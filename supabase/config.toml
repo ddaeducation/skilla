@@ -1,0 +1,40 @@
+project_id = "hapixvzfcnawjlttkjtr"
+
+[functions.course-assistant]
+verify_jwt = true
+
+[functions.send-admin-invitation]
+verify_jwt = true
+
+[functions.accept-admin-invitation]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = true
+
+[functions.verify-flutterwave-payment]
+verify_jwt = false
+
+[functions.send-instructor-invitation]
+verify_jwt = true
+
+[functions.accept-instructor-invitation]
+verify_jwt = false
+
+[functions.generate-certificate]
+verify_jwt = true
+
+[functions.ai-content-generator]
+verify_jwt = true
+
+[functions.ai-grade-answer]
+verify_jwt = true
+
+[functions.send-notification]
+verify_jwt = true
+
+[functions.run-code]
+verify_jwt = false
+
+[functions.fetch-colab-notebook]
+verify_jwt = false

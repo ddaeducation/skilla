@@ -1,0 +1,358 @@
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { 
+  Clock, 
+  ChevronLeft, 
+  ChevronRight, 
+  Eye, 
+  ArrowRightLeft,
+  GripVertical,
+  CheckCircle,
+  AlertCircle
+} from "lucide-react";
+
+interface QuizQuestion {
+  id: string;
+  question_text: string;
+  question_type: string;
+  points: number;
+  order_index: number;
+  explanation: string | null;
+}
+
+interface QuizOption {
+  id: string;
+  question_id: string;
+  option_text: string;
+  is_correct: boolean;
+  order_index: number;
+}
+
+interface Quiz {
+  id: string;
+  title: string;
+  description?: string | null;
+  passing_score: number;
+  time_limit_minutes?: number | null;
+}
+
+interface QuizPreviewProps {
+  quiz: Quiz;
+  questions: QuizQuestion[];
+  options: Record<string, QuizOption[]>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export const QuizPreview = ({ quiz, questions, options, open, onOpenChange }: QuizPreviewProps) => {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [showResults, setShowResults] = useState(false);
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const currentOptions = currentQuestion ? options[currentQuestion.id] || [] : [];
+  const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
+
+  const handleNext = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      setShowResults(true);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
+
+  const handleReset = () => {
+    setCurrentQuestionIndex(0);
+    setAnswers({});
+    setShowResults(false);
+  };
+
+  const calculateScore = () => {
+    let correct = 0;
+    let total = 0;
+
+    questions.forEach((question) => {
+      const questionOptions = options[question.id] || [];
+      const answer = answers[question.id];
+      total += question.points;
+
+      if (question.question_type === "single_choice" || question.question_type === "true_false") {
+        const correctOption = questionOptions.find((o) => o.is_correct);
+        if (correctOption && answer === correctOption.id) {
+          correct += question.points;
+        }
+      } else if (question.question_type === "multiple_choice") {
+        const correctOptionIds = questionOptions.filter((o) => o.is_correct).map((o) => o.id);
+        const selectedIds = Array.isArray(answer) ? answer : [];
+        if (
+          correctOptionIds.length === selectedIds.length &&
+          correctOptionIds.every((id) => selectedIds.includes(id))
+        ) {
+          correct += question.points;
+        }
+      } else if (question.question_type === "fill_in" || question.question_type === "short_answer" || question.question_type === "numerical") {
+        const correctOption = questionOptions.find((o) => o.is_correct);
+        if (correctOption && typeof answer === "string" && answer.toLowerCase().trim() === correctOption.option_text.toLowerCase().trim()) {
+          correct += question.points;
+        }
+      }
+    });
+
+    return { correct, total, percentage: total > 0 ? Math.round((correct / total) * 100) : 0 };
+  };
+
+  const renderQuestion = () => {
+    if (!currentQuestion) return null;
+
+    const questionAnswer = answers[currentQuestion.id];
+
+    switch (currentQuestion.question_type) {
+      case "single_choice":
+      case "true_false":
+        return (
+          <RadioGroup
+            value={typeof questionAnswer === "string" ? questionAnswer : ""}
+            onValueChange={(value) => setAnswers({ ...answers, [currentQuestion.id]: value })}
+            className="space-y-3"
+          >
+            {currentOptions.map((option) => (
+              <div key={option.id} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer">
+                <RadioGroupItem value={option.id} id={option.id} />
+                <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                  {option.option_text}
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+        );
+
+      case "multiple_choice":
+        const selectedOptions = Array.isArray(questionAnswer) ? questionAnswer : [];
+        return (
+          <div className="space-y-3">
+            {currentOptions.map((option) => (
+              <div key={option.id} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer">
+                <Checkbox
+                  id={option.id}
+                  checked={selectedOptions.includes(option.id)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setAnswers({ ...answers, [currentQuestion.id]: [...selectedOptions, option.id] });
+                    } else {
+                      setAnswers({ ...answers, [currentQuestion.id]: selectedOptions.filter((id) => id !== option.id) });
+                    }
+                  }}
+                />
+                <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                  {option.option_text}
+                </Label>
+              </div>
+            ))}
+          </div>
+        );
+
+      case "fill_in":
+      case "short_answer":
+      case "numerical":
+        return (
+          <Input
+            placeholder={currentQuestion.question_type === "numerical" ? "Enter your numerical answer..." : "Type your answer..."}
+            type={currentQuestion.question_type === "numerical" ? "number" : "text"}
+            value={typeof questionAnswer === "string" ? questionAnswer : ""}
+            onChange={(e) => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
+            className="max-w-md"
+          />
+        );
+
+      case "long_answer":
+      case "scenario":
+      case "case_study":
+      case "code_based":
+        return (
+          <Textarea
+            placeholder="Type your detailed answer here..."
+            value={typeof questionAnswer === "string" ? questionAnswer : ""}
+            onChange={(e) => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
+            rows={6}
+            className={currentQuestion.question_type === "code_based" ? "font-mono" : ""}
+          />
+        );
+
+      case "matching":
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Match the items on the left with their corresponding items on the right.</p>
+            {currentOptions.map((option) => {
+              const [left, right] = option.option_text.split("|||");
+              return (
+                <div key={option.id} className="flex items-center gap-4 p-3 rounded-lg border bg-muted/30">
+                  <span className="flex-1 font-medium">{left}</span>
+                  <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex-1 text-right text-muted-foreground">{right}</span>
+                </div>
+              );
+            })}
+          </div>
+        );
+
+      case "ordering":
+      case "drag_drop":
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Arrange the items in the correct order.</p>
+            {currentOptions.map((option, idx) => (
+              <div key={option.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground w-6">{idx + 1}.</span>
+                <span className="flex-1">{option.option_text}</span>
+              </div>
+            ))}
+          </div>
+        );
+
+      default:
+        return <p className="text-muted-foreground">This question type is not yet supported in preview mode.</p>;
+    }
+  };
+
+  const renderResults = () => {
+    const { correct, total, percentage } = calculateScore();
+    const passed = percentage >= quiz.passing_score;
+
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          {passed ? (
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          ) : (
+            <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
+          )}
+          <h3 className="text-2xl font-bold mb-2">
+            {passed ? "Congratulations!" : "Keep Practicing"}
+          </h3>
+          <p className="text-muted-foreground">
+            {passed ? "You passed the quiz!" : "You didn't reach the passing score this time."}
+          </p>
+        </div>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-3xl font-bold text-primary">{percentage}%</p>
+                <p className="text-sm text-muted-foreground">Your Score</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold">{correct}/{total}</p>
+                <p className="text-sm text-muted-foreground">Points Earned</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold">{quiz.passing_score}%</p>
+                <p className="text-sm text-muted-foreground">Passing Score</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-center gap-4">
+          <Button variant="outline" onClick={handleReset}>
+            Try Again
+          </Button>
+          <Button onClick={() => onOpenChange(false)}>
+            Close Preview
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <Eye className="h-5 w-5 text-primary" />
+            <DialogTitle>Quiz Preview: {quiz.title}</DialogTitle>
+          </div>
+          {quiz.description && (
+            <p className="text-sm text-muted-foreground">{quiz.description}</p>
+          )}
+        </DialogHeader>
+
+        {!showResults ? (
+          <div className="space-y-6">
+            {/* Progress and Timer */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <Progress value={progress} className="h-2" />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Question {currentQuestionIndex + 1} of {questions.length}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                {quiz.time_limit_minutes && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {quiz.time_limit_minutes} min
+                  </Badge>
+                )}
+                <Badge variant="secondary">
+                  {currentQuestion?.points || 0} pts
+                </Badge>
+              </div>
+            </div>
+
+            {/* Question */}
+            {currentQuestion && (
+              <Card>
+                <CardContent className="pt-6 space-y-6">
+                  <div>
+                    <Badge variant="outline" className="mb-3">
+                      {currentQuestion.question_type.replace(/_/g, " ").toUpperCase()}
+                    </Badge>
+                    <h3 className="text-lg font-semibold">{currentQuestion.question_text}</h3>
+                  </div>
+
+                  {renderQuestion()}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Navigation */}
+            <div className="flex justify-between">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentQuestionIndex === 0}
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
+              <Button onClick={handleNext}>
+                {currentQuestionIndex === questions.length - 1 ? "Finish" : "Next"}
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          renderResults()
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
