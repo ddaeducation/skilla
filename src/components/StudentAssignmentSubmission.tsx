@@ -277,47 +277,6 @@ export const StudentAssignmentSubmission = ({
               )}
             </div>
 
-            {/* Instructions */}
-            {instructions && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Instructions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div 
-                    className="prose prose-sm max-w-none [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-medium [&>h3]:mb-2 [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:mb-4 [&>ol]:mb-4 [&>a]:text-primary [&>a]:underline"
-                    dangerouslySetInnerHTML={{ __html: instructions }}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Rubrics */}
-            {rubrics && (
-              <Collapsible>
-                <Card>
-                  <CollapsibleTrigger className="w-full">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm flex items-center justify-between">
-                        <span className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4" />
-                          Rubrics
-                        </span>
-                        <ChevronDown className="h-4 w-4 transition-transform duration-200" />
-                      </CardTitle>
-                    </CardHeader>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <CardContent>
-                      <div 
-                        className="prose prose-sm max-w-none [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-medium [&>h3]:mb-2 [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:mb-4 [&>ol]:mb-4 [&>a]:text-primary [&>a]:underline"
-                        dangerouslySetInnerHTML={{ __html: rubrics }}
-                      />
-                    </CardContent>
-                  </CollapsibleContent>
-                </Card>
-              </Collapsible>
-            )}
 
             {/* Feedback (if graded) */}
             {isGraded && existingSubmission?.feedback && (
