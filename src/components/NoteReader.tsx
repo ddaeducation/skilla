@@ -55,22 +55,51 @@ const NoteReader = () => {
     }
 
     const mainEl = document.querySelector("main") || document.querySelector("[role='main']") || document.body;
-    const skipSelectors = "nav, footer, header, [role='navigation'], [role='banner'], .sidebar, button, script, style, noscript, .note-reader-container";
+    const skipSelectors = "nav, footer, header, [role='navigation'], [role='banner'], .sidebar, button, script, style, noscript, .note-reader-container, svg, [aria-hidden='true']";
 
-    const candidates = Array.from(
-      mainEl.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote, pre, figcaption, dt, dd, label")
+    // Collect all potential text-bearing elements
+    const allCandidates = Array.from(
+      mainEl.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote, pre, figcaption, dt, dd, label, span, div, section, article, aside")
     ) as HTMLElement[];
 
-    // Filter out elements inside skip zones and nested duplicates
-    const filtered = candidates.filter(el => {
+    // Filter: skip navigation/UI elements, and only keep leaf-level text nodes
+    const filtered = allCandidates.filter(el => {
       if (el.closest(skipSelectors)) return false;
-      return !candidates.some(other => other !== el && other.contains(el));
+      const text = el.innerText?.trim();
+      if (!text || text.length < 2) return false;
+      // Keep element only if no child candidate also contains the same full text
+      // This prevents double-reading parent + child
+      const hasChildCandidate = allCandidates.some(
+        other => other !== el && el.contains(other) && other.innerText?.trim() === text
+      );
+      if (hasChildCandidate) return false;
+      // For divs/sections/articles, only include if they have direct text content (not just child elements)
+      if (['DIV', 'SECTION', 'ARTICLE', 'ASIDE'].includes(el.tagName)) {
+        const hasTextChild = Array.from(el.childNodes).some(
+          node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim()
+        );
+        const hasNoNestedCandidates = !allCandidates.some(
+          other => other !== el && el.contains(other) && other.innerText?.trim()
+        );
+        if (!hasTextChild && !hasNoNestedCandidates) return false;
+      }
+      return true;
+    });
+
+    // Deduplicate: remove elements whose text is fully contained in a previous sibling/cousin
+    const seen = new Set<string>();
+    const deduped = filtered.filter(el => {
+      const text = el.innerText?.trim();
+      if (!text) return false;
+      if (seen.has(text)) return false;
+      seen.add(text);
+      return true;
     });
 
     const blocks: BlockMapping[] = [];
     let fullText = "";
 
-    filtered.forEach(el => {
+    deduped.forEach(el => {
       const text = el.innerText?.trim();
       if (!text) return;
       const start = fullText.length;
