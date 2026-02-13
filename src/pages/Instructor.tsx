@@ -288,7 +288,7 @@ const Instructor = () => {
             courses (title)
           `)
           .in("course_id", courseIds)
-          .in("payment_status", ["completed", "suspended", "removed"])
+          .in("payment_status", ["completed", "suspended", "pending"])
           .order("enrolled_at", { ascending: false });
 
         if (enrollmentsError) {
@@ -1383,11 +1383,14 @@ const Instructor = () => {
                                       ? "bg-green-100 text-green-800 hover:bg-green-100"
                                       : enrollment.payment_status === "suspended"
                                       ? "bg-orange-100 text-orange-800 hover:bg-orange-100"
+                                      : enrollment.payment_status === "pending"
+                                      ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
                                       : ""
                                   }
                                 >
                                   {enrollment.payment_status === "completed" ? "Active" : 
                                    enrollment.payment_status === "suspended" ? "Suspended" : 
+                                   enrollment.payment_status === "pending" ? "Pending" :
                                    enrollment.payment_status || "Unknown"}
                                 </Badge>
                               </TableCell>
