@@ -1,13 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface InviteRequest {
@@ -135,30 +131,54 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Invitation created:", invitation.id);
 
     // Build the invitation URL
-    const appUrl = req.headers.get("origin") || "http://localhost:5173";
+    const appUrl = req.headers.get("origin") || "https://skilllafrica.lovable.app";
     const inviteUrl = `${appUrl}/accept-invite?token=${invitation.token}`;
 
-    // Send the invitation email
-    const emailResponse = await resend.emails.send({
-      from: "GNI Academy <onboarding@resend.dev>",
-      to: [email],
-      subject: "You've been invited to be an admin at GNI Academy",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">Admin Invitation</h1>
-          <p>You've been invited to become an administrator at GNI Academy.</p>
-          <p>Click the button below to accept your invitation:</p>
-          <a href="${inviteUrl}" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">
-            Accept Invitation
-          </a>
-          <p style="color: #666; font-size: 14px;">This invitation will expire in 7 days.</p>
-          <p style="color: #666; font-size: 14px;">If you didn't expect this invitation, you can safely ignore this email.</p>
-        </div>
-      `,
+    // Send the invitation email using Resend API
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ error: "Email service not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Global Nexus Institute <noreply@resend.dev>",
+        to: email,
+        subject: "You've been invited to be an admin at Global Nexus Institute",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #333;">Admin Invitation</h1>
+            <p>You've been invited to become an administrator at Global Nexus Institute.</p>
+            <p>Click the button below to accept your invitation:</p>
+            <a href="${inviteUrl}" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">
+              Accept Invitation
+            </a>
+            <p style="color: #666; font-size: 14px;">This invitation will expire in 7 days.</p>
+            <p style="color: #666; font-size: 14px;">If you didn't expect this invitation, you can safely ignore this email.</p>
+          </div>
+        `,
+      }),
     });
 
-    console.log("Email sent:", emailResponse);
+    if (!emailResponse.ok) {
+      const emailError = await emailResponse.text();
+      console.error("Failed to send email:", emailError);
+      return new Response(
+        JSON.stringify({ success: true, warning: "Invitation created but email could not be sent", invitation_id: invitation.id }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
+    console.log("Admin invitation sent successfully to:", email);
     return new Response(
       JSON.stringify({ success: true, invitation_id: invitation.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
