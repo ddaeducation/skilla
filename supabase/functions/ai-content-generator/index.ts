@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface GenerateRequest {
-  type: "lesson" | "quiz" | "assignment" | "questions" | "single_lesson" | "single_question";
+  type: "lesson" | "quiz" | "assignment" | "questions" | "single_lesson" | "single_question" | "editor_content";
   topic: string;
   courseName?: string;
   lessonCount?: number;
@@ -197,6 +197,21 @@ Return as JSON array:
     ]
   }
 ]`;
+    } else if (type === "editor_content") {
+      systemPrompt = `You are an expert content writer for online education. Generate well-structured HTML content suitable for a rich text editor. Write at the ${difficulty} level.
+
+CRITICAL FORMATTING RULES:
+- Write content as proper HTML with <p> tags for each paragraph.
+- Use <h2> and <h3> tags for section headings.
+- Use <ul>/<ol> with <li> for lists.
+- Use <strong> for key terms and <em> for emphasis.
+- Never output raw text without HTML tags.
+- Make the content educational, clear, and comprehensive.
+- Do NOT wrap in a JSON object. Return ONLY the raw HTML content.`;
+      userPrompt = `Write educational content about: "${topic}"${courseName ? ` for the course: ${courseName}` : ""}.
+${additionalContext ? `Additional context: ${additionalContext}` : ""}
+
+Return ONLY the HTML content, no JSON wrapping. Start directly with the HTML tags.`;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -241,6 +256,13 @@ Return as JSON array:
 
     if (!content) {
       throw new Error("No content generated");
+    }
+
+    // For editor_content, return raw HTML directly
+    if (type === "editor_content") {
+      return new Response(JSON.stringify({ success: true, data: { content_text: content } }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Extract JSON from the response

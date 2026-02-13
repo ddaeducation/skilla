@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Type, CaseSensitive, LineChart } from "lucide-react";
+import { Type, CaseSensitive, LineChart, Sparkles } from "lucide-react";
 
 // Custom TextStyle extension with fontSize and lineHeight
 const CustomTextStyle = TextStyle.extend({
@@ -95,6 +95,8 @@ import {
   Split,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { Textarea } from "@/components/ui/textarea";
 
 // Create lowlight instance with common languages
 const lowlight = createLowlight(common);
@@ -161,6 +163,9 @@ export const RichTextEditor = ({
   const [videoPopoverOpen, setVideoPopoverOpen] = useState(false);
   const [tablePopoverOpen, setTablePopoverOpen] = useState(false);
   const [codeBlockPopoverOpen, setCodeBlockPopoverOpen] = useState(false);
+  const [aiPopoverOpen, setAiPopoverOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [selectedFontSize, setSelectedFontSize] = useState("16px");
   const [selectedFontFamily, setSelectedFontFamily] = useState("default");
@@ -380,6 +385,33 @@ export const RichTextEditor = ({
     editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
     setTablePopoverOpen(false);
   }, [editor, tableRows, tableCols]);
+
+  const handleAiGenerate = useCallback(async () => {
+    if (!editor || !aiPrompt.trim()) return;
+    setAiGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-content-generator", {
+        body: {
+          type: "editor_content",
+          topic: aiPrompt,
+          courseName: courseId || "General",
+          difficulty: "intermediate",
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const content = data?.data?.content_text || data?.data || "";
+      if (typeof content === "string" && content.trim()) {
+        editor.chain().focus().insertContent(content).run();
+      }
+      setAiPrompt("");
+      setAiPopoverOpen(false);
+    } catch (err: any) {
+      console.error("AI generate error:", err);
+    } finally {
+      setAiGenerating(false);
+    }
+  }, [editor, aiPrompt, courseId]);
 
   if (!editor) {
     return null;
@@ -1071,6 +1103,53 @@ export const RichTextEditor = ({
                 className="w-full"
               >
                 Insert from URL
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* AI Generate */}
+        <ToolbarDivider />
+        <Popover open={aiPopoverOpen} onOpenChange={setAiPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 gap-1 hover:bg-muted text-primary"
+              title="Generate AI Content"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span className="text-xs font-medium hidden sm:inline">Generate AI</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="space-y-3">
+              <p className="text-sm font-medium">Generate AI Content</p>
+              <Textarea
+                placeholder="Describe what content you want to generate..."
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                rows={3}
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleAiGenerate}
+                disabled={aiGenerating || !aiPrompt.trim()}
+                className="w-full"
+              >
+                {aiGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate & Insert
+                  </>
+                )}
               </Button>
             </div>
           </PopoverContent>
