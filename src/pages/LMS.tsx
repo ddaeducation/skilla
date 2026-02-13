@@ -1020,10 +1020,15 @@ const LMS = () => {
                   <CardTitle>Contact Support</CardTitle>
                   <CardDescription>Get in touch with our support team</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Button variant="outline">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Contact Us
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Email us at: <a href="mailto:globalnexusinstitute@gmail.com" className="text-primary font-medium hover:underline">globalnexusinstitute@gmail.com</a>
+                  </p>
+                  <Button variant="outline" asChild>
+                    <a href="mailto:globalnexusinstitute@gmail.com">
+                      <Mail className="w-4 h-4 mr-2" />
+                      Contact Us
+                    </a>
                   </Button>
                 </CardContent>
               </Card>

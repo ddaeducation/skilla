@@ -94,7 +94,7 @@ const AdminSidebar = ({ activeView, setActiveView }: AdminSidebarProps) => {
     if (viewId === "profile") {
       navigate("/profile");
     } else if (viewId === "help") {
-      toast({ title: "Help", description: "Contact support at support@globalnexus.edu" });
+      toast({ title: "Help", description: "Contact support at globalnexusinstitute@gmail.com" });
     } else {
       setActiveView(viewId);
     }

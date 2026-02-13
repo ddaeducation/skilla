@@ -90,7 +90,7 @@ const InstructorSidebar = ({ activeView, setActiveView }: InstructorSidebarProps
       navigate("/profile");
     } else if (viewId === "help") {
       // Could open help modal or navigate to help page
-      toast({ title: "Help", description: "Contact support at support@globalnexus.edu" });
+      toast({ title: "Help", description: "Contact support at globalnexusinstitute@gmail.com" });
     } else {
       setActiveView(viewId);
     }
