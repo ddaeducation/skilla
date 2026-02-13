@@ -475,12 +475,34 @@ const CourseDetail = () => {
           </div>
         )}
 
-        {/* Video URL */}
+        {/* Video URL - check if it's an embed URL or a direct video file */}
         {lesson.content_type === "video" && lesson.content_url && !embedUrl && (
-          <video controls className="w-full rounded-lg">
-            <source src={lesson.content_url} />
-            Your browser does not support the video tag.
-          </video>
+          (() => {
+            const videoUrl = lesson.content_url!;
+            const isEmbedUrl = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.includes('vimeo.com') || videoUrl.includes('/embed/');
+            if (isEmbedUrl) {
+              const ytEmbed = getYouTubeEmbedUrl(videoUrl);
+              const vimeoEmbed = getVimeoEmbedUrl(videoUrl);
+              const src = ytEmbed || vimeoEmbed || videoUrl;
+              return (
+                <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
+                  <iframe
+                    src={src}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title={lesson.title}
+                  />
+                </div>
+              );
+            }
+            return (
+              <video controls className="w-full rounded-lg">
+                <source src={videoUrl} />
+                Your browser does not support the video tag.
+              </video>
+            );
+          })()
         )}
 
         {/* PDF */}

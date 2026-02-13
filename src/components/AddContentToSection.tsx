@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -232,12 +233,15 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
             <>
               {form.content_type === "youtube" && (
                 <div className="space-y-2">
-                  <Label>YouTube URL</Label>
+                  <Label>YouTube URL or Embed Code</Label>
                   <Input
                     value={form.content_url}
                     onChange={(e) => setForm({ ...form, content_url: e.target.value })}
-                    placeholder="https://www.youtube.com/watch?v=..."
+                    placeholder="https://www.youtube.com/watch?v=... or embed URL"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Paste a YouTube watch URL, share URL, or embed URL
+                  </p>
                 </div>
               )}
 
@@ -253,18 +257,37 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
               )}
 
               {(form.content_type === "video" || form.content_type === "pdf" || form.content_type === "image") && (
-                <FileUpload
-                  value={form.content_url}
-                  onChange={(url) => setForm({ ...form, content_url: url })}
-                  folder="lessons"
-                  accept={
-                    form.content_type === "video"
-                      ? ".mp4,.webm,.mov"
-                      : form.content_type === "pdf"
-                      ? ".pdf"
-                      : ".jpg,.jpeg,.png,.gif,.webp"
-                  }
-                />
+                <div className="space-y-4">
+                  <FileUpload
+                    value={form.content_url}
+                    onChange={(url) => setForm({ ...form, content_url: url })}
+                    folder="lessons"
+                    accept={
+                      form.content_type === "video"
+                        ? ".mp4,.webm,.mov"
+                        : form.content_type === "pdf"
+                        ? ".pdf"
+                        : ".jpg,.jpeg,.png,.gif,.webp"
+                    }
+                  />
+                  {form.content_type === "video" && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Separator className="flex-1" />
+                        <span className="text-xs text-muted-foreground">OR paste embed URL</span>
+                        <Separator className="flex-1" />
+                      </div>
+                      <Input
+                        value={form.content_url}
+                        onChange={(e) => setForm({ ...form, content_url: e.target.value })}
+                        placeholder="https://www.youtube.com/embed/... or any video embed URL"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Paste a YouTube embed URL, Vimeo URL, or any video embed link
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
 
               {(form.content_type === "text" || form.content_type === "note") && (

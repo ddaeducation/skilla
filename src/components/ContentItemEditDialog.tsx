@@ -244,13 +244,26 @@ export const ContentItemEditDialog = ({
                   lessonForm.content_type === 'video' || lessonForm.content_type === 'pdf' || 
                   lessonForm.content_type === 'image') && (
                   <div className="space-y-2">
-                    <Label htmlFor="content_url">Content URL</Label>
+                    <Label htmlFor="content_url">
+                      {lessonForm.content_type === 'youtube' ? 'YouTube URL or Embed URL' :
+                       lessonForm.content_type === 'vimeo' ? 'Vimeo URL' :
+                       lessonForm.content_type === 'video' ? 'Video URL or Embed URL' : 'Content URL'}
+                    </Label>
                     <Input
                       id="content_url"
                       value={lessonForm.content_url || ""}
                       onChange={(e) => setLessonForm({ ...lessonForm, content_url: e.target.value })}
-                      placeholder="Enter URL..."
+                      placeholder={
+                        lessonForm.content_type === 'youtube' ? 'https://www.youtube.com/watch?v=... or embed URL' :
+                        lessonForm.content_type === 'video' ? 'Upload URL or paste embed URL (e.g. YouTube embed)' :
+                        'Enter URL...'
+                      }
                     />
+                    {(lessonForm.content_type === 'youtube' || lessonForm.content_type === 'video') && (
+                      <p className="text-xs text-muted-foreground">
+                        Paste a YouTube watch URL, share URL, embed URL, or any video embed link
+                      </p>
+                    )}
                   </div>
                 )}
                 {lessonForm.content_type === 'text' && (
