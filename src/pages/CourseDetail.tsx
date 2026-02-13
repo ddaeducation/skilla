@@ -28,6 +28,7 @@ import {
   ChevronLeft,
   MessageSquare,
   Code2,
+  Lock,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -293,7 +294,16 @@ const CourseDetail = () => {
       (item) => item.type === activeContent.type && item.data.id === activeContent.data.id,
     );
     if (currentIndex < unifiedContent.length - 1) {
-      setActiveContent(unifiedContent[currentIndex + 1]);
+      const nextItem = unifiedContent[currentIndex + 1];
+      if (isItemLocked(nextItem)) {
+        toast({
+          title: "Content Locked",
+          description: "Complete the current item first to proceed.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setActiveContent(nextItem);
     }
   };
 
@@ -757,6 +767,29 @@ const CourseDetail = () => {
     }
   };
 
+  // Sequential locking: an item is locked if the previous item is not completed
+  const isItemLocked = (item: ContentItem) => {
+    const currentIndex = unifiedContent.findIndex(
+      (i) => i.type === item.type && i.data.id === item.data.id
+    );
+    if (currentIndex <= 0) return false; // First item is never locked
+    const previousItem = unifiedContent[currentIndex - 1];
+    return !getItemStatus(previousItem);
+  };
+
+  // Handle content selection with lock check
+  const handleSelectContent = (item: ContentItem) => {
+    if (isItemLocked(item)) {
+      toast({
+        title: "Content Locked",
+        description: "Complete the previous item first to unlock this content.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setActiveContent(item);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -864,8 +897,9 @@ const CourseDetail = () => {
                         sections={sections}
                         unifiedContent={unifiedContent}
                         activeContent={activeContent}
-                        onSelectContent={setActiveContent}
+                        onSelectContent={handleSelectContent}
                         getItemStatus={getItemStatus}
+                        isItemLocked={isItemLocked}
                         completedItems={completedItems}
                         totalItems={totalItems}
                         onHideSidebar={() => setIsSidebarHidden(true)}

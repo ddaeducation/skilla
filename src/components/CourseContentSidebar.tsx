@@ -23,6 +23,7 @@ import {
   CheckCircle,
   ChevronsUpDown,
   PanelLeftClose,
+  Lock,
 } from "lucide-react";
 
 interface CourseSection {
@@ -80,6 +81,7 @@ interface CourseContentSidebarProps {
   activeContent: ContentItem | null;
   onSelectContent: (item: ContentItem) => void;
   getItemStatus: (item: ContentItem) => boolean;
+  isItemLocked?: (item: ContentItem) => boolean;
   completedItems: number;
   totalItems: number;
   onHideSidebar?: () => void;
@@ -119,6 +121,7 @@ export function CourseContentSidebar({
   activeContent,
   onSelectContent,
   getItemStatus,
+  isItemLocked,
   completedItems,
   totalItems,
   onHideSidebar,
@@ -217,6 +220,7 @@ export function CourseContentSidebar({
   // Render content item button
   const renderContentItem = (item: ContentItem) => {
     const isCompleted = getItemStatus(item);
+    const locked = isItemLocked?.(item) ?? false;
     const isActive =
       activeContent?.type === item.type && activeContent.data.id === item.data.id;
 
@@ -245,10 +249,16 @@ export function CourseContentSidebar({
         key={`${item.type}-${item.data.id}`}
         onClick={() => onSelectContent(item)}
         className={`w-full text-left p-2 rounded-md text-sm flex items-center gap-2 transition-colors ${
-          isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+          locked
+            ? "opacity-50 cursor-not-allowed"
+            : isActive
+            ? "bg-primary text-primary-foreground"
+            : "hover:bg-muted"
         }`}
       >
-        {isCompleted ? (
+        {locked ? (
+          <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        ) : isCompleted ? (
           <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
         ) : (
           <span className="flex-shrink-0">{icon}</span>

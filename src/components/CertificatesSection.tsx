@@ -26,6 +26,10 @@ interface CourseProgress {
   school: string;
   completedLessons: number;
   totalLessons: number;
+  passedQuizzes: number;
+  totalQuizzes: number;
+  submittedAssignments: number;
+  totalAssignments: number;
   percentage: number;
   isComplete: boolean;
   hasCertificate: boolean;
@@ -93,15 +97,62 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
 
       if (progressError) throw progressError;
 
+      // Fetch quizzes for enrolled courses
+      const { data: quizzes, error: quizzesError } = await supabase
+        .from("quizzes")
+        .select("id, course_id")
+        .in("course_id", courseIds.length > 0 ? courseIds : ['no-courses']);
+
+      if (quizzesError) throw quizzesError;
+
+      // Fetch quiz attempts
+      const { data: quizAttempts, error: attemptsError } = await supabase
+        .from("quiz_attempts")
+        .select("quiz_id, passed")
+        .eq("user_id", user.id);
+
+      if (attemptsError) throw attemptsError;
+
+      // Fetch assignments for enrolled courses
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from("assignments")
+        .select("id, course_id")
+        .in("course_id", courseIds.length > 0 ? courseIds : ['no-courses']);
+
+      if (assignmentsError) throw assignmentsError;
+
+      // Fetch assignment submissions
+      const { data: submissions, error: submissionsError } = await supabase
+        .from("assignment_submissions")
+        .select("assignment_id")
+        .eq("user_id", user.id);
+
+      if (submissionsError) throw submissionsError;
+
       // Calculate progress for each course
       const certificateIds = new Set(certs?.map(c => c.course?.id) || []);
+      const submittedAssignmentIds = new Set(submissions?.map(s => s.assignment_id) || []);
+      const passedQuizIds = new Set(
+        (quizAttempts || []).filter(a => a.passed).map(a => a.quiz_id)
+      );
       
       const progressData: CourseProgress[] = (enrollments || []).map(enrollment => {
         const courseLessons = lessons?.filter(l => l.course_id === enrollment.course_id) || [];
         const courseProgress = progress?.filter(p => p.course_id === enrollment.course_id) || [];
         const completedLessons = courseProgress.filter(p => p.completed).length;
         const totalLessons = courseLessons.length;
-        const percentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+        const courseQuizzes = quizzes?.filter(q => q.course_id === enrollment.course_id) || [];
+        const totalQuizzes = courseQuizzes.length;
+        const passedQuizzes = courseQuizzes.filter(q => passedQuizIds.has(q.id)).length;
+
+        const courseAssignments = assignments?.filter(a => a.course_id === enrollment.course_id) || [];
+        const totalAssignments = courseAssignments.length;
+        const submittedAssignments = courseAssignments.filter(a => submittedAssignmentIds.has(a.id)).length;
+
+        const totalItems = totalLessons + totalQuizzes + totalAssignments;
+        const completedItems = completedLessons + passedQuizzes + submittedAssignments;
+        const percentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
         
         return {
           courseId: enrollment.course_id,
@@ -109,8 +160,12 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
           school: enrollment.course?.school || "Unknown School",
           completedLessons,
           totalLessons,
+          passedQuizzes,
+          totalQuizzes,
+          submittedAssignments,
+          totalAssignments,
           percentage,
-          isComplete: totalLessons > 0 && completedLessons >= totalLessons,
+          isComplete: totalItems > 0 && completedItems >= totalItems,
           hasCertificate: certificateIds.has(enrollment.course_id)
         };
       });
@@ -248,9 +303,23 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
                   <CardDescription>{course.school}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center gap-2 text-sm text-green-600">
-                    <CheckCircle className="w-4 h-4" />
-                    All {course.totalLessons} lessons completed
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      {course.completedLessons}/{course.totalLessons} lessons completed
+                    </div>
+                    {course.totalQuizzes > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <CheckCircle className="w-4 h-4" />
+                        {course.passedQuizzes}/{course.totalQuizzes} quizzes passed
+                      </div>
+                    )}
+                    {course.totalAssignments > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <CheckCircle className="w-4 h-4" />
+                        {course.submittedAssignments}/{course.totalAssignments} assignments submitted
+                      </div>
+                    )}
                   </div>
                   <Button
                     className="w-full bg-green-600 hover:bg-green-700"
@@ -298,7 +367,9 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
                     </div>
                     <Progress value={course.percentage} className="h-2" />
                     <p className="text-xs text-muted-foreground mt-2">
-                      {course.completedLessons} of {course.totalLessons} lessons completed
+                      {course.completedLessons}/{course.totalLessons} lessons
+                      {course.totalQuizzes > 0 && ` · ${course.passedQuizzes}/${course.totalQuizzes} quizzes`}
+                      {course.totalAssignments > 0 && ` · ${course.submittedAssignments}/${course.totalAssignments} assignments`}
                     </p>
                   </div>
                   <Button variant="outline" className="w-full" disabled>
