@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Type, CaseSensitive, LineChart, Sparkles } from "lucide-react";
+import { Type, CaseSensitive, LineChart, Sparkles, FileUp } from "lucide-react";
 
 // Custom TextStyle extension with fontSize and lineHeight
 const CustomTextStyle = TextStyle.extend({
@@ -175,6 +175,8 @@ export const RichTextEditor = ({
   const [selectedLineHeight, setSelectedLineHeight] = useState("1.5");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
+  const docFileInputRef = useRef<HTMLInputElement>(null);
+  const [docImporting, setDocImporting] = useState(false);
 
   const fontSizes = [
     { value: "12px", label: "12" },
@@ -416,6 +418,43 @@ export const RichTextEditor = ({
       setAiGenerating(false);
     }
   }, [editor, aiPrompt, courseId, aiDifficulty, contentContext]);
+
+  const handleDocumentImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editor) return;
+
+    const maxSize = 20 * 1024 * 1024; // 20MB
+    if (file.size > maxSize) {
+      console.error("File too large. Maximum size is 20MB.");
+      return;
+    }
+
+    setDocImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("contentContext", contentContext || "lesson");
+
+      const { data, error } = await supabase.functions.invoke("parse-document", {
+        body: formData,
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const content = data?.data?.content_text || "";
+      if (typeof content === "string" && content.trim()) {
+        editor.chain().focus().insertContent(content).run();
+      }
+    } catch (err: any) {
+      console.error("Document import error:", err);
+    } finally {
+      setDocImporting(false);
+      if (docFileInputRef.current) {
+        docFileInputRef.current.value = "";
+      }
+    }
+  }, [editor, contentContext]);
 
   if (!editor) {
     return null;
@@ -1171,6 +1210,33 @@ export const RichTextEditor = ({
             </div>
           </PopoverContent>
         </Popover>
+
+        {/* Document Import */}
+        <input
+          ref={docFileInputRef}
+          type="file"
+          accept=".pdf,.doc,.docx,.pptx,.ppt,.xlsx,.xls,.txt,.rtf,.csv,.md"
+          onChange={handleDocumentImport}
+          className="hidden"
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 gap-1 hover:bg-muted"
+          title="Import Document (PDF, Word, etc.)"
+          onClick={() => docFileInputRef.current?.click()}
+          disabled={docImporting}
+        >
+          {docImporting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <FileUp className="h-4 w-4" />
+          )}
+          <span className="text-xs font-medium hidden sm:inline">
+            {docImporting ? "Importing..." : "Import Doc"}
+          </span>
+        </Button>
 
         {/* Video */}
         <Popover open={videoPopoverOpen} onOpenChange={setVideoPopoverOpen}>
