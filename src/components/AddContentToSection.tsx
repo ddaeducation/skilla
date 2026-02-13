@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, FileText, Video, Youtube, Image, FileQuestion, ClipboardList, Loader2, Link2 } from "lucide-react";
+import { Plus, FileText, Video, Youtube, Image, FileQuestion, ClipboardList, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "@/components/FileUpload";
 import { RichTextEditor } from "@/components/RichTextEditor";
@@ -27,7 +27,6 @@ interface AddContentToSectionProps {
 const contentTypes = [
   { value: "text", label: "Text/Notes", icon: FileText },
   { value: "note", label: "Note", icon: FileText },
-  { value: "link", label: "Link/URL", icon: Link2 },
   { value: "video", label: "Video", icon: Video },
   { value: "youtube", label: "YouTube", icon: Youtube },
   { value: "vimeo", label: "Vimeo", icon: Video },
@@ -268,20 +267,6 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
                   />
                   <p className="text-xs text-muted-foreground">
                     Paste a YouTube embed, Vimeo, or any iframe-compatible video URL. Will play distraction-free without related videos or suggestions.
-                  </p>
-                </div>
-              )}
-
-              {form.content_type === "link" && (
-                <div className="space-y-2">
-                  <Label>Link URL</Label>
-                  <Input
-                    value={form.content_url}
-                    onChange={(e) => setForm({ ...form, content_url: e.target.value })}
-                    placeholder="https://example.com/resource"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Paste any external link (article, resource, tool, etc.)
                   </p>
                 </div>
               )}
