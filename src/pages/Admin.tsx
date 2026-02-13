@@ -650,11 +650,13 @@ const Admin = () => {
       
       if (error) throw error;
       
+      // Immediately remove from local state
+      setAdminUsers(prev => prev.filter(a => a.id !== adminUser.id));
+      
       toast({ 
         title: "Admin removed",
         description: `Admin privileges removed from ${adminEmail}`,
       });
-      fetchData();
     } catch (error) {
       console.error("Error removing admin:", error);
       toast({
@@ -701,6 +703,10 @@ const Admin = () => {
             },
           }).catch((err) => console.error("Failed to send notification email:", err));
         }
+
+        // Immediately remove from local state
+        setProfiles(prev => prev.filter(p => p.id !== selectedUser.id));
+        setEnrollments(prev => prev.filter(e => e.user_id !== selectedUser.id));
 
         toast({
           title: "User removed",
@@ -1242,11 +1248,13 @@ const Admin = () => {
       
       if (error) throw error;
       
+      // Immediately remove from local state
+      setInstructorUsers(prev => prev.filter(i => i.id !== instructor.id));
+      
       toast({ 
         title: "Instructor removed",
         description: `Instructor privileges removed from ${instructorEmail}`,
       });
-      fetchData();
     } catch (error) {
       console.error("Error removing instructor:", error);
       toast({

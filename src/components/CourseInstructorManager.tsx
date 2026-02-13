@@ -191,12 +191,14 @@ export const CourseInstructorManager = ({
 
       if (error) throw error;
 
+      // Immediately remove from local state
+      setCourseInstructors(prev => prev.filter(i => i.instructor_id !== instructorId));
+
       toast({
         title: "Instructor removed",
         description: "The instructor has been removed from this course",
       });
 
-      fetchData();
       onUpdate?.();
     } catch (error) {
       console.error("Error removing instructor:", error);
