@@ -119,6 +119,7 @@ const CourseDetail = () => {
   const [assignmentSubmissions, setAssignmentSubmissions] = useState<AssignmentSubmission[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [contentCounts, setContentCounts] = useState<{ lesson_count: number; quiz_count: number } | null>(null);
   const [activeContent, setActiveContent] = useState<ContentItem | null>(null);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
 
@@ -169,6 +170,10 @@ const CourseDetail = () => {
     }
     setCourse(data);
     setLoading(false);
+
+    // Fetch content counts (accessible to all users via database function)
+    const { data: countsData } = await supabase.rpc("get_course_content_counts", { p_course_id: courseId });
+    if (countsData) setContentCounts(countsData as any);
   };
 
   const checkEnrollment = async (userId: string) => {
@@ -761,11 +766,11 @@ const CourseDetail = () => {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-2xl font-bold text-primary">{lessons.length || "—"}</p>
+                    <p className="text-2xl font-bold text-primary">{(contentCounts?.lesson_count ?? lessons.length) || "—"}</p>
                     <p className="text-sm text-muted-foreground">Lessons</p>
                   </div>
                   <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-2xl font-bold text-primary">{quizzes.length || "—"}</p>
+                    <p className="text-2xl font-bold text-primary">{(contentCounts?.quiz_count ?? quizzes.length) || "—"}</p>
                     <p className="text-sm text-muted-foreground">Quizzes</p>
                   </div>
                   <div className="p-4 bg-muted rounded-lg">

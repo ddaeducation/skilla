@@ -1681,6 +1681,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_course_content_counts: {
+        Args: { p_course_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
