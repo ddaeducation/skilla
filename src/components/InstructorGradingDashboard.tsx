@@ -67,7 +67,6 @@ export const InstructorGradingDashboard = ({ instructorId, courses }: Instructor
   const fetchSubmissions = async () => {
     setLoading(true);
     try {
-      // Get all assignments for instructor's courses
       const courseIds = courses.map(c => c.id);
       
       if (courseIds.length === 0) {
@@ -76,28 +75,61 @@ export const InstructorGradingDashboard = ({ instructorId, courses }: Instructor
         return;
       }
 
-      const { data, error } = await supabase
+      // Fetch assignments for instructor's courses
+      const { data: assignmentsData, error: assignErr } = await supabase
+        .from("assignments")
+        .select("id, title, max_score, course_id, courses (title)")
+        .in("course_id", courseIds);
+
+      if (assignErr) throw assignErr;
+      if (!assignmentsData || assignmentsData.length === 0) {
+        setSubmissions([]);
+        setLoading(false);
+        return;
+      }
+
+      const assignmentIds = assignmentsData.map(a => a.id);
+
+      // Fetch submissions for those assignments
+      const { data: subsData, error: subsErr } = await supabase
         .from("assignment_submissions")
-        .select(`
-          *,
-          assignments (
-            title,
-            max_score,
-            course_id,
-            courses (title)
-          ),
-          profiles:user_id (full_name, email)
-        `)
+        .select("*")
+        .in("assignment_id", assignmentIds)
         .order("submitted_at", { ascending: false });
 
-      if (error) throw error;
+      if (subsErr) throw subsErr;
 
-      // Filter to only instructor's courses
-      const filteredSubmissions = (data || []).filter(
-        (sub: any) => sub.assignments && courseIds.includes(sub.assignments.course_id)
-      );
+      // Get unique user IDs and fetch their profiles
+      const userIds = [...new Set((subsData || []).map(s => s.user_id))];
+      let profilesMap: Record<string, { full_name: string | null; email: string | null }> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", userIds);
+        
+        if (profilesData) {
+          profilesMap = Object.fromEntries(profilesData.map(p => [p.id, { full_name: p.full_name, email: p.email }]));
+        }
+      }
 
-      setSubmissions(filteredSubmissions as unknown as Submission[]);
+      // Build assignment lookup
+      const assignmentMap = Object.fromEntries(assignmentsData.map(a => [a.id, a]));
+
+      // Combine data
+      const combined: Submission[] = (subsData || []).map(sub => ({
+        ...sub,
+        assignments: assignmentMap[sub.assignment_id] ? {
+          title: assignmentMap[sub.assignment_id].title,
+          max_score: assignmentMap[sub.assignment_id].max_score,
+          course_id: assignmentMap[sub.assignment_id].course_id,
+          courses: assignmentMap[sub.assignment_id].courses as { title: string } | undefined,
+        } : undefined,
+        profiles: profilesMap[sub.user_id] || null,
+      }));
+
+      setSubmissions(combined);
     } catch (error) {
       console.error("Error fetching submissions:", error);
       toast({
@@ -154,7 +186,6 @@ export const InstructorGradingDashboard = ({ instructorId, courses }: Instructor
   const filteredSubmissions = selectedCourse === "all"
     ? submissions
     : submissions.filter(s => s.assignments?.course_id === selectedCourse);
-
   const pendingCount = submissions.filter(s => s.score === null).length;
   const gradedCount = submissions.filter(s => s.score !== null).length;
 
