@@ -648,7 +648,10 @@ const CourseDetail = () => {
               <CardTitle className="text-sm">Instructions</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{assignment.instructions}</p>
+              <div 
+                className="prose prose-sm max-w-none [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-medium [&>h3]:mb-2 [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:mb-4 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:mb-4 [&>ol]:list-decimal [&>ol]:pl-5 [&>li]:mb-1 [&>a]:text-primary [&>a]:underline [&>pre]:bg-muted [&>pre]:p-4 [&>pre]:rounded-md [&>pre]:overflow-x-auto [&>blockquote]:border-l-4 [&>blockquote]:border-primary/30 [&>blockquote]:pl-4 [&>blockquote]:italic"
+                dangerouslySetInnerHTML={{ __html: assignment.instructions }}
+              />
             </CardContent>
           </Card>
         )}
