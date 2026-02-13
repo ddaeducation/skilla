@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ClipboardCheck, FileText, ExternalLink, Loader2, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { ClipboardCheck, FileText, ExternalLink, Loader2, CheckCircle, Clock, AlertCircle, Download } from "lucide-react";
 
 interface Course {
   id: string;
@@ -338,18 +338,26 @@ export const InstructorGradingDashboard = ({ instructorId, courses }: Instructor
                   </div>
                 )}
                 {gradingSubmission.file_url && (
-                  <Button variant="outline" asChild>
-                    <a
-                      href={gradingSubmission.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="gap-2"
-                    >
-                      <FileText className="h-4 w-4" />
-                      View Submitted File
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" asChild>
+                      <a
+                        href={gradingSubmission.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="gap-2"
+                      >
+                        <FileText className="h-4 w-4" />
+                        View Submitted File
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <a href={gradingSubmission.file_url} download className="gap-2">
+                        <Download className="h-4 w-4" />
+                        Download
+                      </a>
+                    </Button>
+                  </div>
                 )}
                 {!gradingSubmission.submission_text && !gradingSubmission.file_url && (
                   <p className="text-muted-foreground italic">No content submitted</p>
@@ -479,13 +487,20 @@ const SubmissionsTable = ({
                   </span>
                 </TableCell>
                 <TableCell>
-                  {submission.file_url ? (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={submission.file_url} target="_blank" rel="noopener noreferrer" className="gap-1">
-                        <FileText className="h-3 w-3" />
-                        View
-                      </a>
-                    </Button>
+                {submission.file_url ? (
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={submission.file_url} target="_blank" rel="noopener noreferrer" className="gap-1">
+                          <FileText className="h-3 w-3" />
+                          View
+                        </a>
+                      </Button>
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={submission.file_url} download className="gap-1">
+                          <Download className="h-3 w-3" />
+                        </a>
+                      </Button>
+                    </div>
                   ) : submission.submission_text ? (
                     <Badge variant="secondary" className="gap-1">
                       <FileText className="h-3 w-3" />
