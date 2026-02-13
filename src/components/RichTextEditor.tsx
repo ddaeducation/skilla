@@ -166,6 +166,7 @@ export const RichTextEditor = ({
   const [aiPopoverOpen, setAiPopoverOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiDifficulty, setAiDifficulty] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [selectedFontSize, setSelectedFontSize] = useState("16px");
   const [selectedFontFamily, setSelectedFontFamily] = useState("default");
@@ -395,7 +396,7 @@ export const RichTextEditor = ({
           type: "editor_content",
           topic: aiPrompt,
           courseName: courseId || "General",
-          difficulty: "intermediate",
+          difficulty: aiDifficulty,
         },
       });
       if (error) throw error;
@@ -411,7 +412,7 @@ export const RichTextEditor = ({
     } finally {
       setAiGenerating(false);
     }
-  }, [editor, aiPrompt, courseId]);
+  }, [editor, aiPrompt, courseId, aiDifficulty]);
 
   if (!editor) {
     return null;
@@ -1132,6 +1133,19 @@ export const RichTextEditor = ({
                 onChange={(e) => setAiPrompt(e.target.value)}
                 rows={3}
               />
+              <div className="space-y-1">
+                <Label className="text-xs">Difficulty</Label>
+                <Select value={aiDifficulty} onValueChange={(v: "beginner" | "intermediate" | "advanced") => setAiDifficulty(v)}>
+                  <SelectTrigger className="h-8 text-xs bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Button
                 type="button"
                 size="sm"
