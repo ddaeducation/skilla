@@ -305,17 +305,15 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
                 </div>
               )}
 
-              {(form.content_type === "text" || form.content_type === "note") && (
-                <div className="space-y-2 flex-1">
-                  <Label>Content</Label>
-                  <RichTextEditor
-                    value={form.content_text}
-                    onChange={(val) => setForm({ ...form, content_text: val })}
-                    placeholder="Write your lesson content here..."
-                    minHeight="400px"
-                  />
-                </div>
-              )}
+              <div className="space-y-2 flex-1">
+                <Label>Content</Label>
+                <RichTextEditor
+                  value={form.content_text}
+                  onChange={(val) => setForm({ ...form, content_text: val })}
+                  placeholder="Write your lesson content here..."
+                  minHeight="400px"
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
