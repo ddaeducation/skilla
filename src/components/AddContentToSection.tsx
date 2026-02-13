@@ -30,6 +30,7 @@ const contentTypes = [
   { value: "video", label: "Video", icon: Video },
   { value: "youtube", label: "YouTube", icon: Youtube },
   { value: "vimeo", label: "Vimeo", icon: Video },
+  { value: "embed", label: "Embedded Video", icon: Video },
   { value: "pdf", label: "PDF Document", icon: FileText },
   { value: "image", label: "Image/Photo", icon: Image },
   { value: "quiz", label: "Quiz", icon: FileQuestion },
@@ -253,6 +254,20 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
                     onChange={(e) => setForm({ ...form, content_url: e.target.value })}
                     placeholder="https://vimeo.com/..."
                   />
+                </div>
+              )}
+
+              {form.content_type === "embed" && (
+                <div className="space-y-2">
+                  <Label>Embed URL (Distraction-Free)</Label>
+                  <Input
+                    value={form.content_url}
+                    onChange={(e) => setForm({ ...form, content_url: e.target.value })}
+                    placeholder="Paste any video embed URL..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Paste a YouTube embed, Vimeo, or any iframe-compatible video URL. Will play distraction-free without related videos or suggestions.
+                  </p>
                 </div>
               )}
 

@@ -225,6 +225,7 @@ export const ContentItemEditDialog = ({
                         <SelectItem value="video">Video Upload</SelectItem>
                         <SelectItem value="youtube">YouTube</SelectItem>
                         <SelectItem value="vimeo">Vimeo</SelectItem>
+                        <SelectItem value="embed">Embedded Video (Distraction-Free)</SelectItem>
                         <SelectItem value="pdf">PDF</SelectItem>
                         <SelectItem value="image">Image</SelectItem>
                       </SelectContent>
@@ -242,11 +243,12 @@ export const ContentItemEditDialog = ({
                 </div>
                 {(lessonForm.content_type === 'youtube' || lessonForm.content_type === 'vimeo' || 
                   lessonForm.content_type === 'video' || lessonForm.content_type === 'pdf' || 
-                  lessonForm.content_type === 'image') && (
+                  lessonForm.content_type === 'image' || lessonForm.content_type === 'embed') && (
                   <div className="space-y-2">
                     <Label htmlFor="content_url">
                       {lessonForm.content_type === 'youtube' ? 'YouTube URL or Embed URL' :
                        lessonForm.content_type === 'vimeo' ? 'Vimeo URL' :
+                       lessonForm.content_type === 'embed' ? 'Embed URL (Distraction-Free)' :
                        lessonForm.content_type === 'video' ? 'Video URL or Embed URL' : 'Content URL'}
                     </Label>
                     <Input

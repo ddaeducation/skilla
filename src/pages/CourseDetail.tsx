@@ -487,6 +487,26 @@ const CourseDetail = () => {
           </div>
         )}
 
+        {/* Embedded Video (Distraction-Free) */}
+        {lesson.content_type === "embed" && lesson.content_url && (
+          <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
+            <iframe
+              src={(() => {
+                const url = lesson.content_url!;
+                const ytEmbed = getYouTubeEmbedUrl(url);
+                if (ytEmbed) return ytEmbed.includes('?') ? ytEmbed + '&rel=0&modestbranding=1' : ytEmbed + '?rel=0&modestbranding=1';
+                const vimeoEmbed = getVimeoEmbedUrl(url);
+                if (vimeoEmbed) return vimeoEmbed.includes('?') ? vimeoEmbed + '&title=0&byline=0&portrait=0' : vimeoEmbed + '?title=0&byline=0&portrait=0';
+                return url;
+              })()}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title={lesson.title}
+            />
+          </div>
+        )}
+
         {/* Video URL - check if it's an embed URL or a direct video file */}
         {lesson.content_type === "video" && lesson.content_url && !embedUrl && (
           (() => {
