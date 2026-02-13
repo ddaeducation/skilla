@@ -198,20 +198,36 @@ Return as JSON array:
   }
 ]`;
     } else if (type === "editor_content") {
-      systemPrompt = `You are an expert content writer for online education. Generate well-structured HTML content suitable for a rich text editor. Write at the ${difficulty} level.
+      systemPrompt = `You are an expert content writer and curriculum designer for online education. Generate beautifully structured, well-organized HTML content suitable for a rich text editor. Write at the ${difficulty} level.
 
-CRITICAL FORMATTING RULES:
-- Write content as proper HTML with <p> tags for each paragraph.
-- Use <h2> and <h3> tags for section headings.
-- Use <ul>/<ol> with <li> for lists.
-- Use <strong> for key terms and <em> for emphasis.
-- Never output raw text without HTML tags.
-- Make the content educational, clear, and comprehensive.
-- Do NOT wrap in a JSON object. Return ONLY the raw HTML content.`;
-      userPrompt = `Write educational content about: "${topic}"${courseName ? ` for the course: ${courseName}` : ""}.
+CRITICAL STRUCTURE & FORMATTING RULES:
+1. ALWAYS start with a clear <h2> title that summarizes the topic.
+2. Follow with an introductory <p> paragraph that provides context and overview.
+3. Break the content into 3-5 clearly defined sections, each with its own <h3> subheading.
+4. Under each section:
+   - Write 2-3 well-developed <p> paragraphs with clear, complete sentences.
+   - Use <ul> or <ol> lists where appropriate to organize key points, steps, or examples.
+   - Bold <strong> important terms, concepts, or definitions on their first mention.
+   - Use <em> for emphasis sparingly.
+5. End with a <h3>Summary</h3> or <h3>Key Takeaways</h3> section containing a concise <ul> list of main points.
+
+CONTENT QUALITY RULES:
+- Each paragraph must be substantive (3-5 sentences minimum), not just a single sentence.
+- Maintain logical flow between sections — use transitions.
+- Be educational, clear, and comprehensive.
+- Never output raw text without HTML tags. Every piece of text must be inside a proper tag.
+- Do NOT wrap in a JSON object or markdown code block. Return ONLY the raw HTML content.
+- Do NOT include \`\`\`html or any code fences.`;
+      userPrompt = `Write well-organized, comprehensive educational content about: "${topic}"${courseName ? ` for the course: ${courseName}` : ""}.
 ${additionalContext ? `Additional context: ${additionalContext}` : ""}
 
-Return ONLY the HTML content, no JSON wrapping. Start directly with the HTML tags.`;
+Structure the content with:
+1. A main title (h2)
+2. An introduction paragraph
+3. 3-5 sections with subheadings (h3), each containing multiple paragraphs and lists
+4. A summary/key takeaways section at the end
+
+Return ONLY the HTML content. Start directly with <h2>.`;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -260,7 +276,9 @@ Return ONLY the HTML content, no JSON wrapping. Start directly with the HTML tag
 
     // For editor_content, return raw HTML directly
     if (type === "editor_content") {
-      return new Response(JSON.stringify({ success: true, data: { content_text: content } }), {
+      // Strip any markdown code fences the model might wrap around HTML
+      const cleanedContent = content.replace(/^```html?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+      return new Response(JSON.stringify({ success: true, data: { content_text: cleanedContent } }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
