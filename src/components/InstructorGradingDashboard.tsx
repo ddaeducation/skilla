@@ -60,6 +60,37 @@ export const InstructorGradingDashboard = ({ instructorId, courses }: Instructor
   const [gradeForm, setGradeForm] = useState({ score: 0, feedback: "" });
   const [saving, setSaving] = useState(false);
 
+  const getSignedUrl = async (fileUrl: string) => {
+    try {
+      // Extract the path after the bucket name from the public URL
+      const match = fileUrl.match(/\/storage\/v1\/object\/(?:public|sign)\/assignment-submissions\/(.+)/);
+      if (!match) return fileUrl;
+      const filePath = decodeURIComponent(match[1]);
+      const { data, error } = await supabase.storage
+        .from("assignment-submissions")
+        .createSignedUrl(filePath, 3600);
+      if (error || !data?.signedUrl) return fileUrl;
+      return data.signedUrl;
+    } catch {
+      return fileUrl;
+    }
+  };
+
+  const handleViewFile = async (fileUrl: string) => {
+    const url = await getSignedUrl(fileUrl);
+    window.open(url, "_blank");
+  };
+
+  const handleDownloadFile = async (fileUrl: string) => {
+    const url = await getSignedUrl(fileUrl);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   useEffect(() => {
     fetchSubmissions();
   }, [instructorId]);
@@ -271,6 +302,8 @@ export const InstructorGradingDashboard = ({ instructorId, courses }: Instructor
           <SubmissionsTable
             submissions={filteredSubmissions.filter(s => s.score === null)}
             onGrade={openGradeDialog}
+            onViewFile={handleViewFile}
+            onDownloadFile={handleDownloadFile}
           />
         </TabsContent>
 
@@ -278,6 +311,8 @@ export const InstructorGradingDashboard = ({ instructorId, courses }: Instructor
           <SubmissionsTable
             submissions={filteredSubmissions.filter(s => s.score !== null)}
             onGrade={openGradeDialog}
+            onViewFile={handleViewFile}
+            onDownloadFile={handleDownloadFile}
           />
         </TabsContent>
 
@@ -285,6 +320,8 @@ export const InstructorGradingDashboard = ({ instructorId, courses }: Instructor
           <SubmissionsTable
             submissions={filteredSubmissions}
             onGrade={openGradeDialog}
+            onViewFile={handleViewFile}
+            onDownloadFile={handleDownloadFile}
           />
         </TabsContent>
       </Tabs>
@@ -339,23 +376,14 @@ export const InstructorGradingDashboard = ({ instructorId, courses }: Instructor
                 )}
                 {gradingSubmission.file_url && (
                   <div className="flex gap-2">
-                    <Button variant="outline" asChild>
-                      <a
-                        href={gradingSubmission.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="gap-2"
-                      >
-                        <FileText className="h-4 w-4" />
-                        View Submitted File
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
+                    <Button variant="outline" onClick={() => handleViewFile(gradingSubmission.file_url!)}>
+                      <FileText className="h-4 w-4" />
+                      View Submitted File
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" asChild>
-                      <a href={gradingSubmission.file_url} download className="gap-2">
-                        <Download className="h-4 w-4" />
-                        Download
-                      </a>
+                    <Button variant="outline" onClick={() => handleDownloadFile(gradingSubmission.file_url!)}>
+                      <Download className="h-4 w-4" />
+                      Download
                     </Button>
                   </div>
                 )}
@@ -426,9 +454,13 @@ export const InstructorGradingDashboard = ({ instructorId, courses }: Instructor
 const SubmissionsTable = ({
   submissions,
   onGrade,
+  onViewFile,
+  onDownloadFile,
 }: {
   submissions: Submission[];
   onGrade: (submission: Submission) => void;
+  onViewFile: (url: string) => void;
+  onDownloadFile: (url: string) => void;
 }) => {
   if (submissions.length === 0) {
     return (
@@ -489,16 +521,12 @@ const SubmissionsTable = ({
                 <TableCell>
                 {submission.file_url ? (
                     <div className="flex gap-1">
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={submission.file_url} target="_blank" rel="noopener noreferrer" className="gap-1">
-                          <FileText className="h-3 w-3" />
-                          View
-                        </a>
+                      <Button variant="outline" size="sm" onClick={() => onViewFile(submission.file_url!)} className="gap-1">
+                        <FileText className="h-3 w-3" />
+                        View
                       </Button>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={submission.file_url} download className="gap-1">
-                          <Download className="h-3 w-3" />
-                        </a>
+                      <Button variant="outline" size="sm" onClick={() => onDownloadFile(submission.file_url!)} className="gap-1">
+                        <Download className="h-3 w-3" />
                       </Button>
                     </div>
                   ) : submission.submission_text ? (
