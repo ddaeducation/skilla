@@ -98,6 +98,17 @@ export const StudentQuizTaker = ({
 
   useEffect(() => {
     if (open) {
+      // Reset state for fresh load
+      setSubmitted(false);
+      setGrading(false);
+      setScore(0);
+      setMaxScore(0);
+      setPassed(false);
+      setFeedbacks([]);
+      setAnswers({});
+      setCurrentQuestionIndex(0);
+      setAttemptId(null);
+      setShowFeedbackDetails(false);
       fetchQuestions();
       if (timeLimitMinutes) {
         setTimeLeft(timeLimitMinutes * 60);
@@ -155,9 +166,29 @@ export const StudentQuizTaker = ({
         setOptions(optionsByQuestion);
       }
 
-      // Create quiz attempt
+      // Check for existing passed attempt before creating a new one
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        const { data: existingAttempts } = await supabase
+          .from("quiz_attempts")
+          .select("id, passed, score, max_score, completed_at")
+          .eq("user_id", user.id)
+          .eq("quiz_id", quizId)
+          .eq("passed", true)
+          .limit(1);
+
+        if (existingAttempts && existingAttempts.length > 0) {
+          // Already passed - show results without creating a new attempt
+          const passedAttempt = existingAttempts[0];
+          setAttemptId(passedAttempt.id);
+          setScore(passedAttempt.score || 0);
+          setMaxScore(passedAttempt.max_score || 0);
+          setPassed(true);
+          setSubmitted(true);
+          setLoading(false);
+          return;
+        }
+
         const { data: attempt, error: attemptError } = await supabase
           .from("quiz_attempts")
           .insert({
@@ -334,6 +365,36 @@ export const StudentQuizTaker = ({
       setGrading(false);
     }
   }, [submitted, attemptId, questions, options, answers, passingScore, onComplete, toast]);
+
+  const handleRetake = async () => {
+    // Reset all state and create a new attempt
+    setSubmitted(false);
+    setGrading(false);
+    setScore(0);
+    setMaxScore(0);
+    setPassed(false);
+    setFeedbacks([]);
+    setAnswers({});
+    setCurrentQuestionIndex(0);
+    setAttemptId(null);
+    setShowFeedbackDetails(false);
+    if (timeLimitMinutes) {
+      setTimeLeft(timeLimitMinutes * 60);
+    }
+
+    // Create a new attempt
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: attempt, error } = await supabase
+        .from("quiz_attempts")
+        .insert({ user_id: user.id, quiz_id: quizId })
+        .select()
+        .single();
+      if (!error && attempt) {
+        setAttemptId(attempt.id);
+      }
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -625,7 +686,10 @@ export const StudentQuizTaker = ({
           </ScrollArea>
         )}
 
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-center gap-3 pt-2">
+          <Button variant="outline" onClick={handleRetake} size="lg">
+            Retake Quiz
+          </Button>
           <Button onClick={onClose} size="lg">
             Close
           </Button>
