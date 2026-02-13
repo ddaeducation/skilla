@@ -281,7 +281,9 @@ const CourseDetail = () => {
   };
 
   const getQuizAttempt = (quizId: string) => {
-    return quizAttempts.find((a) => a.quiz_id === quizId);
+    // Prioritize passed attempts so reopening doesn't lose "passed" status
+    const attempts = quizAttempts.filter((a) => a.quiz_id === quizId);
+    return attempts.find((a) => a.passed) || attempts[attempts.length - 1] || undefined;
   };
 
   const getAssignmentSubmission = (assignmentId: string) => {
