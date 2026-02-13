@@ -240,13 +240,29 @@ const CourseDetail = () => {
 
     if (progressData) setProgress(progressData);
 
-    // Fetch quiz attempts
+    // Fetch quiz attempts - get all and keep only the best per quiz
     const { data: attemptsData } = await supabase
       .from("quiz_attempts")
       .select("quiz_id, passed, score, max_score")
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .not("completed_at", "is", null);
 
-    if (attemptsData) setQuizAttempts(attemptsData);
+    if (attemptsData) {
+      // Keep only the highest scoring attempt per quiz
+      const bestAttempts = new Map<string, QuizAttempt>();
+      attemptsData.forEach((a) => {
+        const existing = bestAttempts.get(a.quiz_id);
+        if (!existing || (a.score ?? 0) > (existing.score ?? 0)) {
+          bestAttempts.set(a.quiz_id, {
+            quiz_id: a.quiz_id,
+            passed: a.passed ?? false,
+            score: a.score ?? 0,
+            max_score: a.max_score ?? 0,
+          });
+        }
+      });
+      setQuizAttempts(Array.from(bestAttempts.values()));
+    }
 
     // Fetch assignment submissions
     const { data: submissionsData } = await supabase
@@ -373,10 +389,17 @@ const CourseDetail = () => {
 
   const handleQuizComplete = (passed: boolean, score: number, maxScore: number) => {
     if (selectedQuiz) {
-      setQuizAttempts((prev) => [
-        ...prev.filter((a) => a.quiz_id !== selectedQuiz.id),
-        { quiz_id: selectedQuiz.id, passed, score, max_score: maxScore },
-      ]);
+      setQuizAttempts((prev) => {
+        const existing = prev.find((a) => a.quiz_id === selectedQuiz.id);
+        // Only update if this score is higher than the previous best
+        if (existing && existing.score >= score) {
+          return prev;
+        }
+        return [
+          ...prev.filter((a) => a.quiz_id !== selectedQuiz.id),
+          { quiz_id: selectedQuiz.id, passed: existing?.passed || passed, score, max_score: maxScore },
+        ];
+      });
     }
   };
 
@@ -608,7 +631,7 @@ const CourseDetail = () => {
                 <div>
                   <p className="font-medium">{attempt.passed ? "You passed!" : "Not passed yet"}</p>
                   <p className="text-sm text-muted-foreground">
-                    Score: {attempt.score}/{attempt.max_score} ({Math.round((attempt.score / attempt.max_score) * 100)}
+                    Best Score: {attempt.score}/{attempt.max_score} ({Math.round((attempt.score / attempt.max_score) * 100)}
                     %)
                   </p>
                 </div>
@@ -632,10 +655,17 @@ const CourseDetail = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
-          <Button size="lg" onClick={() => handleOpenQuiz(quiz)}>
-            <Play className="w-4 h-4 mr-2" />
-            {attempt ? "Retake Quiz" : "Start Quiz"}
-          </Button>
+          {attempt?.passed ? (
+            <Badge className="bg-green-500 text-white text-sm py-2 px-4">
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Completed
+            </Badge>
+          ) : (
+            <Button size="lg" onClick={() => handleOpenQuiz(quiz)}>
+              <Play className="w-4 h-4 mr-2" />
+              {attempt ? "Retake Quiz" : "Start Quiz"}
+            </Button>
+          )}
           {hasNextContent() && (
             <Button size="lg" variant="outline" onClick={goToNextContent}>
               Next

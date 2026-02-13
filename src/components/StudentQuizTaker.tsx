@@ -126,6 +126,32 @@ export const StudentQuizTaker = ({
   const fetchQuestions = async () => {
     try {
       setLoading(true);
+      
+      // Check if user already passed this quiz
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: existingAttempts } = await supabase
+          .from("quiz_attempts")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("quiz_id", quizId)
+          .eq("passed", true)
+          .not("completed_at", "is", null)
+          .order("score", { ascending: false })
+          .limit(1);
+
+        if (existingAttempts && existingAttempts.length > 0) {
+          const best = existingAttempts[0];
+          // Show the best result directly without retaking
+          setScore(best.score ?? 0);
+          setMaxScore(best.max_score ?? 0);
+          setPassed(true);
+          setSubmitted(true);
+          setLoading(false);
+          return;
+        }
+      }
+
       const { data: questionsData, error: questionsError } = await supabase
         .from("quiz_questions")
         .select("*")
@@ -156,7 +182,6 @@ export const StudentQuizTaker = ({
       }
 
       // Create quiz attempt
-      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: attempt, error: attemptError } = await supabase
           .from("quiz_attempts")
