@@ -519,7 +519,7 @@ const LMS = () => {
                               variant="outline"
                               onClick={() => handleEnroll(course.id)}
                             >
-                              Enroll Now
+                              {Number((course as any).monthly_price ?? course.price) === 0 ? "Enroll For Free" : "Enroll Now"}
                             </Button>
                           )}
                         </CardContent>
@@ -595,7 +595,7 @@ const LMS = () => {
                                     variant="outline"
                                     onClick={() => handleEnroll(course.id)}
                                   >
-                                    Enroll Now
+                                    {Number((course as any).monthly_price ?? course.price) === 0 ? "Enroll For Free" : "Enroll Now"}
                                   </Button>
                                 )}
                               </CardContent>

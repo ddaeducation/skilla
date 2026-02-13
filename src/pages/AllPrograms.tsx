@@ -180,7 +180,7 @@ const AllPrograms = () => {
                     skills={program.skills}
                     gradientColor={category.categoryColor}
                     enrollLink={getEnrollUrl(program.title, category.categoryRoute)}
-                    enrollButtonText="Enroll Now - $20/month"
+                    enrollButtonText="Enroll Now - $20/mo"
                     animationDelay={index * 0.1}
                   />
                 ))}

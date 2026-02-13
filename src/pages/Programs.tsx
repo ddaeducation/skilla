@@ -221,7 +221,7 @@ const Programs = () => {
                     </ul>
                   </div>
                   <Button asChild className="w-full group-hover:shadow-lg transition-shadow">
-                    <Link to={getEnrollUrl(program.title)}>Enroll Now - $20/month</Link>
+                    <Link to={getEnrollUrl(program.title)}>Enroll Now - $20/mo</Link>
                   </Button>
                 </CardContent>
               </Card>
