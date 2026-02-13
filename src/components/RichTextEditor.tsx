@@ -154,7 +154,6 @@ export const RichTextEditor = ({
   const [videoUrl, setVideoUrl] = useState("");
   const [videoWidth, setVideoWidth] = useState("640");
   const [videoHeight, setVideoHeight] = useState("360");
-  const [videoEmbedType, setVideoEmbedType] = useState<"youtube" | "embed">("youtube");
   const [tableRows, setTableRows] = useState("3");
   const [tableCols, setTableCols] = useState("3");
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
@@ -329,31 +328,22 @@ export const RichTextEditor = ({
   const addVideo = useCallback(() => {
     if (!editor || !videoUrl) return;
 
-    const w = parseInt(videoWidth) || 640;
-    const h = parseInt(videoHeight) || 360;
-
-    if (videoEmbedType === "embed") {
-      // Distraction-free embedded iframe
-      const embedHtml = `<div class="video-wrapper"><iframe src="${videoUrl}" width="${w}" height="${h}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="embedded-video-iframe" style="border:0; border-radius:8px;"></iframe></div>`;
-      editor.chain().focus().insertContent(embedHtml).run();
+    // Check if it's a YouTube URL
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
+    if (youtubeRegex.test(videoUrl)) {
+      editor.chain().focus().setYoutubeVideo({
+        src: videoUrl,
+        width: parseInt(videoWidth) || 640,
+        height: parseInt(videoHeight) || 360,
+      }).run();
     } else {
-      // Check if it's a YouTube URL
-      const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
-      if (youtubeRegex.test(videoUrl)) {
-        editor.chain().focus().setYoutubeVideo({
-          src: videoUrl,
-          width: w,
-          height: h,
-        }).run();
-      } else {
-        // Insert as HTML5 video
-        const videoHtml = `<div class="video-wrapper"><video controls width="${w}" height="${h}" class="embedded-video"><source src="${videoUrl}" type="video/mp4">Your browser does not support the video tag.</video></div>`;
-        editor.chain().focus().insertContent(videoHtml).run();
-      }
+      // Insert as HTML5 video
+      const videoHtml = `<div class="video-wrapper"><video controls width="${videoWidth}" height="${videoHeight}" class="embedded-video"><source src="${videoUrl}" type="video/mp4">Your browser does not support the video tag.</video></div>`;
+      editor.chain().focus().insertContent(videoHtml).run();
     }
     setVideoUrl("");
     setVideoPopoverOpen(false);
-  }, [editor, videoUrl, videoWidth, videoHeight, videoEmbedType]);
+  }, [editor, videoUrl, videoWidth, videoHeight]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1102,85 +1092,54 @@ export const RichTextEditor = ({
           <PopoverContent className="w-80">
             <div className="space-y-3">
               <p className="text-sm font-medium">Insert Video</p>
-
-              {/* Embed Type Selector */}
-              <div className="flex gap-2">
+              
+              {/* Video File Upload */}
+              <div className="space-y-2">
+                <input
+                  ref={videoFileInputRef}
+                  type="file"
+                  accept=".mp4,.webm,.ogg"
+                  onChange={handleVideoFileUpload}
+                  className="hidden"
+                />
                 <Button
                   type="button"
+                  variant="outline"
                   size="sm"
-                  variant={videoEmbedType === "youtube" ? "default" : "outline"}
-                  onClick={() => setVideoEmbedType("youtube")}
-                  className="flex-1 text-xs"
+                  className="w-full"
+                  onClick={() => videoFileInputRef.current?.click()}
+                  disabled={uploadingVideo}
                 >
-                  YouTube / Video URL
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={videoEmbedType === "embed" ? "default" : "outline"}
-                  onClick={() => setVideoEmbedType("embed")}
-                  className="flex-1 text-xs"
-                >
-                  Embed (Distraction-Free)
+                  {uploadingVideo ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Video (MP4, WebM, OGG)
+                    </>
+                  )}
                 </Button>
               </div>
-              
-              {/* Video File Upload - only for youtube/video type */}
-              {videoEmbedType === "youtube" && (
-                <>
-                  <div className="space-y-2">
-                    <input
-                      ref={videoFileInputRef}
-                      type="file"
-                      accept=".mp4,.webm,.ogg"
-                      onChange={handleVideoFileUpload}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => videoFileInputRef.current?.click()}
-                      disabled={uploadingVideo}
-                    >
-                      {uploadingVideo ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload Video (MP4, WebM, OGG)
-                        </>
-                      )}
-                    </Button>
-                  </div>
 
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-popover px-2 text-muted-foreground">Or</span>
-                    </div>
-                  </div>
-                </>
-              )}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-popover px-2 text-muted-foreground">Or</span>
+                </div>
+              </div>
 
               {/* URL Input */}
               <div className="space-y-2">
                 <Input
-                  placeholder={videoEmbedType === "embed" ? "Paste embed/iframe URL" : "YouTube URL or video URL"}
+                  placeholder="YouTube URL or video URL"
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
                 />
-                {videoEmbedType === "embed" && (
-                  <p className="text-xs text-muted-foreground">
-                    Paste any embed URL for distraction-free viewing (e.g. YouTube embed, Vimeo, Loom)
-                  </p>
-                )}
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <Label htmlFor="videoWidth" className="text-xs">Width</Label>
@@ -1211,7 +1170,7 @@ export const RichTextEditor = ({
                 disabled={!videoUrl}
                 className="w-full"
               >
-                {videoEmbedType === "embed" ? "Embed Video" : "Insert Video"}
+                Insert Video
               </Button>
             </div>
           </PopoverContent>
