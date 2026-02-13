@@ -385,6 +385,9 @@ const Instructor = () => {
         
         if (error) throw error;
 
+        // Immediately remove from local state
+        setEnrollments(prev => prev.filter(e => e.id !== selectedStudent.id));
+
         toast({
           title: "Student removed",
           description: `${selectedStudent.profiles?.full_name || selectedStudent.profiles?.email} has been removed from the course`,
@@ -398,6 +401,9 @@ const Instructor = () => {
         
         if (error) throw error;
 
+        // Immediately update local state
+        setEnrollments(prev => prev.map(e => e.id === selectedStudent.id ? { ...e, payment_status: "suspended" } : e));
+
         toast({
           title: "Student suspended",
           description: `${selectedStudent.profiles?.full_name || selectedStudent.profiles?.email} has been suspended from the course`,
@@ -410,6 +416,9 @@ const Instructor = () => {
           .eq("id", selectedStudent.id);
         
         if (error) throw error;
+
+        // Immediately update local state
+        setEnrollments(prev => prev.map(e => e.id === selectedStudent.id ? { ...e, payment_status: "completed" } : e));
 
         toast({
           title: "Student reactivated",
