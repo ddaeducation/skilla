@@ -3137,17 +3137,50 @@ const Admin = () => {
                       <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                           <CardTitle>USD Transaction History</CardTitle>
-                          {usdEarnings.filter(e => e.status === "pending").length > 0 && (
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                className="h-4 w-4 rounded border-gray-300"
-                                checked={usdEarnings.filter(e => e.status === "pending").every(e => selectedEarnings.includes(e.id))}
-                                onChange={(e) => handleSelectAllEarnings(e.target.checked, usdEarnings)}
-                              />
-                              <span className="text-sm text-muted-foreground">Select all pending</span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-3">
+                            {usdEarnings.filter(e => e.status === "pending").length > 0 && (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-gray-300"
+                                  checked={usdEarnings.filter(e => e.status === "pending").every(e => selectedEarnings.includes(e.id))}
+                                  onChange={(e) => handleSelectAllEarnings(e.target.checked, usdEarnings)}
+                                />
+                                <span className="text-sm text-muted-foreground">Select all pending</span>
+                              </div>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> Export</Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => {
+                                  const cols = [
+                                    { header: "Instructor", accessor: (r: any) => r.instructor_profile?.full_name || r.instructor_profile?.email || "Unknown" },
+                                    { header: "Course", accessor: (r: any) => r.courses?.title || "-" },
+                                    { header: "Total Sale (USD)", accessor: (r: any) => `$${Number(r.amount_usd || r.amount).toFixed(2)}` },
+                                    { header: "Platform Fee (USD)", accessor: (r: any) => `$${Number(r.platform_fee_usd || r.platform_fee).toFixed(2)}` },
+                                    { header: "Instructor Share (USD)", accessor: (r: any) => `$${Number(r.instructor_share_usd || r.instructor_share).toFixed(2)}` },
+                                    { header: "Status", accessor: (r: any) => r.status },
+                                    { header: "Date", accessor: (r: any) => new Date(r.created_at).toLocaleDateString() },
+                                  ];
+                                  exportToExcel(usdEarnings, cols, "usd-transactions");
+                                }}>Export as Excel (CSV)</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  const cols = [
+                                    { header: "Instructor", accessor: (r: any) => r.instructor_profile?.full_name || r.instructor_profile?.email || "Unknown" },
+                                    { header: "Course", accessor: (r: any) => r.courses?.title || "-" },
+                                    { header: "Total Sale (USD)", accessor: (r: any) => `$${Number(r.amount_usd || r.amount).toFixed(2)}` },
+                                    { header: "Platform Fee (USD)", accessor: (r: any) => `$${Number(r.platform_fee_usd || r.platform_fee).toFixed(2)}` },
+                                    { header: "Instructor Share (USD)", accessor: (r: any) => `$${Number(r.instructor_share_usd || r.instructor_share).toFixed(2)}` },
+                                    { header: "Status", accessor: (r: any) => r.status },
+                                    { header: "Date", accessor: (r: any) => new Date(r.created_at).toLocaleDateString() },
+                                  ];
+                                  exportToPDF(usdEarnings, cols, "usd-transactions", "USD Transaction History");
+                                }}>Export as PDF</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </CardHeader>
                         <Table>
                           <TableHeader>
@@ -3250,17 +3283,50 @@ const Admin = () => {
                       <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                           <CardTitle>RWF Transaction History</CardTitle>
-                          {rwfEarnings.filter(e => e.status === "pending").length > 0 && (
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                className="h-4 w-4 rounded border-gray-300"
-                                checked={rwfEarnings.filter(e => e.status === "pending").every(e => selectedEarnings.includes(e.id))}
-                                onChange={(e) => handleSelectAllEarnings(e.target.checked, rwfEarnings)}
-                              />
-                              <span className="text-sm text-muted-foreground">Select all pending</span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-3">
+                            {rwfEarnings.filter(e => e.status === "pending").length > 0 && (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-gray-300"
+                                  checked={rwfEarnings.filter(e => e.status === "pending").every(e => selectedEarnings.includes(e.id))}
+                                  onChange={(e) => handleSelectAllEarnings(e.target.checked, rwfEarnings)}
+                                />
+                                <span className="text-sm text-muted-foreground">Select all pending</span>
+                              </div>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> Export</Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => {
+                                  const cols = [
+                                    { header: "Instructor", accessor: (r: any) => r.instructor_profile?.full_name || r.instructor_profile?.email || "Unknown" },
+                                    { header: "Course", accessor: (r: any) => r.courses?.title || "-" },
+                                    { header: "Total Sale (RWF)", accessor: (r: any) => `RWF ${Number(r.amount).toLocaleString()}` },
+                                    { header: "Platform Fee (RWF)", accessor: (r: any) => `RWF ${Number(r.platform_fee).toLocaleString()}` },
+                                    { header: "Instructor Share (RWF)", accessor: (r: any) => `RWF ${Number(r.instructor_share).toLocaleString()}` },
+                                    { header: "Status", accessor: (r: any) => r.status },
+                                    { header: "Date", accessor: (r: any) => new Date(r.created_at).toLocaleDateString() },
+                                  ];
+                                  exportToExcel(rwfEarnings, cols, "rwf-transactions");
+                                }}>Export as Excel (CSV)</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  const cols = [
+                                    { header: "Instructor", accessor: (r: any) => r.instructor_profile?.full_name || r.instructor_profile?.email || "Unknown" },
+                                    { header: "Course", accessor: (r: any) => r.courses?.title || "-" },
+                                    { header: "Total Sale (RWF)", accessor: (r: any) => `RWF ${Number(r.amount).toLocaleString()}` },
+                                    { header: "Platform Fee (RWF)", accessor: (r: any) => `RWF ${Number(r.platform_fee).toLocaleString()}` },
+                                    { header: "Instructor Share (RWF)", accessor: (r: any) => `RWF ${Number(r.instructor_share).toLocaleString()}` },
+                                    { header: "Status", accessor: (r: any) => r.status },
+                                    { header: "Date", accessor: (r: any) => new Date(r.created_at).toLocaleDateString() },
+                                  ];
+                                  exportToPDF(rwfEarnings, cols, "rwf-transactions", "RWF Transaction History");
+                                }}>Export as PDF</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </CardHeader>
                         <Table>
                           <TableHeader>
