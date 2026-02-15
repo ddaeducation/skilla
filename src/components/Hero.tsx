@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowRight, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import student1 from "@/assets/student-1.jpg";
 import student2 from "@/assets/student-2.jpg";
 import student3 from "@/assets/student-3.jpg";
@@ -10,6 +12,7 @@ import student6 from "@/assets/student-6.jpg";
 import rtbLogo from "@/assets/rtb-logo.png";
 import ioaLogo from "@/assets/institute-of-analytics.png";
 const Hero = () => {
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const students = [{
     src: student1,
@@ -41,12 +44,26 @@ const Hero = () => {
           <p className="mx-auto mb-8 max-w-2xl text-lg leading-relaxed text-primary-foreground/90 sm:text-xl md:text-2xl animate-fade-in" style={{
           animationDelay: "0.1s"
         }}>Achieve career clarity and global relevance through flexible short courses or full professional programs—built for international success.</p>
-          <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 text-base font-semibold px-8 py-6 h-auto animate-fade-in shadow-lg hover:shadow-xl transition-all" style={{
-          animationDelay: "0.2s"
-        }} onClick={() => navigate("/programs/all")}>
-            Explore all programs
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+            <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 text-base font-semibold px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-all" onClick={() => navigate("/programs/all")}>
+              Explore all programs
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Search courses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && searchQuery.trim()) {
+                    navigate(`/programs/all?search=${encodeURIComponent(searchQuery.trim())}`);
+                  }
+                }}
+                className="pl-10 py-6 h-auto bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/50 focus-visible:ring-accent"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Student image grid */}
