@@ -20,6 +20,16 @@ interface CourseResult {
   category: string | null;
 }
 
+// Reverse map: database school name -> URL slug
+const schoolUrlMap: Record<string, string> = {
+  "Data Engineering": "engineering",
+  "Data & Analytics": "data",
+  "Business Studies": "business",
+  "Product Design": "product",
+  "Creative Economy": "creative-economy",
+  "Business Computing": "computing",
+};
+
 const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<CourseResult[]>([]);
@@ -117,7 +127,12 @@ const Hero = () => {
                         onClick={() => {
                           setShowResults(false);
                           setSearchQuery("");
-                          navigate(`/course/${course.id}`);
+                          const schoolSlug = schoolUrlMap[course.school];
+                          if (schoolSlug) {
+                            navigate(`/schools/${schoolSlug}`);
+                          } else {
+                            navigate(`/programs/all`);
+                          }
                         }}
                       >
                         <span className="text-sm font-medium text-foreground truncate">{course.title}</span>
