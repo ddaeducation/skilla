@@ -44,11 +44,6 @@ const FAQSection = () => {
       answer:
         "Yes, we offer a 14-day money-back guarantee if you're not satisfied with your program. Refund terms vary by program type, so please review the specific policy in your enrollment agreement.",
     },
-    {
-      question: "How long does it take to complete a program?",
-      answer:
-        "Program duration varies: Short Courses take 4-8 weeks, Professional programs run 3-12 months, and Masterclasses are completed in 1-3 hour sessions. All programs are designed to fit around your schedule.",
-    },
   ];
 
   return (

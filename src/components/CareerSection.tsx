@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Briefcase, FileText, Users, Target, ArrowRight, ChevronDown, TrendingUp, GraduationCap } from "lucide-react";
+import { Briefcase, FileText, Users, Target, ArrowRight, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,16 +30,6 @@ const CareerSection = () => {
       icon: Briefcase,
       title: "Career Mentorship",
       description: "One-on-one guidance from experienced professionals in your field.",
-    },
-    {
-      icon: TrendingUp,
-      title: "Networking Events",
-      description: "Join exclusive networking events to connect with industry leaders and peers.",
-    },
-    {
-      icon: GraduationCap,
-      title: "Continuous Learning",
-      description: "Access alumni workshops and advanced courses to keep growing your career.",
     },
   ];
 
@@ -84,7 +74,7 @@ const CareerSection = () => {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto mb-12">
+        <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto mb-12">
           {careerServices.map((service, index) => {
             const Icon = service.icon;
             return (
