@@ -484,6 +484,7 @@ export const StudentProgressDashboard = ({ instructorId, courses }: StudentProgr
     avgAssignmentScore: filteredProgress.filter(p => p.totalAssignments > 0).length > 0
       ? filteredProgress.filter(p => p.totalAssignments > 0).reduce((acc, p) => acc + p.assignmentAvgScore, 0) / filteredProgress.filter(p => p.totalAssignments > 0).length
       : 0,
+    totalTimeSpent: filteredProgress.reduce((acc, p) => acc + p.totalTimeSpent, 0),
   };
 
   if (loading) {
@@ -511,7 +512,7 @@ export const StudentProgressDashboard = ({ instructorId, courses }: StudentProgr
   return (
     <div className="space-y-6">
       {/* General Statistics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -560,6 +561,18 @@ export const StudentProgressDashboard = ({ instructorId, courses }: StudentProgr
           <CardContent>
             <div className="text-2xl font-bold">{filteredStats.avgAssignmentScore.toFixed(1)}%</div>
             <Progress value={filteredStats.avgAssignmentScore} className="h-2 mt-2" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Total Time Spent
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatTime(filteredStats.totalTimeSpent)}</div>
           </CardContent>
         </Card>
 
