@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Users, BookOpen, ClipboardCheck, FileQuestion, TrendingUp, Eye, Search, GraduationCap, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, Users, BookOpen, ClipboardCheck, FileQuestion, TrendingUp, Eye, Search, GraduationCap, Clock, CheckCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 interface Course {
   id: string;
@@ -74,6 +74,8 @@ export const StudentProgressDashboard = ({ instructorId, courses }: StudentProgr
   const [studentDetail, setStudentDetail] = useState<StudentDetail | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [sortBy, setSortBy] = useState<string>("overall");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   // General statistics
   const [generalStats, setGeneralStats] = useState({
@@ -414,6 +416,22 @@ export const StudentProgressDashboard = ({ instructorId, courses }: StudentProgr
     return `${minutes}m`;
   };
 
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortDirection("desc");
+    }
+  };
+
+  const getSortIcon = (column: string) => {
+    if (sortBy !== column) return <ArrowUpDown className="h-3 w-3 ml-1" />;
+    return sortDirection === "asc" 
+      ? <ArrowUp className="h-3 w-3 ml-1" /> 
+      : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
+
   const filteredProgress = studentProgress.filter(p => {
     const matchesCourse = selectedCourse === "all" || p.courseId === selectedCourse;
     const matchesSearch = !searchQuery || 
@@ -421,6 +439,38 @@ export const StudentProgressDashboard = ({ instructorId, courses }: StudentProgr
       p.email?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCourse && matchesSearch;
   });
+
+  const sortedProgress = useMemo(() => {
+    const sorted = [...filteredProgress];
+    sorted.sort((a, b) => {
+      let aVal = 0, bVal = 0;
+      switch (sortBy) {
+        case "lessons":
+          aVal = a.lessonProgress;
+          bVal = b.lessonProgress;
+          break;
+        case "quizzes":
+          aVal = a.quizAvgScore;
+          bVal = b.quizAvgScore;
+          break;
+        case "assignments":
+          aVal = a.assignmentAvgScore;
+          bVal = b.assignmentAvgScore;
+          break;
+        case "time":
+          aVal = a.totalTimeSpent;
+          bVal = b.totalTimeSpent;
+          break;
+        case "overall":
+        default:
+          aVal = a.overallProgress;
+          bVal = b.overallProgress;
+          break;
+      }
+      return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
+    });
+    return sorted;
+  }, [filteredProgress, sortBy, sortDirection]);
 
   // Calculate filtered stats
   const filteredStats = {
@@ -578,16 +628,26 @@ export const StudentProgressDashboard = ({ instructorId, courses }: StudentProgr
                   <TableRow>
                     <TableHead>Student</TableHead>
                     <TableHead>Course</TableHead>
-                    <TableHead className="text-center">Lessons</TableHead>
-                    <TableHead className="text-center">Quizzes</TableHead>
-                    <TableHead className="text-center">Assignments</TableHead>
-                    <TableHead className="text-center">Time Spent</TableHead>
-                    <TableHead className="text-center">Overall</TableHead>
+                    <TableHead className="text-center cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort("lessons")}>
+                      <span className="inline-flex items-center">Lessons{getSortIcon("lessons")}</span>
+                    </TableHead>
+                    <TableHead className="text-center cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort("quizzes")}>
+                      <span className="inline-flex items-center">Quizzes{getSortIcon("quizzes")}</span>
+                    </TableHead>
+                    <TableHead className="text-center cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort("assignments")}>
+                      <span className="inline-flex items-center">Assignments{getSortIcon("assignments")}</span>
+                    </TableHead>
+                    <TableHead className="text-center cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort("time")}>
+                      <span className="inline-flex items-center">Time Spent{getSortIcon("time")}</span>
+                    </TableHead>
+                    <TableHead className="text-center cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort("overall")}>
+                      <span className="inline-flex items-center">Overall{getSortIcon("overall")}</span>
+                    </TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProgress.map((student, index) => (
+                  {sortedProgress.map((student, index) => (
                     <TableRow key={`${student.userId}-${student.courseId}-${index}`}>
                       <TableCell>
                         <div>
