@@ -268,16 +268,14 @@ export const ContentItemEditDialog = ({
                     )}
                   </div>
                 )}
-                {lessonForm.content_type === 'text' && (
-                  <div className="space-y-2 flex-1">
-                    <Label>Content</Label>
-                    <RichTextEditor
-                      value={lessonForm.content_text || ""}
-                      onChange={(value) => setLessonForm({ ...lessonForm, content_text: value })}
-                      minHeight="400px"
-                    />
-                  </div>
-                )}
+                <div className="space-y-2 flex-1">
+                  <Label>{lessonForm.content_type === 'text' ? 'Content' : 'Supplemental Notes / Content'}</Label>
+                  <RichTextEditor
+                    value={lessonForm.content_text || ""}
+                    onChange={(value) => setLessonForm({ ...lessonForm, content_text: value })}
+                    minHeight={lessonForm.content_type === 'text' ? "400px" : "200px"}
+                  />
+                </div>
                 <div className="flex items-center gap-2">
                   <Switch
                     id="free_preview"
