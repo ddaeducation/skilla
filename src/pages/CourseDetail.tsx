@@ -547,9 +547,20 @@ const CourseDetail = () => {
                 const url = lesson.content_url!;
                 const ytEmbed = getYouTubeEmbedUrl(url);
                 if (ytEmbed) return ytEmbed;
-                const vimeoEmbed = getVimeoEmbedUrl(url);
+               const vimeoEmbed = getVimeoEmbedUrl(url);
                 if (vimeoEmbed) return vimeoEmbed;
-                return url;
+                // Add distraction-free params to generic embed URLs
+                try {
+                  const embedUrlObj = new URL(url);
+                  embedUrlObj.searchParams.set('rel', '0');
+                  embedUrlObj.searchParams.set('showinfo', '0');
+                  embedUrlObj.searchParams.set('modestbranding', '1');
+                  embedUrlObj.searchParams.set('title', '0');
+                  embedUrlObj.searchParams.set('controls', '1');
+                  return embedUrlObj.toString();
+                } catch {
+                  return url;
+                }
               })()}
               className="w-full h-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -567,7 +578,20 @@ const CourseDetail = () => {
             if (isEmbedUrl) {
               const ytEmbed = getYouTubeEmbedUrl(videoUrl);
               const vimeoEmbed = getVimeoEmbedUrl(videoUrl);
-              const src = ytEmbed || vimeoEmbed || videoUrl;
+              let src = ytEmbed || vimeoEmbed || null;
+              if (!src) {
+                try {
+                  const embedUrlObj = new URL(videoUrl);
+                  embedUrlObj.searchParams.set('rel', '0');
+                  embedUrlObj.searchParams.set('showinfo', '0');
+                  embedUrlObj.searchParams.set('modestbranding', '1');
+                  embedUrlObj.searchParams.set('title', '0');
+                  embedUrlObj.searchParams.set('controls', '1');
+                  src = embedUrlObj.toString();
+                } catch {
+                  src = videoUrl;
+                }
+              }
               return (
                 <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
                   <iframe
