@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Clock, BookOpen } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ interface Course {
   duration: string | null;
   image_url: string | null;
   instructor_name: string | null;
+  learning_outcomes: string[] | null;
 }
 
 const categoryConfig: Record<string, { color: string; gradient: string; route: string; label: string }> = {
@@ -77,18 +78,19 @@ const CourseCard = ({ course }: { course: Course }) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col pt-0">
-        <div className="flex flex-wrap gap-3 mb-4 text-xs text-muted-foreground">
-          {course.duration && (
-            <span className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" />
-              {course.duration}
-            </span>
-          )}
-          <span className="flex items-center gap-1">
-            <BookOpen className="h-3.5 w-3.5" />
-            {course.school}
-          </span>
-        </div>
+        {course.learning_outcomes && course.learning_outcomes.length > 0 && (
+          <>
+            <h4 className="text-sm font-semibold mb-3 text-foreground">What you'll learn:</h4>
+            <ul className="space-y-2 mb-5">
+              {course.learning_outcomes.slice(0, 3).map((skill, idx) => (
+                <li key={idx} className="text-sm text-muted-foreground flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span>{skill}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
         <div className="mt-auto flex items-center justify-between gap-2">
           <span className="text-sm font-semibold text-primary">
             {price > 0 ? `$${price}/mo` : "Free"}
@@ -111,7 +113,7 @@ const AllPrograms = () => {
     const fetchCourses = async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title, description, school, category, price, monthly_price, duration, image_url, instructor_name")
+        .select("id, title, description, school, category, price, monthly_price, duration, image_url, instructor_name, learning_outcomes")
         .eq("approval_status", "approved");
 
       if (!error && data) {
