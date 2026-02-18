@@ -108,7 +108,10 @@ const DraggablePlaceholder = ({
     };
   }, [isResizing, resizeDirection, placeholder.id, onResize, scale]);
 
+  const isQR = placeholder.type === "qr_code";
   const placeholderWidth = placeholder.width || 150;
+  // QR codes are always square; text placeholders have a height based on font size
+  const placeholderHeight = isQR ? placeholderWidth : (placeholder.fontSize + 8);
 
   const style: React.CSSProperties = {
     position: 'absolute',
@@ -122,20 +125,21 @@ const DraggablePlaceholder = ({
     textAlign: placeholder.textAlign || 'center',
     color: placeholder.color,
     border: isSelected ? '2px dashed hsl(var(--primary))' : '1px dashed hsl(var(--border))',
-    padding: `${4 * scale}px ${8 * scale}px`,
+    padding: isQR ? `${4 * scale}px` : `${4 * scale}px ${8 * scale}px`,
     backgroundColor: 'hsl(var(--background) / 0.9)',
     borderRadius: 4,
     userSelect: 'none',
     zIndex: isSelected ? 10 : 1,
     width: placeholderWidth * scale,
-    minWidth: 80 * scale,
+    height: placeholderHeight * scale,
+    minWidth: isQR ? 40 * scale : 80 * scale,
+    minHeight: isQR ? 40 * scale : undefined,
+    boxSizing: 'border-box',
   };
 
   const previewText = placeholder.type === "custom" 
     ? placeholder.customText || "Custom Text"
     : placeholderTypes.find(p => p.value === placeholder.type)?.preview || placeholder.label;
-
-  const isQR = placeholder.type === "qr_code";
 
   return (
     <div
@@ -164,15 +168,15 @@ const DraggablePlaceholder = ({
         {...attributes}
       >
         {isQR ? (
-          <div className="flex flex-col items-center gap-0.5">
-            {/* Mini QR grid preview */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1 }}>
+          <div className="flex flex-col items-center gap-0.5 w-full h-full">
+            {/* Mini QR grid preview — scales with width */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, width: '80%' }}>
               {Array.from({ length: 25 }).map((_, i) => (
                 <div
                   key={i}
                   style={{
-                    width: Math.max(4, placeholder.fontSize * scale * 0.12),
-                    height: Math.max(4, placeholder.fontSize * scale * 0.12),
+                    width: Math.max(3, (placeholderWidth * scale * 0.8) / 5 - 1),
+                    height: Math.max(3, (placeholderWidth * scale * 0.8) / 5 - 1),
                     backgroundColor: [0,1,2,5,10,12,14,18,20,22,24].includes(i)
                       ? 'hsl(var(--foreground))'
                       : 'hsl(var(--background))',
@@ -181,7 +185,7 @@ const DraggablePlaceholder = ({
                 />
               ))}
             </div>
-            <span style={{ fontSize: Math.max(8, placeholder.fontSize * scale * 0.35) }}>QR Code</span>
+            <span style={{ fontSize: Math.max(7, placeholderWidth * scale * 0.08) }}>QR Code</span>
           </div>
         ) : (
           <>
@@ -369,6 +373,7 @@ const CertificateDesigner = ({ courseId, existingTemplate, onSave, onClose }: Ce
       instructor_name: 250,
       school_name: 300,
       custom: 200,
+      qr_code: 120,
     };
 
     const newPlaceholder: Placeholder = {
@@ -399,8 +404,10 @@ const CertificateDesigner = ({ courseId, existingTemplate, onSave, onClose }: Ce
       placeholders: prev.placeholders.map(p => {
         if (p.id !== id) return p;
         
-        const currentWidth = p.width || 150;
-        const newWidth = Math.max(80, Math.min(currentWidth + deltaWidth, template.width - 20));
+        const isQR = p.type === "qr_code";
+        const minSize = isQR ? 40 : 80;
+        const currentWidth = p.width || (isQR ? 120 : 150);
+        const newWidth = Math.max(minSize, Math.min(currentWidth + deltaWidth, template.width - 20));
         
         // If resizing from the left, also adjust x position
         if (direction === 'left') {
@@ -664,134 +671,152 @@ const CertificateDesigner = ({ courseId, existingTemplate, onSave, onClose }: Ce
                   />
                 </div>
               )}
-              
-              <div>
-                <Label>Font Size</Label>
-                <Input
-                  type="number"
-                  value={selectedPlaceholderData.fontSize}
-                  onChange={(e) => updatePlaceholder(selectedPlaceholderData.id, { fontSize: parseInt(e.target.value) || 16 })}
-                  min={8}
-                  max={72}
-                />
-              </div>
-              
-              <div>
-                <Label>Font Weight</Label>
-                <Select
-                  value={selectedPlaceholderData.fontWeight}
-                  onValueChange={(value) => updatePlaceholder(selectedPlaceholderData.id, { fontWeight: value as "normal" | "bold" })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="bold">Bold</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
-              <div>
-                <Label>Font Style</Label>
-                <Select
-                  value={selectedPlaceholderData.fontStyle || "normal"}
-                  onValueChange={(value) => updatePlaceholder(selectedPlaceholderData.id, { fontStyle: value as "normal" | "italic" })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="italic">Italic</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Text Alignment (inside placeholder)</Label>
-                <div className="flex gap-1">
-                  <Button
-                    type="button"
-                    variant={(selectedPlaceholderData.textAlign || "center") === "left" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => updatePlaceholder(selectedPlaceholderData.id, { textAlign: "left" })}
-                  >
-                    <AlignLeft className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={(selectedPlaceholderData.textAlign || "center") === "center" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => updatePlaceholder(selectedPlaceholderData.id, { textAlign: "center" })}
-                  >
-                    <AlignCenter className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={(selectedPlaceholderData.textAlign || "center") === "right" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => updatePlaceholder(selectedPlaceholderData.id, { textAlign: "right" })}
-                  >
-                    <AlignRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label>Center on Certificate</Label>
-                <div className="flex gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => {
-                      const placeholderWidth = selectedPlaceholderData.width || 150;
-                      const centeredX = (template.width - placeholderWidth) / 2;
-                      updatePlaceholder(selectedPlaceholderData.id, { x: centeredX });
-                    }}
-                  >
-                    <AlignCenter className="w-4 h-4 mr-1" />
-                    Center Horizontally
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Centers the placeholder in the middle of the certificate
-                </p>
-              </div>
-              
-              <div>
-                <Label>Color</Label>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    value={selectedPlaceholderData.color}
-                    onChange={(e) => updatePlaceholder(selectedPlaceholderData.id, { color: e.target.value })}
-                    className="w-10 h-10 rounded cursor-pointer"
-                  />
+              {selectedPlaceholderData.type === "qr_code" ? (
+                /* QR-specific controls */
+                <div>
+                  <Label>Size (px)</Label>
                   <Input
-                    value={selectedPlaceholderData.color}
-                    onChange={(e) => updatePlaceholder(selectedPlaceholderData.id, { color: e.target.value })}
-                    className="flex-1"
+                    type="number"
+                    value={Math.round(selectedPlaceholderData.width || 120)}
+                    onChange={(e) => updatePlaceholder(selectedPlaceholderData.id, { width: parseInt(e.target.value) || 120 })}
+                    min={40}
+                    max={template.width}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">QR is always square — drag the edges to resize</p>
                 </div>
-              </div>
+              ) : (
+                /* Text-specific controls */
+                <>
+                  <div>
+                    <Label>Font Size</Label>
+                    <Input
+                      type="number"
+                      value={selectedPlaceholderData.fontSize}
+                      onChange={(e) => updatePlaceholder(selectedPlaceholderData.id, { fontSize: parseInt(e.target.value) || 16 })}
+                      min={8}
+                      max={72}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label>Font Weight</Label>
+                    <Select
+                      value={selectedPlaceholderData.fontWeight}
+                      onValueChange={(value) => updatePlaceholder(selectedPlaceholderData.id, { fontWeight: value as "normal" | "bold" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="bold">Bold</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div>
-                <Label>Width</Label>
-                <Input
-                  type="number"
-                  value={Math.round(selectedPlaceholderData.width || 150)}
-                  onChange={(e) => updatePlaceholder(selectedPlaceholderData.id, { width: parseInt(e.target.value) || 150 })}
-                  min={80}
-                  max={template.width}
-                />
-                <p className="text-xs text-muted-foreground mt-1">Drag edges to resize horizontally</p>
-              </div>
+                  <div>
+                    <Label>Font Style</Label>
+                    <Select
+                      value={selectedPlaceholderData.fontStyle || "normal"}
+                      onValueChange={(value) => updatePlaceholder(selectedPlaceholderData.id, { fontStyle: value as "normal" | "italic" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="italic">Italic</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Text Alignment (inside placeholder)</Label>
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant={(selectedPlaceholderData.textAlign || "center") === "left" ? "default" : "outline"}
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => updatePlaceholder(selectedPlaceholderData.id, { textAlign: "left" })}
+                      >
+                        <AlignLeft className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={(selectedPlaceholderData.textAlign || "center") === "center" ? "default" : "outline"}
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => updatePlaceholder(selectedPlaceholderData.id, { textAlign: "center" })}
+                      >
+                        <AlignCenter className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={(selectedPlaceholderData.textAlign || "center") === "right" ? "default" : "outline"}
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => updatePlaceholder(selectedPlaceholderData.id, { textAlign: "right" })}
+                      >
+                        <AlignRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Center on Certificate</Label>
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          const placeholderWidth = selectedPlaceholderData.width || 150;
+                          const centeredX = (template.width - placeholderWidth) / 2;
+                          updatePlaceholder(selectedPlaceholderData.id, { x: centeredX });
+                        }}
+                      >
+                        <AlignCenter className="w-4 h-4 mr-1" />
+                        Center Horizontally
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Centers the placeholder in the middle of the certificate
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label>Color</Label>
+                    <div className="flex gap-2">
+                      <input
+                        type="color"
+                        value={selectedPlaceholderData.color}
+                        onChange={(e) => updatePlaceholder(selectedPlaceholderData.id, { color: e.target.value })}
+                        className="w-10 h-10 rounded cursor-pointer"
+                      />
+                      <Input
+                        value={selectedPlaceholderData.color}
+                        onChange={(e) => updatePlaceholder(selectedPlaceholderData.id, { color: e.target.value })}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Width</Label>
+                    <Input
+                      type="number"
+                      value={Math.round(selectedPlaceholderData.width || 150)}
+                      onChange={(e) => updatePlaceholder(selectedPlaceholderData.id, { width: parseInt(e.target.value) || 150 })}
+                      min={80}
+                      max={template.width}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Drag edges to resize horizontally</p>
+                  </div>
+                </>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
