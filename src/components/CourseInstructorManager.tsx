@@ -140,6 +140,29 @@ export const CourseInstructorManager = ({
     }
   };
 
+  const handleInvitationResponse = (
+    res: { data?: any; error?: any },
+    email: string,
+    roleLabel: string,
+    onSuccess: () => void
+  ) => {
+    if (res.error && !res.data?.warning) {
+      throw new Error(res.data?.error || res.error?.message || "Failed to send invitation");
+    }
+    if (res.data?.warning && res.data?.invite_link) {
+      const link = res.data.invite_link as string;
+      navigator.clipboard.writeText(link).catch(() => {});
+      toast({
+        title: "Invitation created — link copied!",
+        description: `Email delivery is unavailable. The invite link for ${email} has been copied to your clipboard. Share it directly with them.`,
+        duration: 15000,
+      });
+    } else {
+      toast({ title: `${roleLabel} invitation sent!`, description: `An invitation has been sent to ${email}.` });
+    }
+    onSuccess();
+  };
+
   const handleInviteCoInstructor = async () => {
     if (!coEmail.trim()) {
       toast({ title: "Email required", description: "Please enter an email address.", variant: "destructive" });
@@ -153,15 +176,12 @@ export const CourseInstructorManager = ({
         headers: { Authorization: `Bearer ${session?.access_token}` },
       });
 
-      if (res.error || res.data?.error) {
-        throw new Error(res.data?.error || res.error?.message || "Failed to send invitation");
-      }
-
-      toast({ title: "Invitation sent!", description: `An invitation email has been sent to ${coEmail}.` });
-      setCoEmail("");
-      setCoDialogOpen(false);
-      fetchData();
-      onUpdate?.();
+      handleInvitationResponse(res, coEmail.trim(), "Co-Instructor", () => {
+        setCoEmail("");
+        setCoDialogOpen(false);
+        fetchData();
+        onUpdate?.();
+      });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
@@ -182,18 +202,12 @@ export const CourseInstructorManager = ({
         headers: { Authorization: `Bearer ${session?.access_token}` },
       });
 
-      if (res.error || res.data?.error) {
-        throw new Error(res.data?.error || res.error?.message || "Failed to send invitation");
-      }
-
-      toast({
-        title: "Transfer invitation sent!",
-        description: `An ownership transfer invitation has been sent to ${transferEmail}.`,
+      handleInvitationResponse(res, transferEmail.trim(), "Ownership Transfer", () => {
+        setTransferEmail("");
+        setTransferDialogOpen(false);
+        fetchData();
+        onUpdate?.();
       });
-      setTransferEmail("");
-      setTransferDialogOpen(false);
-      fetchData();
-      onUpdate?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
