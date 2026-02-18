@@ -20,7 +20,18 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Plus, Trash2, Crown, UserPlus, ArrowRightLeft, Loader2 } from "lucide-react";
+import {
+  Users,
+  Trash2,
+  Crown,
+  UserPlus,
+  ArrowRightLeft,
+  Loader2,
+  Mail,
+  Clock,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface CourseInstructor {
@@ -34,10 +45,13 @@ interface CourseInstructor {
   };
 }
 
-interface Instructor {
+interface PendingInvitation {
   id: string;
-  full_name: string | null;
-  email: string | null;
+  email: string;
+  role: "co_instructor" | "primary";
+  status: string;
+  created_at: string;
+  expires_at: string;
 }
 
 interface CourseInstructorManagerProps {
@@ -56,12 +70,18 @@ export const CourseInstructorManager = ({
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [courseInstructors, setCourseInstructors] = useState<CourseInstructor[]>([]);
-  const [availableInstructors, setAvailableInstructors] = useState<Instructor[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
+  const [primaryProfile, setPrimaryProfile] = useState<{ full_name: string | null; email: string | null } | null>(null);
+
+  // Co-instructor invite dialog
+  const [coDialogOpen, setCoDialogOpen] = useState(false);
+  const [coEmail, setCoEmail] = useState("");
+  const [sendingCo, setSendingCo] = useState(false);
+
+  // Transfer ownership dialog
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
-  const [selectedInstructor, setSelectedInstructor] = useState<string>("");
-  const [transferToInstructor, setTransferToInstructor] = useState<string>("");
-  const [submitting, setSubmitting] = useState(false);
+  const [transferEmail, setTransferEmail] = useState("");
+  const [sendingTransfer, setSendingTransfer] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -70,27 +90,23 @@ export const CourseInstructorManager = ({
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch current course instructors
-      const { data: instructorsData, error: instructorsError } = await supabase
+
+      // Fetch co-instructors from course_instructors
+      const { data: instructorsData } = await supabase
         .from("course_instructors")
         .select("*")
         .eq("course_id", courseId);
 
-      if (instructorsError) throw instructorsError;
-
-      // Fetch profiles for course instructors
       if (instructorsData && instructorsData.length > 0) {
-        const instructorIds = instructorsData.map(i => i.instructor_id);
+        const ids = instructorsData.map((i) => i.instructor_id);
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name, email")
-          .in("id", instructorIds);
+          .in("id", ids);
 
-        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-        
+        const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
         setCourseInstructors(
-          instructorsData.map(i => ({
+          instructorsData.map((i) => ({
             ...i,
             role: i.role as "primary" | "co_instructor",
             profile: profileMap.get(i.instructor_id) || null,
@@ -100,88 +116,93 @@ export const CourseInstructorManager = ({
         setCourseInstructors([]);
       }
 
-      // Fetch all instructors (users with moderator or admin role)
-      const { data: rolesData } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .in("role", ["moderator", "admin"]);
+      // Fetch primary instructor profile
+      const { data: primaryPro } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", currentInstructorId)
+        .maybeSingle();
+      setPrimaryProfile(primaryPro || null);
 
-      if (rolesData && rolesData.length > 0) {
-        const userIds = rolesData.map(r => r.user_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, email")
-          .in("id", userIds);
+      // Fetch pending invitations for this course
+      const { data: invitations } = await supabase
+        .from("course_instructor_invitations")
+        .select("id, email, role, status, created_at, expires_at")
+        .eq("course_id", courseId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
 
-        setAvailableInstructors(profiles || []);
-      }
+      setPendingInvitations((invitations as PendingInvitation[]) || []);
     } catch (error) {
-      console.error("Error fetching instructors:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load instructor data",
-        variant: "destructive",
-      });
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddCoInstructor = async () => {
-    if (!selectedInstructor) {
-      toast({
-        title: "Select an instructor",
-        description: "Please select an instructor to add",
-        variant: "destructive",
-      });
+  const handleInviteCoInstructor = async () => {
+    if (!coEmail.trim()) {
+      toast({ title: "Email required", description: "Please enter an email address.", variant: "destructive" });
       return;
     }
-
-    // Check if already added
-    if (courseInstructors.some(i => i.instructor_id === selectedInstructor)) {
-      toast({
-        title: "Already added",
-        description: "This instructor is already assigned to this course",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSubmitting(true);
+    setSendingCo(true);
     try {
-      const { error } = await supabase.from("course_instructors").insert({
-        course_id: courseId,
-        instructor_id: selectedInstructor,
-        role: "co_instructor",
-        added_by: currentInstructorId,
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("send-course-instructor-invitation", {
+        body: { email: coEmail.trim(), courseId, role: "co_instructor" },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
       });
 
-      if (error) throw error;
+      if (res.error || res.data?.error) {
+        throw new Error(res.data?.error || res.error?.message || "Failed to send invitation");
+      }
 
-      toast({
-        title: "Co-instructor added",
-        description: "The co-instructor has been added to this course",
-      });
-
-      setSelectedInstructor("");
-      setDialogOpen(false);
+      toast({ title: "Invitation sent!", description: `An invitation email has been sent to ${coEmail}.` });
+      setCoEmail("");
+      setCoDialogOpen(false);
       fetchData();
       onUpdate?.();
     } catch (error: any) {
-      console.error("Error adding co-instructor:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add co-instructor",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
-      setSubmitting(false);
+      setSendingCo(false);
+    }
+  };
+
+  const handleInviteOwner = async () => {
+    if (!transferEmail.trim()) {
+      toast({ title: "Email required", description: "Please enter an email address.", variant: "destructive" });
+      return;
+    }
+    setSendingTransfer(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("send-course-instructor-invitation", {
+        body: { email: transferEmail.trim(), courseId, role: "primary" },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+
+      if (res.error || res.data?.error) {
+        throw new Error(res.data?.error || res.error?.message || "Failed to send invitation");
+      }
+
+      toast({
+        title: "Transfer invitation sent!",
+        description: `An ownership transfer invitation has been sent to ${transferEmail}.`,
+      });
+      setTransferEmail("");
+      setTransferDialogOpen(false);
+      fetchData();
+      onUpdate?.();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setSendingTransfer(false);
     }
   };
 
   const handleRemoveInstructor = async (instructorId: string) => {
-    if (!confirm("Remove this instructor from the course?")) return;
-
+    if (!confirm("Remove this co-instructor from the course?")) return;
     try {
       const { error } = await supabase
         .from("course_instructors")
@@ -190,86 +211,27 @@ export const CourseInstructorManager = ({
         .eq("instructor_id", instructorId);
 
       if (error) throw error;
-
-      // Immediately remove from local state
-      setCourseInstructors(prev => prev.filter(i => i.instructor_id !== instructorId));
-
-      toast({
-        title: "Instructor removed",
-        description: "The instructor has been removed from this course",
-      });
-
+      setCourseInstructors((prev) => prev.filter((i) => i.instructor_id !== instructorId));
+      toast({ title: "Instructor removed", description: "The instructor has been removed from this course." });
       onUpdate?.();
     } catch (error) {
-      console.error("Error removing instructor:", error);
-      toast({
-        title: "Error",
-        description: "Failed to remove instructor",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to remove instructor", variant: "destructive" });
     }
   };
 
-  const handleTransferCourse = async () => {
-    if (!transferToInstructor) {
-      toast({
-        title: "Select an instructor",
-        description: "Please select an instructor to transfer the course to",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSubmitting(true);
+  const handleRevokeInvitation = async (invitationId: string) => {
     try {
-      // Update the course's primary instructor
-      const { error: courseError } = await supabase
-        .from("courses")
-        .update({ instructor_id: transferToInstructor })
-        .eq("id", courseId);
-
-      if (courseError) throw courseError;
-
-      // Remove old primary instructor from course_instructors if exists
-      await supabase
-        .from("course_instructors")
+      const { error } = await supabase
+        .from("course_instructor_invitations")
         .delete()
-        .eq("course_id", courseId)
-        .eq("role", "primary");
-
-      // Add new primary instructor to course_instructors
-      await supabase.from("course_instructors").upsert({
-        course_id: courseId,
-        instructor_id: transferToInstructor,
-        role: "primary",
-        added_by: currentInstructorId,
-      });
-
-      toast({
-        title: "Course transferred",
-        description: "The course has been transferred to the new instructor",
-      });
-
-      setTransferToInstructor("");
-      setTransferDialogOpen(false);
-      fetchData();
-      onUpdate?.();
-    } catch (error: any) {
-      console.error("Error transferring course:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to transfer course",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
+        .eq("id", invitationId);
+      if (error) throw error;
+      setPendingInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+      toast({ title: "Invitation revoked" });
+    } catch {
+      toast({ title: "Error", description: "Failed to revoke invitation", variant: "destructive" });
     }
   };
-
-  // Filter out already assigned instructors
-  const unassignedInstructors = availableInstructors.filter(
-    i => !courseInstructors.some(ci => ci.instructor_id === i.id) && i.id !== currentInstructorId
-  );
 
   if (loading) {
     return (
@@ -279,120 +241,101 @@ export const CourseInstructorManager = ({
     );
   }
 
+  const coInstructors = courseInstructors.filter((i) => i.instructor_id !== currentInstructorId);
+
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
               Course Instructors
             </CardTitle>
-            <CardDescription>
-              Manage instructors for {courseName}
-            </CardDescription>
+            <CardDescription>Manage instructors for {courseName}</CardDescription>
           </div>
-          <div className="flex gap-2">
-            {/* Transfer Course Dialog */}
+          <div className="flex gap-2 flex-wrap">
+            {/* Transfer Ownership */}
             <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <ArrowRightLeft className="h-4 w-4 mr-2" />
-                  Transfer Course
+                  Transfer Ownership
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Transfer Course Ownership</DialogTitle>
                   <DialogDescription>
-                    Transfer this course to another instructor. They will become the primary owner.
+                    Send an invitation to transfer full ownership of this course to another instructor. They must accept the invite via email.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label>Select New Owner</Label>
-                    <Select value={transferToInstructor} onValueChange={setTransferToInstructor}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an instructor..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableInstructors
-                          .filter(i => i.id !== currentInstructorId)
-                          .map(instructor => (
-                            <SelectItem key={instructor.id} value={instructor.id}>
-                              {instructor.full_name || instructor.email || "Unknown"}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="transfer-email">Recipient Email</Label>
+                    <Input
+                      id="transfer-email"
+                      type="email"
+                      placeholder="instructor@example.com"
+                      value={transferEmail}
+                      onChange={(e) => setTransferEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleInviteOwner()}
+                    />
                   </div>
-                  <Button 
-                    onClick={handleTransferCourse} 
-                    disabled={submitting || !transferToInstructor}
+                  <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm text-amber-800">
+                    ⚠️ The recipient will become the primary owner once they accept. The invitation link expires in 7 days.
+                  </div>
+                  <Button
+                    onClick={handleInviteOwner}
+                    disabled={sendingTransfer || !transferEmail.trim()}
                     className="w-full"
                   >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Transferring...
-                      </>
+                    {sendingTransfer ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending...</>
                     ) : (
-                      "Transfer Course"
+                      <><Mail className="mr-2 h-4 w-4" />Send Transfer Invitation</>
                     )}
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
 
-            {/* Add Co-Instructor Dialog */}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            {/* Add Co-Instructor */}
+            <Dialog open={coDialogOpen} onOpenChange={setCoDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Add Co-Instructor
+                  Invite Co-Instructor
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add Co-Instructor</DialogTitle>
+                  <DialogTitle>Invite Co-Instructor</DialogTitle>
                   <DialogDescription>
-                    Add a co-instructor who can help manage this course.
+                    Send an email invitation to add someone as a co-instructor on this course. The invitation expires in 7 days.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label>Select Instructor</Label>
-                    <Select value={selectedInstructor} onValueChange={setSelectedInstructor}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an instructor..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {unassignedInstructors.length === 0 ? (
-                          <SelectItem value="none" disabled>
-                            No available instructors
-                          </SelectItem>
-                        ) : (
-                          unassignedInstructors.map(instructor => (
-                            <SelectItem key={instructor.id} value={instructor.id}>
-                              {instructor.full_name || instructor.email || "Unknown"}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="co-email">Instructor Email</Label>
+                    <Input
+                      id="co-email"
+                      type="email"
+                      placeholder="instructor@example.com"
+                      value={coEmail}
+                      onChange={(e) => setCoEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleInviteCoInstructor()}
+                    />
                   </div>
-                  <Button 
-                    onClick={handleAddCoInstructor} 
-                    disabled={submitting || !selectedInstructor}
+                  <Button
+                    onClick={handleInviteCoInstructor}
+                    disabled={sendingCo || !coEmail.trim()}
                     className="w-full"
                   >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Adding...
-                      </>
+                    {sendingCo ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending...</>
                     ) : (
-                      "Add Co-Instructor"
+                      <><Mail className="mr-2 h-4 w-4" />Send Invitation</>
                     )}
                   </Button>
                 </div>
@@ -401,66 +344,102 @@ export const CourseInstructorManager = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {/* Primary Instructor (from course.instructor_id) */}
+      <CardContent className="space-y-4">
+        {/* Primary Instructor */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Primary Owner</p>
           <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Crown className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium">
-                  {availableInstructors.find(i => i.id === currentInstructorId)?.full_name || "You"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {availableInstructors.find(i => i.id === currentInstructorId)?.email || "Primary Instructor"}
-                </p>
+                <p className="font-medium">{primaryProfile?.full_name || "You"}</p>
+                <p className="text-sm text-muted-foreground">{primaryProfile?.email || "Primary Instructor"}</p>
               </div>
             </div>
             <Badge>Primary</Badge>
           </div>
-
-          {/* Co-Instructors */}
-          {courseInstructors
-            .filter(i => i.instructor_id !== currentInstructorId)
-            .map(instructor => (
-              <div 
-                key={instructor.id} 
-                className="flex items-center justify-between p-3 rounded-lg border"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center">
-                    <Users className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium">
-                      {instructor.profile?.full_name || "Unknown"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {instructor.profile?.email || "Co-Instructor"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">Co-Instructor</Badge>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveInstructor(instructor.instructor_id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-
-          {courseInstructors.filter(i => i.instructor_id !== currentInstructorId).length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No co-instructors assigned yet
-            </p>
-          )}
         </div>
+
+        {/* Co-Instructors */}
+        {coInstructors.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Co-Instructors</p>
+            <div className="space-y-2">
+              {coInstructors.map((instructor) => (
+                <div
+                  key={instructor.id}
+                  className="flex items-center justify-between p-3 rounded-lg border"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center">
+                      <Users className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{instructor.profile?.full_name || "Unknown"}</p>
+                      <p className="text-sm text-muted-foreground">{instructor.profile?.email || ""}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">Co-Instructor</Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveInstructor(instructor.instructor_id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Pending Invitations */}
+        {pendingInvitations.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Pending Invitations</p>
+            <div className="space-y-2">
+              {pendingInvitations.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-dashed bg-muted/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                      <Clock className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{inv.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {inv.role === "primary" ? "Ownership transfer" : "Co-instructor"} · Expires {new Date(inv.expires_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-amber-600 border-amber-300">Pending</Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRevokeInvitation(inv.id)}
+                      title="Revoke invitation"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {coInstructors.length === 0 && pendingInvitations.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No co-instructors yet. Invite someone via email above.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

@@ -15,6 +15,7 @@ import CourseDetail from "./pages/CourseDetail";
 import AcceptInvite from "./pages/AcceptInvite";
 import AcceptInstructorInvite from "./pages/AcceptInstructorInvite";
 import Instructor from "./pages/Instructor";
+import AcceptCourseInstructorInvite from "./pages/AcceptCourseInstructorInvite";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import BecomeInstructor from "./pages/BecomeInstructor";
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/course/:courseId" element={<CourseDetail />} />
           <Route path="/accept-invite" element={<AcceptInvite />} />
           <Route path="/accept-instructor-invite" element={<AcceptInstructorInvite />} />
+          <Route path="/accept-course-instructor-invite" element={<AcceptCourseInstructorInvite />} />
           <Route path="/instructor" element={<Instructor />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/profile" element={<Profile />} />
