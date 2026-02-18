@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 
 interface Placeholder {
   id: string;
@@ -33,22 +33,8 @@ export interface CertificateData {
 
 interface CertificateRendererProps {
   data: CertificateData;
-  scale?: number; // for preview sizing
-  onReady?: () => void; // called once QR codes are loaded and ready for capture
-}
-
-/**
- * Generates a QR code as a base64 PNG data URL using the local `qrcode` package.
- * This avoids any cross-origin issues with html2canvas.
- */
-async function generateQRDataUrl(text: string, size: number): Promise<string> {
-  const QRCode = (await import("qrcode")).default;
-  return QRCode.toDataURL(text, {
-    width: size,
-    margin: 1,
-    color: { dark: "#000000", light: "#ffffff" },
-    errorCorrectionLevel: "M",
-  });
+  scale?: number;
+  onReady?: () => void;
 }
 
 function getPlaceholderText(ph: Placeholder, data: CertificateData): string {
@@ -65,11 +51,60 @@ function getPlaceholderText(ph: Placeholder, data: CertificateData): string {
 }
 
 /**
+ * A QR code placeholder rendered as a <canvas> so html2canvas captures it
+ * natively without any cross-origin or image-loading timing issues.
+ */
+function QRCanvas({
+  text,
+  size,
+  onReady,
+}: {
+  text: string;
+  size: number;
+  onReady?: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const QRCode = (await import("qrcode")).default;
+        if (cancelled || !canvasRef.current) return;
+        // Draw directly onto our canvas element
+        await QRCode.toCanvas(canvasRef.current, text, {
+          width: size,
+          margin: 1,
+          color: { dark: "#000000", light: "#ffffff" },
+          errorCorrectionLevel: "M",
+        });
+        if (!cancelled) {
+          // One rAF to ensure the browser has composited the canvas pixels
+          requestAnimationFrame(() => {
+            if (!cancelled) onReady?.();
+          });
+        }
+      } catch (err) {
+        console.error("QR generation failed:", err);
+        if (!cancelled) onReady?.(); // don't hang
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [text, size, onReady]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={size}
+      height={size}
+      style={{ width: "100%", height: "100%", display: "block" }}
+    />
+  );
+}
+
+/**
  * Renders a certificate template exactly as designed — used both for preview
  * and as the source for html2canvas PDF capture.
- *
- * When `scale` is provided the canvas is scaled down for preview;
- * for PDF capture pass scale=1 (or omit).
  */
 const CertificateRenderer = React.forwardRef<HTMLDivElement, CertificateRendererProps>(
   ({ data, scale = 1, onReady }, ref) => {
@@ -77,38 +112,26 @@ const CertificateRenderer = React.forwardRef<HTMLDivElement, CertificateRenderer
     const width = template?.width || 842;
     const height = template?.height || 595;
 
-    // Pre-fetch QR codes as base64 so html2canvas can render them cross-origin
-    const [qrDataUrls, setQrDataUrls] = useState<Record<string, string>>({});
+    // Track how many QR canvases still need to signal ready
+    const qrPlaceholders = template?.placeholders.filter(p => p.type === "qr_code") ?? [];
+    const pendingQRRef = useRef(qrPlaceholders.length);
+    const readyFiredRef = useRef(false);
 
+    const handleQRReady = useCallback(() => {
+      pendingQRRef.current -= 1;
+      if (pendingQRRef.current <= 0 && !readyFiredRef.current) {
+        readyFiredRef.current = true;
+        onReady?.();
+      }
+    }, [onReady]);
+
+    // When there are no QR codes, fire onReady after mount
     useEffect(() => {
-      if (!template?.placeholders) {
+      if (qrPlaceholders.length === 0 && !readyFiredRef.current) {
+        readyFiredRef.current = true;
         onReady?.();
-        return;
       }
-      const qrPlaceholders = template.placeholders.filter((ph) => ph.type === "qr_code");
-      if (qrPlaceholders.length === 0) {
-        // No QR codes — ready immediately
-        onReady?.();
-        return;
-      }
-
-      Promise.all(
-        qrPlaceholders.map(async (ph) => {
-          const size = Math.round(ph.width || 150);
-          const dataUrl = await generateQRDataUrl(data.verificationUrl, size);
-          return [ph.id, dataUrl] as [string, string];
-        })
-      ).then((entries) => {
-        setQrDataUrls(Object.fromEntries(entries));
-        // Signal that QR codes are now in state and React will re-render
-        // Use rAF to ensure the DOM has been painted with the new images
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            onReady?.();
-          });
-        });
-      });
-    }, [template, data.verificationUrl]);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const containerStyle: React.CSSProperties = {
       position: "relative",
@@ -120,7 +143,6 @@ const CertificateRenderer = React.forwardRef<HTMLDivElement, CertificateRenderer
     };
 
     if (!template || template.placeholders.length === 0) {
-      // Default fallback layout
       return (
         <div ref={ref} style={containerStyle}>
           {template?.background_url && (
@@ -175,7 +197,7 @@ const CertificateRenderer = React.forwardRef<HTMLDivElement, CertificateRenderer
           const placeholderWidth = (ph.width || 150) * scale;
           const placeholderHeight = isQR ? placeholderWidth : (ph.fontSize + 8) * scale;
 
-          const containerStyle: React.CSSProperties = {
+          const wrapStyle: React.CSSProperties = {
             position: "absolute",
             left: ph.x * scale,
             top: ph.y * scale,
@@ -184,15 +206,13 @@ const CertificateRenderer = React.forwardRef<HTMLDivElement, CertificateRenderer
           };
 
           if (isQR) {
-            // Use pre-generated base64 data URL; fallback renders nothing until ready
-            const qrSrc = qrDataUrls[ph.id] || "";
-            if (!qrSrc) return null; // wait until QR data URL is ready
+            const size = Math.round(ph.width || 150);
             return (
-              <div key={ph.id} style={containerStyle}>
-                <img
-                  src={qrSrc}
-                  alt="Verification QR Code"
-                  style={{ width: "100%", height: "100%", display: "block" }}
+              <div key={ph.id} style={wrapStyle}>
+                <QRCanvas
+                  text={data.verificationUrl}
+                  size={size}
+                  onReady={handleQRReady}
                 />
               </div>
             );
@@ -215,7 +235,7 @@ const CertificateRenderer = React.forwardRef<HTMLDivElement, CertificateRenderer
           };
 
           return (
-            <div key={ph.id} style={containerStyle}>
+            <div key={ph.id} style={wrapStyle}>
               <span style={textStyle}>{text}</span>
             </div>
           );
