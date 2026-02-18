@@ -69,20 +69,35 @@ const AcceptCourseInstructorInvite = () => {
 
   const handleAccept = async () => {
     if (!isLoggedIn) {
-      navigate(`/auth?redirect=/accept-course-instructor-invite?token=${token}`);
+      const redirectUrl = `/accept-course-instructor-invite?token=${encodeURIComponent(token!)}`;
+      navigate(`/auth?redirect=${encodeURIComponent(redirectUrl)}`);
       return;
     }
 
     setStatus("accepting");
     try {
       const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        setIsLoggedIn(false);
+        setStatus("idle");
+        return;
+      }
+
       const res = await supabase.functions.invoke("accept-course-instructor-invitation", {
         body: { token },
-        headers: { Authorization: `Bearer ${session?.access_token}` },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
-      if (res.error || res.data?.error) {
-        throw new Error(res.data?.error || res.error?.message || "Failed to accept invitation");
+      // Parse response body if there's a non-2xx from the function
+      if (res.error) {
+        // Try to extract the error message from the response data
+        const errMsg = res.data?.error || res.error.message || "Failed to accept invitation";
+        throw new Error(errMsg);
+      }
+
+      if (res.data?.error) {
+        throw new Error(res.data.error);
       }
 
       setStatus("success");
