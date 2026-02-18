@@ -100,20 +100,25 @@ export const CourseInstructorManager = ({
         setCourseInstructors([]);
       }
 
-      // Fetch all instructors (users with moderator or admin role)
-      const { data: rolesData } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .in("role", ["moderator", "admin"]);
+      // Fetch all instructors: users who own at least one course
+      const { data: coursesData } = await supabase
+        .from("courses")
+        .select("instructor_id")
+        .not("instructor_id", "is", null);
 
-      if (rolesData && rolesData.length > 0) {
-        const userIds = rolesData.map(r => r.user_id);
+      const instructorIds = [
+        ...new Set(coursesData?.map(c => c.instructor_id).filter(Boolean) as string[])
+      ];
+
+      if (instructorIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name, email")
-          .in("id", userIds);
+          .in("id", instructorIds);
 
         setAvailableInstructors(profiles || []);
+      } else {
+        setAvailableInstructors([]);
       }
     } catch (error) {
       console.error("Error fetching instructors:", error);
