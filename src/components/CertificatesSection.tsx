@@ -44,6 +44,7 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
   const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -212,14 +213,37 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
     }
   };
 
-  const downloadCertificate = (pdfUrl: string | null, certificateNumber: string) => {
-    if (pdfUrl) {
-      window.open(pdfUrl, "_blank");
-    } else {
-      toast({
-        title: "Certificate Ready",
-        description: `Certificate #${certificateNumber} is available. PDF download coming soon.`,
+  const downloadCertificate = async (certId: string, courseId: string, certificateNumber: string) => {
+    setDownloading(certId);
+    try {
+      // Regenerate with current template before downloading
+      const { data, error } = await supabase.functions.invoke("generate-certificate", {
+        body: { courseId, regenerate: true },
       });
+
+      if (error) throw error;
+
+      const pdfUrl = data?.pdfUrl || data?.certificate?.pdf_url;
+      if (pdfUrl) {
+        window.open(pdfUrl, "_blank");
+      } else {
+        toast({
+          title: "Certificate Ready",
+          description: `Certificate #${certificateNumber} is available but PDF URL is missing.`,
+        });
+      }
+
+      // Refresh so the stored url is up to date
+      await fetchCertificatesAndProgress();
+    } catch (error: any) {
+      console.error("Error regenerating certificate:", error);
+      toast({
+        title: "Download Failed",
+        description: error.message || "Failed to regenerate certificate with current template",
+        variant: "destructive",
+      });
+    } finally {
+      setDownloading(null);
     }
   };
 
@@ -270,10 +294,20 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
                   </div>
                   <Button
                     className="w-full"
-                    onClick={() => downloadCertificate(cert.pdf_url, cert.certificate_number)}
+                    onClick={() => downloadCertificate(cert.id, cert.course?.id, cert.certificate_number)}
+                    disabled={downloading === cert.id}
                   >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download Certificate
+                    {downloading === cert.id ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        Download Certificate
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>

@@ -598,7 +598,8 @@ serve(async (req) => {
 
     console.log('Generating certificate for user:', user.id);
 
-    const { courseId } = await req.json();
+    const body = await req.json();
+    const { courseId, regenerate } = body;
 
     if (!courseId) {
       return new Response(
@@ -631,7 +632,8 @@ serve(async (req) => {
       .eq('course_id', courseId)
       .single();
 
-    if (existingCert) {
+    // If cert exists and not regenerating, return existing
+    if (existingCert && !regenerate) {
       return new Response(
         JSON.stringify({ success: true, certificate: existingCert, message: 'Certificate already issued' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -671,12 +673,13 @@ serve(async (req) => {
       .single();
 
     const studentName = profile?.full_name || user.email?.split('@')[0] || 'Student';
-    const certificateNumber = generateCertificateNumber();
-    const issueDate = new Date().toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+
+    // Reuse existing cert number when regenerating so the verification URL stays valid
+    const certificateNumber = existingCert?.certificate_number || generateCertificateNumber();
+
+    const issueDate = existingCert
+      ? new Date(existingCert.issued_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
     // Build verification URL (points to the public verify page)
     const appUrl = supabaseUrl.includes('supabase.co')
@@ -684,7 +687,7 @@ serve(async (req) => {
       : 'http://localhost:8080';
     const verificationUrl = `${appUrl}/certificate/verify/${certificateNumber}`;
 
-    console.log('Generating PDF for:', studentName, course.title, 'verify:', verificationUrl);
+    console.log('Generating PDF for:', studentName, course.title, 'verify:', verificationUrl, 'regenerate:', !!regenerate);
 
     const pdfBytes = await generateCertificatePDFWithBackground(
       studentName,
@@ -702,7 +705,7 @@ serve(async (req) => {
       } : undefined
     );
 
-    // Upload PDF to storage
+    // Upload PDF to storage (upsert so regeneration overwrites the old file)
     const fileName = `${user.id}/${certificateNumber}.pdf`;
     const { error: uploadError } = await supabase.storage
       .from('certificates')
@@ -721,17 +724,35 @@ serve(async (req) => {
 
     const pdfUrl = urlData?.publicUrl || null;
 
-    const { data: certificate, error: certError } = await supabase
-      .from('certificates')
-      .insert({
-        user_id: user.id,
-        course_id: courseId,
-        certificate_number: certificateNumber,
-        pdf_url: pdfUrl,
-        issued_at: new Date().toISOString()
-      })
-      .select()
-      .single();
+    let certificate;
+    let certError;
+
+    if (existingCert && regenerate) {
+      // Update existing certificate record with new pdf_url
+      const result = await supabase
+        .from('certificates')
+        .update({ pdf_url: pdfUrl })
+        .eq('id', existingCert.id)
+        .select()
+        .single();
+      certificate = result.data;
+      certError = result.error;
+    } else {
+      // Insert new certificate record
+      const result = await supabase
+        .from('certificates')
+        .insert({
+          user_id: user.id,
+          course_id: courseId,
+          certificate_number: certificateNumber,
+          pdf_url: pdfUrl,
+          issued_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      certificate = result.data;
+      certError = result.error;
+    }
 
     if (certError) {
       return new Response(
@@ -740,10 +761,10 @@ serve(async (req) => {
       );
     }
 
-    console.log('Certificate created successfully:', certificate.certificate_number);
+    console.log('Certificate processed successfully:', certificate.certificate_number);
 
     return new Response(
-      JSON.stringify({ success: true, certificate, message: 'Certificate generated successfully' }),
+      JSON.stringify({ success: true, certificate, pdfUrl, message: regenerate ? 'Certificate regenerated successfully' : 'Certificate generated successfully' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
