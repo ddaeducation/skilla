@@ -509,13 +509,14 @@ const Instructor = () => {
             learning_outcomes: learningOutcomesArray,
             image_url: courseForm.image_url || null,
             instructor_id: currentUserId,
-            approval_status: "pending",
+            approval_status: "approved",
+            publish_status: "draft",
           });
 
         if (error) throw error;
         toast({ 
-          title: "Course submitted for approval",
-          description: "Your course will be reviewed by an admin before going live.",
+          title: "Course created",
+          description: "Your course is saved as a draft. Click Publish when you're ready.",
         });
       }
 
@@ -530,6 +531,21 @@ const Instructor = () => {
         description: "Failed to save course",
         variant: "destructive",
       });
+    }
+  };
+
+  const handlePublishCourse = async (course: any) => {
+    const nextStatus = course.publish_status === "draft" ? "live" : "draft";
+    try {
+      const { error } = await supabase
+        .from("courses")
+        .update({ publish_status: nextStatus })
+        .eq("id", course.id);
+      if (error) throw error;
+      toast({ title: nextStatus === "live" ? "Course published!" : "Course unpublished", description: nextStatus === "live" ? "Students can now see and enroll in your course." : "Course is now a draft and hidden from students." });
+      fetchData(currentUserId!);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update course status", variant: "destructive" });
     }
   };
 
@@ -1033,15 +1049,17 @@ const Instructor = () => {
                           </div>
                           <div className="flex flex-col items-end gap-1">
                             <Badge variant="secondary">${(course as any).monthly_price ?? course.price}/mo</Badge>
-                            {course.approval_status === "pending" && (
-                              <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-                                Pending Approval
+                            {(course as any).publish_status === "draft" && (
+                              <Badge variant="outline" className="text-muted-foreground border-muted-foreground">
+                                Draft
                               </Badge>
                             )}
-                            {course.approval_status === "rejected" && (
-                              <Badge variant="destructive">Rejected</Badge>
+                            {(course as any).publish_status === "upcoming" && (
+                              <Badge variant="outline" className="text-yellow-600 border-yellow-500">
+                                Upcoming
+                              </Badge>
                             )}
-                            {course.approval_status === "approved" && (
+                            {(course as any).publish_status === "live" && (
                               <Badge variant="default" className="bg-green-600">Live</Badge>
                             )}
                           </div>
@@ -1050,6 +1068,14 @@ const Instructor = () => {
                       <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
                         <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant={(course as any).publish_status === "live" ? "outline" : "default"}
+                            className={(course as any).publish_status !== "live" ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                            onClick={() => handlePublishCourse(course)}
+                          >
+                            {(course as any).publish_status === "live" ? "Unpublish" : "Publish"}
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"

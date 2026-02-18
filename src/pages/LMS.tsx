@@ -117,6 +117,7 @@ const LMS = () => {
     const { data, error } = await supabase
       .from("courses")
       .select("*")
+      .in("publish_status", ["upcoming", "live"])
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -475,90 +476,95 @@ const LMS = () => {
                           <div className="flex items-start justify-between gap-2">
                             <CardTitle>{course.title}</CardTitle>
                             <div className="flex gap-1 shrink-0">
-                              {course.category && (
+                                {course.category && (
                                 <Badge variant="outline" className={getCategoryBadgeStyle(course.category)}>
-                                  {course.category}
-                                </Badge>
-                              )}
-                              {Number(course.price) === 0 && (
-                                <Badge className="bg-green-500 hover:bg-green-600 text-white">Free</Badge>
-                              )}
-                            </div>
-                          </div>
-                          <CardDescription>
-                            <Badge variant="secondary" className="mt-1">{course.school}</Badge>
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <p className="text-sm line-clamp-2">{course.description}</p>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            {course.duration && (
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-4 h-4" />
-                                {course.duration}
-                              </div>
-                            )}
-                            {Number((course as any).monthly_price ?? course.price) > 0 && (
-                              <div className="flex items-center gap-1">
-                                <DollarSign className="w-4 h-4" />
-                                ${(course as any).monthly_price ?? course.price}/mo
-                              </div>
-                            )}
-                          </div>
-                          {isEnrolled(course.id) ? (
-                            <Button
-                              className="w-full"
-                              onClick={() => navigate(`/course/${course.id}`)}
-                            >
-                              <BookOpen className="w-4 h-4 mr-2" />
-                              Continue Learning
-                            </Button>
-                          ) : (
-                            <Button
-                              className="w-full"
-                              variant="outline"
-                              onClick={() => handleEnroll(course.id)}
-                            >
-                              {Number((course as any).monthly_price ?? course.price) === 0 ? "Enroll For Free" : "Enroll Now"}
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  // Show courses grouped by school
-                  SCHOOLS.map((school) => {
-                    const schoolCourses = courses.filter(c => c.school === school);
-                    if (schoolCourses.length === 0) return null;
-                    
-                    return (
-                      <div key={school}>
-                        <div className="flex items-center justify-between mb-4">
-                          <h2 className="text-xl font-semibold">{school}</h2>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => setSelectedSchool(school)}
-                          >
-                            View All ({schoolCourses.length})
-                          </Button>
-                        </div>
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {schoolCourses.slice(0, 3).map((course) => (
-                            <Card key={course.id} className="hover:shadow-lg transition-shadow">
-                              <CardHeader>
-                                <div className="flex items-start justify-between gap-2">
-                                  <CardTitle className="text-lg">{course.title}</CardTitle>
-                                  <div className="flex gap-1 shrink-0">
-                                    {course.category && (
-                                      <Badge variant="outline" className={getCategoryBadgeStyle(course.category)}>
-                                        {course.category}
-                                      </Badge>
-                                    )}
-                                    {Number(course.price) === 0 && (
-                                      <Badge className="bg-green-500 hover:bg-green-600 text-white">Free</Badge>
-                                    )}
+                                   {course.category}
+                                 </Badge>
+                               )}
+                               {(course as any).publish_status === "live" ? (
+                                 <Badge className="bg-green-500 hover:bg-green-600 text-white">Live</Badge>
+                               ) : (course as any).publish_status === "upcoming" ? (
+                                 <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">Upcoming</Badge>
+                               ) : null}
+                             </div>
+                           </div>
+                           <CardDescription>
+                             <Badge variant="secondary" className="mt-1">{course.school}</Badge>
+                           </CardDescription>
+                         </CardHeader>
+                         <CardContent className="space-y-4">
+                           <p className="text-sm line-clamp-2">{course.description}</p>
+                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                             {course.duration && (
+                               <div className="flex items-center gap-1">
+                                 <Clock className="w-4 h-4" />
+                                 {course.duration}
+                               </div>
+                             )}
+                             {Number((course as any).monthly_price ?? course.price) > 0 && (
+                               <div className="flex items-center gap-1">
+                                 <DollarSign className="w-4 h-4" />
+                                 ${(course as any).monthly_price ?? course.price}/mo
+                               </div>
+                             )}
+                           </div>
+                           {isEnrolled(course.id) ? (
+                             <Button
+                               className="w-full"
+                               onClick={() => navigate(`/course/${course.id}`)}
+                             >
+                               <BookOpen className="w-4 h-4 mr-2" />
+                               Continue Learning
+                             </Button>
+                           ) : (
+                             <Button
+                               className="w-full"
+                               variant="outline"
+                               onClick={() => handleEnroll(course.id)}
+                               disabled={(course as any).publish_status === "upcoming"}
+                             >
+                               {(course as any).publish_status === "upcoming" ? "Coming Soon" : Number((course as any).monthly_price ?? course.price) === 0 ? "Enroll For Free" : "Enroll Now"}
+                             </Button>
+                           )}
+                         </CardContent>
+                       </Card>
+                     ))}
+                   </div>
+                 ) : (
+                   // Show courses grouped by school
+                   SCHOOLS.map((school) => {
+                     const schoolCourses = courses.filter(c => c.school === school);
+                     if (schoolCourses.length === 0) return null;
+                     
+                     return (
+                       <div key={school}>
+                         <div className="flex items-center justify-between mb-4">
+                           <h2 className="text-xl font-semibold">{school}</h2>
+                           <Button 
+                             variant="ghost" 
+                             size="sm"
+                             onClick={() => setSelectedSchool(school)}
+                           >
+                             View All ({schoolCourses.length})
+                           </Button>
+                         </div>
+                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                           {schoolCourses.slice(0, 3).map((course) => (
+                             <Card key={course.id} className="hover:shadow-lg transition-shadow">
+                               <CardHeader>
+                                 <div className="flex items-start justify-between gap-2">
+                                   <CardTitle className="text-lg">{course.title}</CardTitle>
+                                   <div className="flex gap-1 shrink-0">
+                                     {course.category && (
+                                       <Badge variant="outline" className={getCategoryBadgeStyle(course.category)}>
+                                         {course.category}
+                                       </Badge>
+                                     )}
+                                     {(course as any).publish_status === "live" ? (
+                                       <Badge className="bg-green-500 hover:bg-green-600 text-white">Live</Badge>
+                                     ) : (course as any).publish_status === "upcoming" ? (
+                                       <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">Upcoming</Badge>
+                                     ) : null}
                                   </div>
                                 </div>
                                 <CardDescription>
@@ -591,12 +597,13 @@ const LMS = () => {
                                   </Button>
                                 ) : (
                                   <Button
-                                    className="w-full"
-                                    variant="outline"
-                                    onClick={() => handleEnroll(course.id)}
-                                  >
-                                    {Number((course as any).monthly_price ?? course.price) === 0 ? "Enroll For Free" : "Enroll Now"}
-                                  </Button>
+                                     className="w-full"
+                                     variant="outline"
+                                     onClick={() => handleEnroll(course.id)}
+                                     disabled={(course as any).publish_status === "upcoming"}
+                                   >
+                                     {(course as any).publish_status === "upcoming" ? "Coming Soon" : Number((course as any).monthly_price ?? course.price) === 0 ? "Enroll For Free" : "Enroll Now"}
+                                   </Button>
                                 )}
                               </CardContent>
                             </Card>
