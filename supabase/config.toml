@@ -1,1 +1,7 @@
 project_id = "dbkuianwxcnptegdxknv"
+
+[functions.send-course-instructor-invitation]
+verify_jwt = false
+
+[functions.accept-course-instructor-invitation]
+verify_jwt = false
