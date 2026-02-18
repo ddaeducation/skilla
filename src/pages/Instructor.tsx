@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, BookOpen, Users, DollarSign, Plus, Pencil, Trash2, FileText, Video, Image, Youtube, FileQuestion, ClipboardList, Eye, ClipboardCheck, CalendarIcon, X, MoreVertical, Ban, UserX, UserCheck, GraduationCap, CheckCircle, Clock, TrendingUp, Users2, Download } from "lucide-react";
+import { Loader2, BookOpen, Users, DollarSign, Plus, Pencil, Trash2, FileText, Video, Image, Youtube, FileQuestion, ClipboardList, Eye, ClipboardCheck, CalendarIcon, X, MoreVertical, Ban, UserX, UserCheck, GraduationCap, CheckCircle, Clock, TrendingUp, Users2, Download, Copy } from "lucide-react";
 import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -28,6 +28,7 @@ import CouponManagement from "@/components/CouponManagement";
 import InstructorPayoutSettings from "@/components/InstructorPayoutSettings";
 import InstructorWithdrawal from "@/components/InstructorWithdrawal";
 import { CourseInstructorManager } from "@/components/CourseInstructorManager";
+import { CourseDuplicateDialog } from "@/components/CourseDuplicateDialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -154,6 +155,7 @@ const Instructor = () => {
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [managingQuizQuestions, setManagingQuizQuestions] = useState<Quiz | null>(null);
+  const [duplicatingCourse, setDuplicatingCourse] = useState<Course | null>(null);
 
 
   // Form states
@@ -1114,6 +1116,14 @@ const Instructor = () => {
                           <Button
                             size="sm"
                             variant="ghost"
+                            title="Duplicate course"
+                            onClick={() => setDuplicatingCourse(course)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => {
                               setEditingCourse(course);
                               setCourseForm({
@@ -1155,9 +1165,19 @@ const Instructor = () => {
                         <CardTitle>Manage: {selectedCourse.title}</CardTitle>
                         <CardDescription>Add lessons, quizzes, and assignments to your course</CardDescription>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedCourse(null)}>
-                        Close
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDuplicatingCourse(selectedCourse)}
+                        >
+                          <Copy className="h-4 w-4 mr-1" />
+                          Duplicate
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedCourse(null)}>
+                          Close
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -1189,6 +1209,19 @@ const Instructor = () => {
                   </CardContent>
                 </Card>
               )}
+            {/* Course Duplicate Dialog */}
+            {duplicatingCourse && (
+              <CourseDuplicateDialog
+                open={!!duplicatingCourse}
+                onOpenChange={(open) => { if (!open) setDuplicatingCourse(null); }}
+                courseId={duplicatingCourse.id}
+                courseTitle={duplicatingCourse.title}
+                onDuplicated={() => {
+                  setDuplicatingCourse(null);
+                  fetchData(currentUserId!);
+                }}
+              />
+            )}
             </TabsContent>
 
             {/* Grading Tab */}
