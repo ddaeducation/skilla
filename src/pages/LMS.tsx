@@ -523,14 +523,14 @@ const LMS = () => {
                                onClick={() => handleEnroll(course.id)}
                                disabled={(course as any).publish_status === "upcoming"}
                              >
-                               {(course as any).publish_status === "upcoming" ? "Coming Soon" : Number((course as any).monthly_price ?? course.price) === 0 ? "Enroll For Free" : "Enroll Now"}
-                             </Button>
-                           )}
-                         </CardContent>
-                       </Card>
-                     ))}
-                   </div>
-                 ) : (
+                                {(course as any).publish_status === "upcoming" ? "Coming Soon" : "Enroll Now"}
+                              </Button>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
                    // Show courses grouped by school
                    SCHOOLS.map((school) => {
                      const schoolCourses = courses.filter(c => c.school === school);
@@ -602,7 +602,7 @@ const LMS = () => {
                                      onClick={() => handleEnroll(course.id)}
                                      disabled={(course as any).publish_status === "upcoming"}
                                    >
-                                     {(course as any).publish_status === "upcoming" ? "Coming Soon" : Number((course as any).monthly_price ?? course.price) === 0 ? "Enroll For Free" : "Enroll Now"}
+                                     {(course as any).publish_status === "upcoming" ? "Coming Soon" : "Enroll Now"}
                                    </Button>
                                 )}
                               </CardContent>
