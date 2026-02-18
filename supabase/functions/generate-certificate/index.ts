@@ -14,7 +14,7 @@ function generateCertificateNumber(): string {
 
 interface Placeholder {
   id: string;
-  type: "student_name" | "course_name" | "date" | "certificate_id" | "instructor_name" | "school_name" | "custom";
+  type: "student_name" | "course_name" | "date" | "certificate_id" | "instructor_name" | "school_name" | "custom" | "qr_code";
   label: string;
   x: number;
   y: number;
@@ -50,7 +50,6 @@ async function fetchImageAsBase64(url: string): Promise<{ data: Uint8Array; widt
     const arrayBuffer = await response.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
     
-    // Determine format
     let format = 'jpeg';
     if (contentType.includes('png') || url.toLowerCase().endsWith('.png')) {
       format = 'png';
@@ -62,7 +61,7 @@ async function fetchImageAsBase64(url: string): Promise<{ data: Uint8Array; widt
     
     return {
       data: bytes,
-      width: 0, // Will use template dimensions
+      width: 0,
       height: 0,
       format
     };
@@ -70,6 +69,40 @@ async function fetchImageAsBase64(url: string): Promise<{ data: Uint8Array; widt
     console.error('Error fetching image:', error);
     return null;
   }
+}
+
+// ─── Simple QR Code generator (QR Version 1, numeric/alphanumeric workaround using URL) ───
+// We use a public QR API to generate a PNG QR code and embed it as an image in the PDF.
+async function fetchQRCodePng(url: string, size = 120): Promise<Uint8Array | null> {
+  try {
+    // Use Google Chart API (public, no API key needed)
+    const qrUrl = `https://chart.googleapis.com/chart?chs=${size}x${size}&cht=qr&chl=${encodeURIComponent(url)}&choe=UTF-8`;
+    const resp = await fetch(qrUrl);
+    if (!resp.ok) return null;
+    const ab = await resp.arrayBuffer();
+    return new Uint8Array(ab);
+  } catch {
+    return null;
+  }
+}
+
+// ─── Draw a QR code PNG as a PDF XObject (returned as PDF stream fragment) ───
+// Returns the xobject definition string and the binary bytes separately.
+async function buildQRXObject(
+  verificationUrl: string,
+  placeholder: Placeholder,
+  pdfHeight: number
+): Promise<{ pdfObjText: string; imageBytes: Uint8Array; drawCommand: string } | null> {
+  const qrSize = placeholder.width || placeholder.fontSize * 4 || 100;
+  const pngBytes = await fetchQRCodePng(verificationUrl, Math.round(qrSize));
+  if (!pngBytes) return null;
+
+  // PDF Y = bottom-left, convert from top-left
+  const pdfY = pdfHeight - placeholder.y - qrSize;
+  const drawCommand = `q\n${qrSize} 0 0 ${qrSize} ${placeholder.x.toFixed(2)} ${pdfY.toFixed(2)} cm\n/QRImg Do\nQ\n`;
+
+  const pdfObjText = `<< /Type /XObject /Subtype /Image /Width ${Math.round(qrSize)} /Height ${Math.round(qrSize)} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${pngBytes.length} >>`;
+  return { pdfObjText, imageBytes: pngBytes, drawCommand };
 }
 
 // Generate PDF with background image support
@@ -80,6 +113,7 @@ async function generateCertificatePDFWithBackground(
   certificateNumber: string,
   issueDate: string,
   instructorName: string,
+  verificationUrl: string,
   template?: { placeholders: Placeholder[]; width: number; height: number; background_url?: string | null }
 ): Promise<Uint8Array> {
   const width = template?.width || 842;
@@ -87,9 +121,17 @@ async function generateCertificatePDFWithBackground(
 
   // Build text objects from placeholders if template exists
   let textObjects = "";
+  let hasQRPlaceholder = false;
+  let qrPlaceholder: Placeholder | null = null;
   
   if (template?.placeholders && template.placeholders.length > 0) {
     template.placeholders.forEach((placeholder) => {
+      if (placeholder.type === "qr_code") {
+        hasQRPlaceholder = true;
+        qrPlaceholder = placeholder;
+        return; // handled separately
+      }
+
       let text = "";
       switch (placeholder.type) {
         case "student_name":
@@ -119,11 +161,8 @@ async function generateCertificatePDFWithBackground(
       
       const rgb = hexToRgb(placeholder.color);
       const fontSize = placeholder.fontSize || 24;
-      // PDF coordinates are bottom-left origin, convert from top-left
       const pdfY = height - placeholder.y - fontSize;
       
-      // Determine font reference based on weight and style
-      // F1: Helvetica-Bold, F2: Helvetica, F3: Helvetica-Oblique, F4: Helvetica-BoldOblique
       let fontRef = "/F2";
       if (placeholder.fontWeight === "bold" && placeholder.fontStyle === "italic") {
         fontRef = "/F4";
@@ -133,26 +172,17 @@ async function generateCertificatePDFWithBackground(
         fontRef = "/F3";
       }
       
-      // Calculate text position based on alignment and width
       const placeholderWidth = placeholder.width || 150;
       const textAlign = placeholder.textAlign || "center";
-      
-      // Estimate text width (approximate: fontSize * 0.5 per character for Helvetica)
       const charWidthRatio = placeholder.fontWeight === "bold" ? 0.55 : 0.5;
       const estimatedTextWidth = text.length * fontSize * charWidthRatio;
       
-      // Calculate X position based on alignment
       let pdfX = placeholder.x;
       if (textAlign === "center") {
-        // Center the text within the placeholder width
         pdfX = placeholder.x + (placeholderWidth - estimatedTextWidth) / 2;
       } else if (textAlign === "right") {
-        // Align text to the right edge of the placeholder
         pdfX = placeholder.x + placeholderWidth - estimatedTextWidth;
       }
-      // For "left" alignment, use the original x position
-      
-      // Ensure pdfX doesn't go negative
       pdfX = Math.max(0, pdfX);
       
       textObjects += `
@@ -246,21 +276,35 @@ ET
     imageData = await fetchImageAsBase64(template.background_url);
   }
 
-  // Build PDF with or without background image
+  // Handle QR code
+  let qrData: { pdfObjText: string; imageBytes: Uint8Array; drawCommand: string } | null = null;
+  if (hasQRPlaceholder && qrPlaceholder) {
+    qrData = await buildQRXObject(verificationUrl, qrPlaceholder, height);
+  }
+
+  // Build PDF with or without background image, with or without QR
   if (imageData) {
     console.log('Generating PDF with background image, format:', imageData.format);
-    return generatePDFWithImage(width, height, textObjects, imageData);
+    return generatePDFWithImage(width, height, textObjects, imageData, qrData);
   } else {
     console.log('Generating PDF without background image');
-    return generatePDFWithoutImage(width, height, textObjects);
+    return generatePDFWithoutImage(width, height, textObjects, qrData);
   }
 }
 
-function generatePDFWithoutImage(width: number, height: number, textObjects: string): Uint8Array {
-  const streamContent = textObjects;
-  const streamLength = streamContent.length;
+function generatePDFWithoutImage(
+  width: number, 
+  height: number, 
+  textObjects: string,
+  qrData: { pdfObjText: string; imageBytes: Uint8Array; drawCommand: string } | null
+): Uint8Array {
+  const hasQR = !!qrData;
 
-  const pdfContent = `%PDF-1.4
+  const streamContent = (hasQR ? qrData!.drawCommand : "") + textObjects;
+  const streamLength = new TextEncoder().encode(streamContent).length;
+
+  if (!hasQR) {
+    const pdfContent = `%PDF-1.4
 1 0 obj
 << /Type /Catalog /Pages 2 0 R >>
 endobj
@@ -313,27 +357,50 @@ trailer
 startxref
 1870
 %%EOF`;
+    return new TextEncoder().encode(pdfContent);
+  }
 
-  return new TextEncoder().encode(pdfContent);
+  // With QR code as object 9
+  const qrBytes = qrData!.imageBytes;
+  const objects: string[] = [];
+
+  objects.push(`1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj`);
+  objects.push(`2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj`);
+  objects.push(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R /F4 8 0 R >> /XObject << /QRImg 9 0 R >> >> >>\nendobj`);
+  objects.push(`4 0 obj\n<< /Length ${streamLength} >>\nstream\n${streamContent}\nendstream\nendobj`);
+  objects.push(`5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj`);
+  objects.push(`6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj`);
+  objects.push(`7 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>\nendobj`);
+  objects.push(`8 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique >>\nendobj`);
+  objects.push(`9 0 obj\n${qrData!.pdfObjText}\nstream`);
+
+  const header = `%PDF-1.4\n${objects.join('\n\n')}\n`;
+  const headerBytes = new TextEncoder().encode(header);
+  const afterStream = new TextEncoder().encode(`\nendstream\nendobj\n\ntrailer\n<< /Size 10 /Root 1 0 R >>\nstartxref\n${headerBytes.length + qrBytes.length + 50}\n%%EOF`);
+
+  const total = new Uint8Array(headerBytes.length + qrBytes.length + afterStream.length);
+  total.set(headerBytes, 0);
+  total.set(qrBytes, headerBytes.length);
+  total.set(afterStream, headerBytes.length + qrBytes.length);
+  return total;
 }
 
 function generatePDFWithImage(
   width: number, 
   height: number, 
   textObjects: string, 
-  imageData: { data: Uint8Array; format: string }
+  imageData: { data: Uint8Array; format: string },
+  qrData: { pdfObjText: string; imageBytes: Uint8Array; drawCommand: string } | null
 ): Uint8Array {
   const imageBytes = imageData.data;
   const isPng = imageData.format === 'png';
   
-  // For PNG, we need to extract raw image data from the PNG file
-  // For JPEG, we can embed directly with DCTDecode
   if (isPng) {
     console.log('Processing PNG image for PDF embedding');
-    return generatePDFWithPngImage(width, height, textObjects, imageBytes);
+    return generatePDFWithPngImage(width, height, textObjects, imageBytes, qrData);
   } else {
     console.log('Processing JPEG image for PDF embedding');
-    return generatePDFWithJpegImage(width, height, textObjects, imageBytes);
+    return generatePDFWithJpegImage(width, height, textObjects, imageBytes, qrData);
   }
 }
 
@@ -341,130 +408,76 @@ function generatePDFWithJpegImage(
   width: number,
   height: number,
   textObjects: string,
-  imageBytes: Uint8Array
+  imageBytes: Uint8Array,
+  qrData: { pdfObjText: string; imageBytes: Uint8Array; drawCommand: string } | null
 ): Uint8Array {
   const imageStreamLength = imageBytes.length;
+  const hasQR = !!qrData;
 
-  // Content stream: draw image full-page, then draw text on top
   const contentStream = `q
 ${width} 0 0 ${height} 0 0 cm
 /Img1 Do
 Q
-${textObjects}`;
-  const contentStreamLength = contentStream.length;
+${hasQR ? qrData!.drawCommand : ""}${textObjects}`;
+  const contentStreamLength = new TextEncoder().encode(contentStream).length;
 
-  // Build PDF structure with image XObject
+  const xobjects = hasQR
+    ? `/XObject << /Img1 9 0 R /QRImg 10 0 R >>`
+    : `/XObject << /Img1 9 0 R >>`;
+
   const objects: string[] = [];
-  
-  // Object 1: Catalog
-  objects.push(`1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj`);
+  objects.push(`1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj`);
+  objects.push(`2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj`);
+  objects.push(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R /F4 8 0 R >> ${xobjects} >> >>\nendobj`);
+  objects.push(`4 0 obj\n<< /Length ${contentStreamLength} >>\nstream\n${contentStream}\nendstream\nendobj`);
+  objects.push(`5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj`);
+  objects.push(`6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj`);
+  objects.push(`7 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>\nendobj`);
+  objects.push(`8 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique >>\nendobj`);
+  objects.push(`9 0 obj\n<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageStreamLength} >>\nstream`);
 
-  // Object 2: Pages
-  objects.push(`2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj`);
-
-  // Object 3: Page
-  objects.push(`3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R /F4 8 0 R >> /XObject << /Img1 9 0 R >> >> >>
-endobj`);
-
-  // Object 4: Content stream
-  objects.push(`4 0 obj
-<< /Length ${contentStreamLength} >>
-stream
-${contentStream}
-endstream
-endobj`);
-
-  // Object 5: Bold font
-  objects.push(`5 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
-endobj`);
-
-  // Object 6: Regular font
-  objects.push(`6 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj`);
-
-  // Object 7: Oblique (italic) font
-  objects.push(`7 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>
-endobj`);
-
-  // Object 8: Bold Oblique font
-  objects.push(`8 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique >>
-endobj`);
-
-  // Object 9: Image XObject (JPEG)
-  objects.push(`9 0 obj
-<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageStreamLength} >>
-stream`);
-
-  // Build the PDF header and objects (text parts)
-  const headerAndObjects = `%PDF-1.4
-${objects.join('\n\n')}
-`;
-
-  // Convert to bytes
+  const headerAndObjects = `%PDF-1.4\n${objects.join('\n\n')}\n`;
   const headerBytes = new TextEncoder().encode(headerAndObjects);
-  
-  // End of image stream and remaining objects
-  const afterImageStream = `
-endstream
-endobj
 
-xref
-0 10
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000350 00000 n 
-0000001500 00000 n 
-0000001577 00000 n 
-0000001654 00000 n 
-0000001750 00000 n 
-0000001850 00000 n 
+  if (!hasQR) {
+    const afterImageStream = `\nendstream\nendobj\n\ntrailer\n<< /Size 10 /Root 1 0 R >>\nstartxref\n${headerBytes.length + imageBytes.length + 50}\n%%EOF`;
+    const afterBytes = new TextEncoder().encode(afterImageStream);
+    const total = new Uint8Array(headerBytes.length + imageBytes.length + afterBytes.length);
+    total.set(headerBytes, 0);
+    total.set(imageBytes, headerBytes.length);
+    total.set(afterBytes, headerBytes.length + imageBytes.length);
+    console.log('PDF with JPEG image generated, total size:', total.length);
+    return total;
+  }
 
-trailer
-<< /Size 10 /Root 1 0 R >>
-startxref
-${headerBytes.length + imageBytes.length + 50}
-%%EOF`;
-  
-  const afterBytes = new TextEncoder().encode(afterImageStream);
+  // With QR
+  const qrBytes = qrData!.imageBytes;
+  const betweenStreams = new TextEncoder().encode(`\nendstream\nendobj\n\n10 0 obj\n${qrData!.pdfObjText}\nstream`);
+  const afterQR = new TextEncoder().encode(`\nendstream\nendobj\n\ntrailer\n<< /Size 11 /Root 1 0 R >>\nstartxref\n1000\n%%EOF`);
 
-  // Combine all parts
-  const totalLength = headerBytes.length + imageBytes.length + afterBytes.length;
-  const pdfBytes = new Uint8Array(totalLength);
-  pdfBytes.set(headerBytes, 0);
-  pdfBytes.set(imageBytes, headerBytes.length);
-  pdfBytes.set(afterBytes, headerBytes.length + imageBytes.length);
-
-  console.log('PDF with JPEG image generated, total size:', totalLength);
-  return pdfBytes;
+  const total = new Uint8Array(headerBytes.length + imageBytes.length + betweenStreams.length + qrBytes.length + afterQR.length);
+  let offset = 0;
+  total.set(headerBytes, offset); offset += headerBytes.length;
+  total.set(imageBytes, offset); offset += imageBytes.length;
+  total.set(betweenStreams, offset); offset += betweenStreams.length;
+  total.set(qrBytes, offset); offset += qrBytes.length;
+  total.set(afterQR, offset);
+  console.log('PDF with JPEG + QR image generated, total size:', total.length);
+  return total;
 }
 
 function generatePDFWithPngImage(
   width: number,
   height: number,
   textObjects: string,
-  pngBytes: Uint8Array
+  pngBytes: Uint8Array,
+  qrData: { pdfObjText: string; imageBytes: Uint8Array; drawCommand: string } | null
 ): Uint8Array {
-  // Parse PNG to extract IDAT chunks (compressed image data)
-  // PNG structure: signature (8 bytes) + chunks
-  // Each chunk: length (4) + type (4) + data (length) + CRC (4)
-  
-  let offset = 8; // Skip PNG signature
+  let offset = 8;
   let imageWidth = width;
   let imageHeight = height;
   const idatChunks: Uint8Array[] = [];
-  let hasAlpha = false;
-  let colorType = 2; // RGB
+  let colorType = 2;
   
   while (offset < pngBytes.length) {
     const chunkLength = (pngBytes[offset] << 24) | (pngBytes[offset + 1] << 16) | 
@@ -480,7 +493,7 @@ function generatePDFWithPngImage(
       imageHeight = (pngBytes[offset + 12] << 24) | (pngBytes[offset + 13] << 16) | 
                     (pngBytes[offset + 14] << 8) | pngBytes[offset + 15];
       colorType = pngBytes[offset + 17];
-      hasAlpha = colorType === 4 || colorType === 6;
+      const hasAlpha = colorType === 4 || colorType === 6;
       console.log('PNG dimensions:', imageWidth, 'x', imageHeight, 'colorType:', colorType, 'hasAlpha:', hasAlpha);
     } else if (chunkType === 'IDAT') {
       idatChunks.push(pngBytes.slice(offset + 8, offset + 8 + chunkLength));
@@ -488,10 +501,9 @@ function generatePDFWithPngImage(
       break;
     }
     
-    offset += 12 + chunkLength; // 4 (length) + 4 (type) + data + 4 (CRC)
+    offset += 12 + chunkLength;
   }
   
-  // Combine all IDAT chunks
   const totalIdatLength = idatChunks.reduce((sum, chunk) => sum + chunk.length, 0);
   const combinedIdat = new Uint8Array(totalIdatLength);
   let idatOffset = 0;
@@ -499,109 +511,63 @@ function generatePDFWithPngImage(
     combinedIdat.set(chunk, idatOffset);
     idatOffset += chunk.length;
   }
-  
-  console.log('Combined IDAT length:', totalIdatLength);
-  
-  // For PNG with alpha, we need to create a soft mask
-  // For simplicity, embed as FlateDecode with PNG predictor
-  const colorSpace = hasAlpha ? '/DeviceRGB' : '/DeviceRGB';
-  const bitsPerComponent = 8;
-  
-  // Content stream: draw image full-page, then draw text on top
+
+  const hasAlpha = colorType === 4 || colorType === 6;
+  const colorSpace = hasAlpha ? '/DeviceRGB' : (colorType === 0 ? '/DeviceGray' : '/DeviceRGB');
+  const hasQR = !!qrData;
+
   const contentStream = `q
 ${width} 0 0 ${height} 0 0 cm
 /Img1 Do
 Q
-${textObjects}`;
-  const contentStreamLength = contentStream.length;
+${hasQR ? qrData!.drawCommand : ""}${textObjects}`;
+  const contentStreamLength = new TextEncoder().encode(contentStream).length;
 
-  // Build PDF with PNG image using FlateDecode and PNG predictor
+  const xobjects = hasQR
+    ? `/XObject << /Img1 9 0 R /QRImg 10 0 R >>`
+    : `/XObject << /Img1 9 0 R >>`;
+
   const objects: string[] = [];
-  
-  objects.push(`1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj`);
+  objects.push(`1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj`);
+  objects.push(`2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj`);
+  objects.push(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R /F4 8 0 R >> ${xobjects} >> >>\nendobj`);
+  objects.push(`4 0 obj\n<< /Length ${contentStreamLength} >>\nstream\n${contentStream}\nendstream\nendobj`);
+  objects.push(`5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj`);
+  objects.push(`6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj`);
+  objects.push(`7 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>\nendobj`);
+  objects.push(`8 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique >>\nendobj`);
+  objects.push(`9 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imageWidth} /Height ${imageHeight} /ColorSpace ${colorSpace} /BitsPerComponent 8 /Filter /FlateDecode /Length ${combinedIdat.length} >>\nstream`);
 
-  objects.push(`2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj`);
+  const headerText = `%PDF-1.4\n${objects.join('\n\n')}\n`;
+  const headerBytes = new TextEncoder().encode(headerText);
 
-  objects.push(`3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R /F4 8 0 R >> /XObject << /Img1 9 0 R >> >> >>
-endobj`);
+  if (!hasQR) {
+    const afterPng = new TextEncoder().encode(`\nendstream\nendobj\n\ntrailer\n<< /Size 10 /Root 1 0 R >>\nstartxref\n1000\n%%EOF`);
+    const total = new Uint8Array(headerBytes.length + combinedIdat.length + afterPng.length);
+    total.set(headerBytes, 0);
+    total.set(combinedIdat, headerBytes.length);
+    total.set(afterPng, headerBytes.length + combinedIdat.length);
+    console.log('PDF with PNG image generated, total size:', total.length);
+    return total;
+  }
 
-  objects.push(`4 0 obj
-<< /Length ${contentStreamLength} >>
-stream
-${contentStream}
-endstream
-endobj`);
+  // With QR
+  const qrBytes = qrData!.imageBytes;
+  const betweenStreams = new TextEncoder().encode(`\nendstream\nendobj\n\n10 0 obj\n${qrData!.pdfObjText}\nstream`);
+  const afterQR = new TextEncoder().encode(`\nendstream\nendobj\n\ntrailer\n<< /Size 11 /Root 1 0 R >>\nstartxref\n1000\n%%EOF`);
 
-  objects.push(`5 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
-endobj`);
-
-  objects.push(`6 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj`);
-
-  objects.push(`7 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>
-endobj`);
-
-  objects.push(`8 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique >>
-endobj`);
-
-  // PNG image as XObject with FlateDecode and PNG predictor
-  const colorsPerPixel = hasAlpha ? 4 : 3;
-  objects.push(`9 0 obj
-<< /Type /XObject /Subtype /Image /Width ${imageWidth} /Height ${imageHeight} /ColorSpace ${colorSpace} /BitsPerComponent ${bitsPerComponent} /Filter /FlateDecode /DecodeParms << /Predictor 15 /Colors ${colorsPerPixel} /BitsPerComponent 8 /Columns ${imageWidth} >> /Length ${combinedIdat.length} >>
-stream`);
-
-  const headerAndObjects = `%PDF-1.4
-${objects.join('\n\n')}
-`;
-
-  const headerBytes = new TextEncoder().encode(headerAndObjects);
-  
-  const afterImageStream = `
-endstream
-endobj
-
-xref
-0 10
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000350 00000 n 
-0000001500 00000 n 
-0000001577 00000 n 
-0000001654 00000 n 
-0000001750 00000 n 
-0000001850 00000 n
-
-trailer
-<< /Size 10 /Root 1 0 R >>
-startxref
-${headerBytes.length + combinedIdat.length + 50}
-%%EOF`;
-  
-  const afterBytes = new TextEncoder().encode(afterImageStream);
-
-  const totalLength = headerBytes.length + combinedIdat.length + afterBytes.length;
-  const pdfBytes = new Uint8Array(totalLength);
-  pdfBytes.set(headerBytes, 0);
-  pdfBytes.set(combinedIdat, headerBytes.length);
-  pdfBytes.set(afterBytes, headerBytes.length + combinedIdat.length);
-
-  console.log('PDF with PNG image generated, total size:', totalLength);
-  return pdfBytes;
+  const total = new Uint8Array(headerBytes.length + combinedIdat.length + betweenStreams.length + qrBytes.length + afterQR.length);
+  let off = 0;
+  total.set(headerBytes, off); off += headerBytes.length;
+  total.set(combinedIdat, off); off += combinedIdat.length;
+  total.set(betweenStreams, off); off += betweenStreams.length;
+  total.set(qrBytes, off); off += qrBytes.length;
+  total.set(afterQR, off);
+  console.log('PDF with PNG + QR image generated, total size:', total.length);
+  return total;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -612,22 +578,18 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error('No authorization header provided');
       return new Response(
         JSON.stringify({ error: 'No authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get user from token
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
-      console.error('Failed to get user:', userError);
       return new Response(
         JSON.stringify({ error: 'Invalid user token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -645,7 +607,7 @@ serve(async (req) => {
       );
     }
 
-    // Check if user is enrolled with completed payment
+    // Check enrollment
     const { data: enrollment, error: enrollmentError } = await supabase
       .from('enrollments')
       .select('*')
@@ -655,7 +617,6 @@ serve(async (req) => {
       .single();
 
     if (enrollmentError || !enrollment) {
-      console.error('Enrollment check failed:', enrollmentError);
       return new Response(
         JSON.stringify({ error: 'You must complete enrollment to receive a certificate' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -671,13 +632,8 @@ serve(async (req) => {
       .single();
 
     if (existingCert) {
-      console.log('Certificate already exists:', existingCert.certificate_number);
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          certificate: existingCert,
-          message: 'Certificate already issued'
-        }),
+        JSON.stringify({ success: true, certificate: existingCert, message: 'Certificate already issued' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -690,21 +646,19 @@ serve(async (req) => {
       .single();
 
     if (courseError || !course) {
-      console.error('Course fetch failed:', courseError);
       return new Response(
         JSON.stringify({ error: 'Course not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Fetch certificate template for this course or default
+    // Fetch certificate template
     const { data: templates } = await supabase
       .from('certificate_templates')
       .select('*')
       .or(`course_id.eq.${courseId},is_default.eq.true`)
       .order('course_id', { ascending: false, nullsFirst: false });
     
-    // Prefer course-specific template, fall back to default
     const template = templates?.find(t => t.course_id === courseId) || templates?.find(t => t.is_default) || null;
     
     console.log('Using template:', template?.name || 'Default built-in', 'Background:', template?.background_url || 'none');
@@ -724,9 +678,14 @@ serve(async (req) => {
       day: 'numeric'
     });
 
-    console.log('Generating PDF for:', studentName, course.title);
+    // Build verification URL (points to the public verify page)
+    const appUrl = supabaseUrl.includes('supabase.co')
+      ? 'https://skilllafrica.lovable.app'
+      : 'http://localhost:8080';
+    const verificationUrl = `${appUrl}/certificate/verify/${certificateNumber}`;
 
-    // Generate PDF content using template if available (with background image support)
+    console.log('Generating PDF for:', studentName, course.title, 'verify:', verificationUrl);
+
     const pdfBytes = await generateCertificatePDFWithBackground(
       studentName,
       course.title,
@@ -734,6 +693,7 @@ serve(async (req) => {
       certificateNumber,
       issueDate,
       course.instructor_name || "Course Instructor",
+      verificationUrl,
       template ? {
         placeholders: template.placeholders as Placeholder[],
         width: template.width,
@@ -753,17 +713,14 @@ serve(async (req) => {
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
-      // Continue without storage URL if upload fails
     }
 
-    // Get public URL
     const { data: urlData } = supabase.storage
       .from('certificates')
       .getPublicUrl(fileName);
 
     const pdfUrl = urlData?.publicUrl || null;
 
-    // Create certificate record
     const { data: certificate, error: certError } = await supabase
       .from('certificates')
       .insert({
@@ -777,21 +734,16 @@ serve(async (req) => {
       .single();
 
     if (certError) {
-      console.error('Certificate creation error:', certError);
       return new Response(
         JSON.stringify({ error: 'Failed to create certificate record' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Certificate created successfully:', certificate.certificate_number, 'PDF URL:', pdfUrl);
+    console.log('Certificate created successfully:', certificate.certificate_number);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        certificate,
-        message: 'Certificate generated successfully'
-      }),
+      JSON.stringify({ success: true, certificate, message: 'Certificate generated successfully' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

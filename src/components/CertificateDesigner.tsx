@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 interface Placeholder {
   id: string;
-  type: "student_name" | "course_name" | "date" | "certificate_id" | "instructor_name" | "school_name" | "custom";
+  type: "student_name" | "course_name" | "date" | "certificate_id" | "instructor_name" | "school_name" | "custom" | "qr_code";
   label: string;
   x: number;
   y: number;
@@ -52,6 +52,7 @@ const placeholderTypes = [
   { value: "instructor_name", label: "Instructor Name", preview: "[Instructor Name]" },
   { value: "school_name", label: "School Name", preview: "[School Name]" },
   { value: "custom", label: "Custom Text", preview: "Custom Text" },
+  { value: "qr_code", label: "QR Code (Verification)", preview: "[QR Code]" },
 ];
 
 const DraggablePlaceholder = ({ 
@@ -134,6 +135,8 @@ const DraggablePlaceholder = ({
     ? placeholder.customText || "Custom Text"
     : placeholderTypes.find(p => p.value === placeholder.type)?.preview || placeholder.label;
 
+  const isQR = placeholder.type === "qr_code";
+
   return (
     <div
       ref={setNodeRef}
@@ -160,8 +163,32 @@ const DraggablePlaceholder = ({
         {...listeners}
         {...attributes}
       >
-        <GripVertical className="w-3 h-3 opacity-50 flex-shrink-0" />
-        <span className="truncate">{previewText}</span>
+        {isQR ? (
+          <div className="flex flex-col items-center gap-0.5">
+            {/* Mini QR grid preview */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1 }}>
+              {Array.from({ length: 25 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: Math.max(4, placeholder.fontSize * scale * 0.12),
+                    height: Math.max(4, placeholder.fontSize * scale * 0.12),
+                    backgroundColor: [0,1,2,5,10,12,14,18,20,22,24].includes(i)
+                      ? 'hsl(var(--foreground))'
+                      : 'hsl(var(--background))',
+                    border: '0.5px solid hsl(var(--border))',
+                  }}
+                />
+              ))}
+            </div>
+            <span style={{ fontSize: Math.max(8, placeholder.fontSize * scale * 0.35) }}>QR Code</span>
+          </div>
+        ) : (
+          <>
+            <GripVertical className="w-3 h-3 opacity-50 flex-shrink-0" />
+            <span className="truncate">{previewText}</span>
+          </>
+        )}
       </div>
       
       {/* Right resize handle */}

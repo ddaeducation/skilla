@@ -20,6 +20,7 @@ import Profile from "./pages/Profile";
 import BecomeInstructor from "./pages/BecomeInstructor";
 import NotFound from "./pages/NotFound";
 import NoteReader from "./components/NoteReader";
+import CertificateVerify from "./pages/CertificateVerify";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/become-instructor" element={<BecomeInstructor />} />
+          <Route path="/certificate/verify/:certNumber" element={<CertificateVerify />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
