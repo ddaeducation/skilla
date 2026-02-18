@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Award, Download, Loader2, CheckCircle, Clock, GraduationCap } from "lucide-react";
 import { User } from "@supabase/supabase-js";
+import CertificateRenderer, { CertificateData } from "@/components/CertificateRenderer";
 
 interface Certificate {
   id: string;
@@ -39,12 +40,46 @@ interface CertificatesSectionProps {
   user: User;
 }
 
+// Hidden off-screen renderer for html2canvas capture
+function HiddenCertificateRenderer({
+  data,
+  containerRef,
+}: {
+  data: CertificateData | null;
+  containerRef: React.RefObject<HTMLDivElement>;
+}) {
+  if (!data) return null;
+  const w = data.template?.width || 842;
+  const h = data.template?.height || 595;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        left: -9999,
+        top: -9999,
+        width: w,
+        height: h,
+        zIndex: -1,
+        pointerEvents: "none",
+      }}
+    >
+      <CertificateRenderer ref={containerRef} data={data} scale={1} />
+    </div>
+  );
+}
+
 const CertificatesSection = ({ user }: CertificatesSectionProps) => {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
+
+  // For client-side PDF rendering
+  const [renderData, setRenderData] = useState<CertificateData | null>(null);
+  const renderRef = useRef<HTMLDivElement>(null);
+  const pendingDownloadRef = useRef<{ certNumber: string; resolve: () => void } | null>(null);
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,121 +88,67 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
 
   const fetchCertificatesAndProgress = async () => {
     try {
-      // Fetch existing certificates
       const { data: certs, error: certsError } = await supabase
         .from("certificates")
-        .select(`
-          id,
-          certificate_number,
-          issued_at,
-          pdf_url,
-          course:courses(id, title, school)
-        `)
+        .select(`id, certificate_number, issued_at, pdf_url, course:courses(id, title, school)`)
         .eq("user_id", user.id);
-
       if (certsError) throw certsError;
 
-      // Fetch enrollments with course info
       const { data: enrollments, error: enrollError } = await supabase
         .from("enrollments")
-        .select(`
-          course_id,
-          course:courses(id, title, school)
-        `)
+        .select(`course_id, course:courses(id, title, school)`)
         .eq("user_id", user.id)
         .eq("payment_status", "completed");
-
       if (enrollError) throw enrollError;
 
-      // Fetch lesson content for each enrolled course
       const courseIds = enrollments?.map(e => e.course_id) || [];
-      
-      const { data: lessons, error: lessonsError } = await supabase
-        .from("lesson_content")
-        .select("id, course_id")
-        .in("course_id", courseIds.length > 0 ? courseIds : ['no-courses']);
+      const fallback = ['no-courses'];
 
-      if (lessonsError) throw lessonsError;
+      const [
+        { data: lessons },
+        { data: progress },
+        { data: quizzes },
+        { data: quizAttempts },
+        { data: assignments },
+        { data: submissions },
+      ] = await Promise.all([
+        supabase.from("lesson_content").select("id, course_id").in("course_id", courseIds.length > 0 ? courseIds : fallback),
+        supabase.from("student_progress").select("lesson_id, course_id, completed").eq("user_id", user.id).in("course_id", courseIds.length > 0 ? courseIds : fallback),
+        supabase.from("quizzes").select("id, course_id").in("course_id", courseIds.length > 0 ? courseIds : fallback),
+        supabase.from("quiz_attempts").select("quiz_id, passed").eq("user_id", user.id),
+        supabase.from("assignments").select("id, course_id").in("course_id", courseIds.length > 0 ? courseIds : fallback),
+        supabase.from("assignment_submissions").select("assignment_id").eq("user_id", user.id),
+      ]);
 
-      // Fetch student progress
-      const { data: progress, error: progressError } = await supabase
-        .from("student_progress")
-        .select("lesson_id, course_id, completed")
-        .eq("user_id", user.id)
-        .in("course_id", courseIds.length > 0 ? courseIds : ['no-courses']);
-
-      if (progressError) throw progressError;
-
-      // Fetch quizzes for enrolled courses
-      const { data: quizzes, error: quizzesError } = await supabase
-        .from("quizzes")
-        .select("id, course_id")
-        .in("course_id", courseIds.length > 0 ? courseIds : ['no-courses']);
-
-      if (quizzesError) throw quizzesError;
-
-      // Fetch quiz attempts
-      const { data: quizAttempts, error: attemptsError } = await supabase
-        .from("quiz_attempts")
-        .select("quiz_id, passed")
-        .eq("user_id", user.id);
-
-      if (attemptsError) throw attemptsError;
-
-      // Fetch assignments for enrolled courses
-      const { data: assignments, error: assignmentsError } = await supabase
-        .from("assignments")
-        .select("id, course_id")
-        .in("course_id", courseIds.length > 0 ? courseIds : ['no-courses']);
-
-      if (assignmentsError) throw assignmentsError;
-
-      // Fetch assignment submissions
-      const { data: submissions, error: submissionsError } = await supabase
-        .from("assignment_submissions")
-        .select("assignment_id")
-        .eq("user_id", user.id);
-
-      if (submissionsError) throw submissionsError;
-
-      // Calculate progress for each course
       const certificateIds = new Set(certs?.map(c => c.course?.id) || []);
       const submittedAssignmentIds = new Set(submissions?.map(s => s.assignment_id) || []);
-      const passedQuizIds = new Set(
-        (quizAttempts || []).filter(a => a.passed).map(a => a.quiz_id)
-      );
-      
+      const passedQuizIds = new Set((quizAttempts || []).filter(a => a.passed).map(a => a.quiz_id));
+
       const progressData: CourseProgress[] = (enrollments || []).map(enrollment => {
         const courseLessons = lessons?.filter(l => l.course_id === enrollment.course_id) || [];
-        const courseProgress = progress?.filter(p => p.course_id === enrollment.course_id) || [];
-        const completedLessons = courseProgress.filter(p => p.completed).length;
-        const totalLessons = courseLessons.length;
-
+        const cp = progress?.filter(p => p.course_id === enrollment.course_id) || [];
+        const completedLessons = cp.filter(p => p.completed).length;
         const courseQuizzes = quizzes?.filter(q => q.course_id === enrollment.course_id) || [];
-        const totalQuizzes = courseQuizzes.length;
         const passedQuizzes = courseQuizzes.filter(q => passedQuizIds.has(q.id)).length;
-
         const courseAssignments = assignments?.filter(a => a.course_id === enrollment.course_id) || [];
-        const totalAssignments = courseAssignments.length;
         const submittedAssignments = courseAssignments.filter(a => submittedAssignmentIds.has(a.id)).length;
-
-        const totalItems = totalLessons + totalQuizzes + totalAssignments;
+        const totalItems = courseLessons.length + courseQuizzes.length + courseAssignments.length;
         const completedItems = completedLessons + passedQuizzes + submittedAssignments;
         const percentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
-        
+
         return {
           courseId: enrollment.course_id,
           courseTitle: enrollment.course?.title || "Unknown Course",
           school: enrollment.course?.school || "Unknown School",
           completedLessons,
-          totalLessons,
+          totalLessons: courseLessons.length,
           passedQuizzes,
-          totalQuizzes,
+          totalQuizzes: courseQuizzes.length,
           submittedAssignments,
-          totalAssignments,
+          totalAssignments: courseAssignments.length,
           percentage,
           isComplete: totalItems > 0 && completedItems >= totalItems,
-          hasCertificate: certificateIds.has(enrollment.course_id)
+          hasCertificate: certificateIds.has(enrollment.course_id),
         };
       });
 
@@ -175,11 +156,7 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
       setCourseProgress(progressData);
     } catch (error) {
       console.error("Error fetching certificates:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load certificates",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to load certificates", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -188,62 +165,115 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
   const generateCertificate = async (courseId: string) => {
     setGenerating(courseId);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-certificate", {
-        body: { courseId },
-      });
-
+      const { data, error } = await supabase.functions.invoke("generate-certificate", { body: { courseId } });
       if (error) throw error;
-
-      toast({
-        title: "Certificate Generated!",
-        description: "Your certificate has been created successfully.",
-      });
-
-      // Refresh the list
+      toast({ title: "Certificate Generated!", description: "Your certificate has been created successfully." });
       await fetchCertificatesAndProgress();
     } catch (error: any) {
-      console.error("Error generating certificate:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to generate certificate",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Failed to generate certificate", variant: "destructive" });
     } finally {
       setGenerating(null);
     }
   };
 
-  const downloadCertificate = async (certId: string, courseId: string, certificateNumber: string) => {
-    setDownloading(certId);
+  // Fetches the certificate data + current template from backend, then renders client-side PDF
+  const downloadCertificate = async (cert: Certificate) => {
+    setDownloading(cert.id);
     try {
-      // Regenerate with current template before downloading
-      const { data, error } = await supabase.functions.invoke("generate-certificate", {
-        body: { courseId, regenerate: true },
+      // 1. Fetch current template for this course
+      const courseId = cert.course?.id;
+      const { data: templates } = await supabase
+        .from("certificate_templates")
+        .select("*")
+        .or(`course_id.eq.${courseId},is_default.eq.true`)
+        .order("course_id", { ascending: false, nullsFirst: false });
+
+      const template = templates?.find(t => t.course_id === courseId) || templates?.find(t => t.is_default) || null;
+
+      // 2. Fetch student profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .single();
+
+      // 3. Fetch course details
+      const { data: course } = await supabase
+        .from("courses")
+        .select("title, school, instructor_name")
+        .eq("id", courseId)
+        .single();
+
+      const appUrl = window.location.origin;
+      const verificationUrl = `${appUrl}/certificate/verify/${cert.certificate_number}`;
+
+      const issueDate = new Date(cert.issued_at).toLocaleDateString("en-US", {
+        year: "numeric", month: "long", day: "numeric",
       });
 
-      if (error) throw error;
+      const certData: CertificateData = {
+        studentName: profile?.full_name || user.email?.split("@")[0] || "Student",
+        courseName: course?.title || cert.course?.title || "",
+        schoolName: course?.school || cert.course?.school || "",
+        certificateNumber: cert.certificate_number,
+        issueDate,
+        instructorName: course?.instructor_name || "Course Instructor",
+        verificationUrl,
+        template: template
+          ? {
+              placeholders: template.placeholders as any,
+              width: template.width,
+              height: template.height,
+              background_url: template.background_url,
+            }
+          : undefined,
+      };
 
-      const pdfUrl = data?.pdfUrl || data?.certificate?.pdf_url;
-      if (pdfUrl) {
-        window.open(pdfUrl, "_blank");
-      } else {
-        toast({
-          title: "Certificate Ready",
-          description: `Certificate #${certificateNumber} is available but PDF URL is missing.`,
-        });
-      }
+      // 4. Mount the hidden renderer with data and wait for images to load
+      await new Promise<void>((resolve) => {
+        pendingDownloadRef.current = { certNumber: cert.certificate_number, resolve };
+        setRenderData(certData);
+        // Resolve will be called from useEffect once renderRef is populated
+        setTimeout(resolve, 100); // short delay for React to commit
+      });
 
-      // Refresh so the stored url is up to date
-      await fetchCertificatesAndProgress();
+      // 5. Wait a bit more for images to fully load
+      await new Promise((r) => setTimeout(r, 1500));
+
+      // 6. Capture with html2canvas and produce PDF
+      const { default: html2canvas } = await import("html2canvas");
+      const { default: jsPDF } = await import("jspdf");
+
+      const el = renderRef.current;
+      if (!el) throw new Error("Render element not available");
+
+      const w = certData.template?.width || 842;
+      const h = certData.template?.height || 595;
+      const orientation = w > h ? "landscape" : "portrait";
+
+      const canvas = await html2canvas(el, {
+        useCORS: true,
+        allowTaint: false,
+        scale: 2,
+        width: w,
+        height: h,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const pdf = new jsPDF({ orientation, unit: "pt", format: [w, h] });
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      pdf.addImage(imgData, "JPEG", 0, 0, w, h);
+      pdf.save(`certificate-${cert.certificate_number}.pdf`);
+
+      toast({ title: "Downloaded!", description: "Your certificate PDF has been saved." });
     } catch (error: any) {
-      console.error("Error regenerating certificate:", error);
-      toast({
-        title: "Download Failed",
-        description: error.message || "Failed to regenerate certificate with current template",
-        variant: "destructive",
-      });
+      console.error("Certificate download error:", error);
+      toast({ title: "Download Failed", description: error.message || "Failed to generate certificate PDF", variant: "destructive" });
     } finally {
       setDownloading(null);
+      setRenderData(null);
+      pendingDownloadRef.current = null;
     }
   };
 
@@ -260,11 +290,12 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
 
   return (
     <div>
+      {/* Hidden off-screen certificate renderer for PDF capture */}
+      <HiddenCertificateRenderer data={renderData} containerRef={renderRef} />
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Certificates</h1>
-        <p className="text-muted-foreground">
-          Your earned certificates of completion
-        </p>
+        <p className="text-muted-foreground">Your earned certificates of completion</p>
       </div>
 
       {/* Earned Certificates */}
@@ -294,13 +325,13 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
                   </div>
                   <Button
                     className="w-full"
-                    onClick={() => downloadCertificate(cert.id, cert.course?.id, cert.certificate_number)}
-                    disabled={downloading === cert.id}
+                    onClick={() => downloadCertificate(cert)}
+                    disabled={!!downloading}
                   >
                     {downloading === cert.id ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Generating...
+                        Building PDF...
                       </>
                     ) : (
                       <>
@@ -361,15 +392,9 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
                     disabled={generating === course.courseId}
                   >
                     {generating === course.courseId ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Generating...
-                      </>
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
                     ) : (
-                      <>
-                        <Award className="w-4 h-4 mr-2" />
-                        Claim Certificate
-                      </>
+                      <><Award className="w-4 h-4 mr-2" />Claim Certificate</>
                     )}
                   </Button>
                 </CardContent>
