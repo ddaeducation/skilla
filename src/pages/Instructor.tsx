@@ -28,7 +28,6 @@ import CouponManagement from "@/components/CouponManagement";
 import InstructorPayoutSettings from "@/components/InstructorPayoutSettings";
 import InstructorWithdrawal from "@/components/InstructorWithdrawal";
 import { CourseInstructorManager } from "@/components/CourseInstructorManager";
-import { InstructorDirectoryTab } from "@/components/InstructorDirectoryTab";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -1513,15 +1512,6 @@ const Instructor = () => {
               })()}
             </TabsContent>
 
-            {/* Instructors Tab */}
-            <TabsContent value="instructors" className="space-y-4">
-              <InstructorDirectoryTab
-                currentUserId={currentUserId}
-                courses={courses}
-                onCourseUpdated={() => currentUserId && fetchData(currentUserId)}
-              />
-            </TabsContent>
-
             {/* Coupons Tab */}
             <TabsContent value="coupons" className="space-y-4">
               <CouponManagement 
@@ -1529,7 +1519,6 @@ const Instructor = () => {
                 instructorCourseIds={courses.map(c => c.id)} 
               />
             </TabsContent>
-
 
             {/* Earnings Tab */}
             <TabsContent value="earnings" className="space-y-4">
