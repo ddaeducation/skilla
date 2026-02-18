@@ -25,6 +25,7 @@ import {
   TrendingUp,
   Ticket,
   Wallet,
+  UserCog,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,6 +41,7 @@ const navigationItems = [
   { id: "grading", title: "Grading", icon: ClipboardCheck },
   { id: "progress", title: "Progress", icon: TrendingUp },
   { id: "students", title: "Students", icon: Users },
+  { id: "instructors", title: "Instructors", icon: UserCog },
   { id: "coupons", title: "Coupons", icon: Ticket },
   { id: "earnings", title: "Earnings", icon: DollarSign },
   { id: "withdraw", title: "Withdraw", icon: Wallet },
