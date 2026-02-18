@@ -2,39 +2,38 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Plus, Trash2, Crown, UserPlus, ArrowRightLeft, Loader2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Users,
+  Trash2,
+  Crown,
+  UserPlus,
+  ArrowRightLeft,
+  Loader2,
+  Search,
+  Mail,
+  CheckCircle2,
+} from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CourseInstructor {
   id: string;
   instructor_id: string;
   role: "primary" | "co_instructor";
-  created_at: string;
-  profile?: {
-    full_name: string | null;
-    email: string | null;
-  };
 }
 
-interface Instructor {
+interface InstructorProfile {
   id: string;
   full_name: string | null;
   email: string | null;
@@ -56,12 +55,14 @@ export const CourseInstructorManager = ({
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [courseInstructors, setCourseInstructors] = useState<CourseInstructor[]>([]);
-  const [availableInstructors, setAvailableInstructors] = useState<Instructor[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
-  const [selectedInstructor, setSelectedInstructor] = useState<string>("");
-  const [transferToInstructor, setTransferToInstructor] = useState<string>("");
-  const [submitting, setSubmitting] = useState(false);
+  const [allInstructors, setAllInstructors] = useState<InstructorProfile[]>([]);
+  const [profileMap, setProfileMap] = useState<Map<string, InstructorProfile>>(new Map());
+  const [search, setSearch] = useState("");
+  const [submitting, setSubmitting] = useState<string | null>(null); // holds instructor id being acted on
+
+  // Confirmation dialogs
+  const [confirmTransfer, setConfirmTransfer] = useState<InstructorProfile | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null); // instructor_id
 
   useEffect(() => {
     fetchData();
@@ -70,50 +71,31 @@ export const CourseInstructorManager = ({
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch current course instructors
-      const { data: instructorsData, error: instructorsError } = await supabase
-        .from("course_instructors")
-        .select("*")
-        .eq("course_id", courseId);
 
-      if (instructorsError) throw instructorsError;
+      // Fetch assigned course instructors + all platform instructors in parallel
+      const [assignedRes, rolesRes] = await Promise.all([
+        supabase.from("course_instructors").select("*").eq("course_id", courseId),
+        supabase.from("user_roles").select("user_id").in("role", ["moderator", "admin"]),
+      ]);
 
-      // Fetch profiles for course instructors
-      if (instructorsData && instructorsData.length > 0) {
-        const instructorIds = instructorsData.map(i => i.instructor_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, email")
-          .in("id", instructorIds);
+      if (assignedRes.error) throw assignedRes.error;
+      setCourseInstructors(
+        (assignedRes.data || []).map((i) => ({
+          ...i,
+          role: i.role as "primary" | "co_instructor",
+        }))
+      );
 
-        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-        
-        setCourseInstructors(
-          instructorsData.map(i => ({
-            ...i,
-            role: i.role as "primary" | "co_instructor",
-            profile: profileMap.get(i.instructor_id) || null,
-          }))
-        );
-      } else {
-        setCourseInstructors([]);
-      }
-
-      // Fetch all instructors (users with moderator or admin role)
-      const { data: rolesData } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .in("role", ["moderator", "admin"]);
-
-      if (rolesData && rolesData.length > 0) {
-        const userIds = rolesData.map(r => r.user_id);
+      const userIds = (rolesRes.data || []).map((r) => r.user_id);
+      if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name, email")
           .in("id", userIds);
 
-        setAvailableInstructors(profiles || []);
+        const map = new Map((profiles || []).map((p) => [p.id, p]));
+        setProfileMap(map);
+        setAllInstructors(profiles || []);
       }
     } catch (error) {
       console.error("Error fetching instructors:", error);
@@ -127,342 +109,306 @@ export const CourseInstructorManager = ({
     }
   };
 
-  const handleAddCoInstructor = async () => {
-    if (!selectedInstructor) {
-      toast({
-        title: "Select an instructor",
-        description: "Please select an instructor to add",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if already added
-    if (courseInstructors.some(i => i.instructor_id === selectedInstructor)) {
-      toast({
-        title: "Already added",
-        description: "This instructor is already assigned to this course",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSubmitting(true);
+  const handleAddCoInstructor = async (instructorId: string) => {
+    setSubmitting(instructorId);
     try {
       const { error } = await supabase.from("course_instructors").insert({
         course_id: courseId,
-        instructor_id: selectedInstructor,
+        instructor_id: instructorId,
         role: "co_instructor",
         added_by: currentInstructorId,
       });
-
       if (error) throw error;
 
-      toast({
-        title: "Co-instructor added",
-        description: "The co-instructor has been added to this course",
-      });
+      setCourseInstructors((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), instructor_id: instructorId, role: "co_instructor" },
+      ]);
 
-      setSelectedInstructor("");
-      setDialogOpen(false);
-      fetchData();
+      toast({ title: "Co-instructor added", description: "Instructor has been added to this course." });
       onUpdate?.();
     } catch (error: any) {
-      console.error("Error adding co-instructor:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add co-instructor",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Failed to add co-instructor", variant: "destructive" });
     } finally {
-      setSubmitting(false);
+      setSubmitting(null);
     }
   };
 
   const handleRemoveInstructor = async (instructorId: string) => {
-    if (!confirm("Remove this instructor from the course?")) return;
-
+    setSubmitting(instructorId);
     try {
       const { error } = await supabase
         .from("course_instructors")
         .delete()
         .eq("course_id", courseId)
         .eq("instructor_id", instructorId);
-
       if (error) throw error;
 
-      // Immediately remove from local state
-      setCourseInstructors(prev => prev.filter(i => i.instructor_id !== instructorId));
-
-      toast({
-        title: "Instructor removed",
-        description: "The instructor has been removed from this course",
-      });
-
+      setCourseInstructors((prev) => prev.filter((i) => i.instructor_id !== instructorId));
+      toast({ title: "Instructor removed" });
       onUpdate?.();
-    } catch (error) {
-      console.error("Error removing instructor:", error);
-      toast({
-        title: "Error",
-        description: "Failed to remove instructor",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      toast({ title: "Error", description: "Failed to remove instructor", variant: "destructive" });
+    } finally {
+      setSubmitting(null);
+      setConfirmRemove(null);
     }
   };
 
-  const handleTransferCourse = async () => {
-    if (!transferToInstructor) {
-      toast({
-        title: "Select an instructor",
-        description: "Please select an instructor to transfer the course to",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSubmitting(true);
+  const handleTransferOwnership = async (toInstructorId: string) => {
+    setSubmitting(toInstructorId);
     try {
-      // Update the course's primary instructor
       const { error: courseError } = await supabase
         .from("courses")
-        .update({ instructor_id: transferToInstructor })
+        .update({ instructor_id: toInstructorId })
         .eq("id", courseId);
-
       if (courseError) throw courseError;
 
-      // Remove old primary instructor from course_instructors if exists
       await supabase
         .from("course_instructors")
         .delete()
         .eq("course_id", courseId)
         .eq("role", "primary");
 
-      // Add new primary instructor to course_instructors
       await supabase.from("course_instructors").upsert({
         course_id: courseId,
-        instructor_id: transferToInstructor,
+        instructor_id: toInstructorId,
         role: "primary",
         added_by: currentInstructorId,
       });
 
-      toast({
-        title: "Course transferred",
-        description: "The course has been transferred to the new instructor",
-      });
-
-      setTransferToInstructor("");
-      setTransferDialogOpen(false);
+      toast({ title: "Ownership transferred", description: "The course now has a new primary instructor." });
       fetchData();
       onUpdate?.();
     } catch (error: any) {
-      console.error("Error transferring course:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to transfer course",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Failed to transfer ownership", variant: "destructive" });
     } finally {
-      setSubmitting(false);
+      setSubmitting(null);
+      setConfirmTransfer(null);
     }
   };
 
-  // Filter out already assigned instructors
-  const unassignedInstructors = availableInstructors.filter(
-    i => !courseInstructors.some(ci => ci.instructor_id === i.id) && i.id !== currentInstructorId
-  );
+  // Derived state
+  const assignedIds = new Set(courseInstructors.map((i) => i.instructor_id));
+  const primaryProfile = profileMap.get(currentInstructorId);
+
+  const filteredInstructors = allInstructors.filter((i) => {
+    if (i.id === currentInstructorId) return false; // skip self — shown separately
+    const q = search.toLowerCase();
+    return i.full_name?.toLowerCase().includes(q) || i.email?.toLowerCase().includes(q);
+  });
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Course Instructors
-            </CardTitle>
-            <CardDescription>
-              Manage instructors for {courseName}
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
-            {/* Transfer Course Dialog */}
-            <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <ArrowRightLeft className="h-4 w-4 mr-2" />
-                  Transfer Course
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Transfer Course Ownership</DialogTitle>
-                  <DialogDescription>
-                    Transfer this course to another instructor. They will become the primary owner.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Select New Owner</Label>
-                    <Select value={transferToInstructor} onValueChange={setTransferToInstructor}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an instructor..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableInstructors
-                          .filter(i => i.id !== currentInstructorId)
-                          .map(instructor => (
-                            <SelectItem key={instructor.id} value={instructor.id}>
-                              {instructor.full_name || instructor.email || "Unknown"}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button 
-                    onClick={handleTransferCourse} 
-                    disabled={submitting || !transferToInstructor}
-                    className="w-full"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Transferring...
-                      </>
-                    ) : (
-                      "Transfer Course"
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+    <div className="space-y-5">
+      {/* Header */}
+      <div>
+        <h3 className="font-semibold text-lg flex items-center gap-2">
+          <Users className="h-5 w-5 text-primary" />
+          Manage Instructors — {courseName}
+        </h3>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Browse all platform instructors and assign them as co-instructor or course owner.
+        </p>
+      </div>
 
-            {/* Add Co-Instructor Dialog */}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add Co-Instructor
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Co-Instructor</DialogTitle>
-                  <DialogDescription>
-                    Add a co-instructor who can help manage this course.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Select Instructor</Label>
-                    <Select value={selectedInstructor} onValueChange={setSelectedInstructor}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an instructor..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {unassignedInstructors.length === 0 ? (
-                          <SelectItem value="none" disabled>
-                            No available instructors
-                          </SelectItem>
-                        ) : (
-                          unassignedInstructors.map(instructor => (
-                            <SelectItem key={instructor.id} value={instructor.id}>
-                              {instructor.full_name || instructor.email || "Unknown"}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button 
-                    onClick={handleAddCoInstructor} 
-                    disabled={submitting || !selectedInstructor}
-                    className="w-full"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Adding...
-                      </>
-                    ) : (
-                      "Add Co-Instructor"
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+      {/* Current Primary Instructor */}
+      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/40">
+        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+          <Crown className="h-5 w-5 text-primary" />
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {/* Primary Instructor (from course.instructor_id) */}
-          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Crown className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium">
-                  {availableInstructors.find(i => i.id === currentInstructorId)?.full_name || "You"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {availableInstructors.find(i => i.id === currentInstructorId)?.email || "Primary Instructor"}
-                </p>
-              </div>
-            </div>
-            <Badge>Primary</Badge>
-          </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm">{primaryProfile?.full_name || "You"}</p>
+          <p className="text-xs text-muted-foreground truncate">{primaryProfile?.email || ""}</p>
+        </div>
+        <Badge>Primary Owner</Badge>
+      </div>
 
-          {/* Co-Instructors */}
+      {/* Co-Instructors already assigned */}
+      {courseInstructors.filter((i) => i.instructor_id !== currentInstructorId).length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Assigned Co-Instructors</p>
           {courseInstructors
-            .filter(i => i.instructor_id !== currentInstructorId)
-            .map(instructor => (
-              <div 
-                key={instructor.id} 
-                className="flex items-center justify-between p-3 rounded-lg border"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center">
-                    <Users className="h-5 w-5 text-muted-foreground" />
+            .filter((i) => i.instructor_id !== currentInstructorId)
+            .map((ci) => {
+              const profile = profileMap.get(ci.instructor_id);
+              return (
+                <div
+                  key={ci.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border"
+                >
+                  <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center shrink-0 text-sm font-medium">
+                    {(profile?.full_name || profile?.email || "?").charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="font-medium">
-                      {instructor.profile?.full_name || "Unknown"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {instructor.profile?.email || "Co-Instructor"}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{profile?.full_name || "Unknown"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{profile?.email || ""}</p>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
                   <Badge variant="secondary">Co-Instructor</Badge>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleRemoveInstructor(instructor.instructor_id)}
+                    className="shrink-0"
+                    disabled={submitting === ci.instructor_id}
+                    onClick={() => setConfirmRemove(ci.instructor_id)}
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    {submitting === ci.instructor_id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    )}
                   </Button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+        </div>
+      )}
 
-          {courseInstructors.filter(i => i.instructor_id !== currentInstructorId).length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No co-instructors assigned yet
+      <Separator />
+
+      {/* All platform instructors */}
+      <div className="space-y-3">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          All Platform Instructors ({allInstructors.length - 1})
+        </p>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name or email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
+          {filteredInstructors.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              {search ? "No instructors match your search." : "No other instructors on the platform."}
             </p>
           )}
+          {filteredInstructors.map((instructor) => {
+            const isAssigned = assignedIds.has(instructor.id);
+            const isBusy = submitting === instructor.id;
+
+            return (
+              <div
+                key={instructor.id}
+                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/30 transition-colors"
+              >
+                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-sm font-semibold text-primary">
+                  {(instructor.full_name || instructor.email || "?").charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {instructor.full_name || "Unnamed"}
+                  </p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                    <Mail className="h-3 w-3 shrink-0" />
+                    {instructor.email || "No email"}
+                  </p>
+                </div>
+
+                {isAssigned ? (
+                  <div className="flex items-center gap-1 text-xs text-green-600 shrink-0">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Assigned</span>
+                  </div>
+                ) : (
+                  <div className="flex gap-1 shrink-0">
+                    {/* Add as Co-Instructor */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isBusy}
+                      onClick={() => handleAddCoInstructor(instructor.id)}
+                      className="text-xs h-8 px-2"
+                    >
+                      {isBusy ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <UserPlus className="h-3.5 w-3.5 mr-1" />
+                          Co-Instructor
+                        </>
+                      )}
+                    </Button>
+                    {/* Transfer Ownership */}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={isBusy}
+                      onClick={() => setConfirmTransfer(instructor)}
+                      className="text-xs h-8 px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                    >
+                      <ArrowRightLeft className="h-3.5 w-3.5 mr-1" />
+                      Owner
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Confirm Remove Dialog */}
+      <AlertDialog open={!!confirmRemove} onOpenChange={(o) => !o && setConfirmRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Co-Instructor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove{" "}
+              <strong>
+                {profileMap.get(confirmRemove || "")?.full_name ||
+                  profileMap.get(confirmRemove || "")?.email}
+              </strong>{" "}
+              from this course?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confirmRemove && handleRemoveInstructor(confirmRemove)}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm Transfer Dialog */}
+      <AlertDialog open={!!confirmTransfer} onOpenChange={(o) => !o && setConfirmTransfer(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Transfer Course Ownership</AlertDialogTitle>
+            <AlertDialogDescription>
+              Transfer <strong>{courseName}</strong> to{" "}
+              <strong>{confirmTransfer?.full_name || confirmTransfer?.email}</strong>? They will become the
+              primary owner. You may lose management rights to this course.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-amber-600 text-white hover:bg-amber-700"
+              onClick={() => confirmTransfer && handleTransferOwnership(confirmTransfer.id)}
+            >
+              Transfer Ownership
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 };
 
