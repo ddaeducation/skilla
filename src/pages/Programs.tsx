@@ -15,7 +15,7 @@ const Programs = () => {
       subtitle: "Self-paced programs that let you go deeper into a focused skill",
       duration: "4–8 weeks (flexible, self-paced)",
       format: "Online with recorded lectures",
-      certification: "Global Nexus Institute Short-Course certificate",
+      certification: "Global Nexus Institute Certificate",
       color: "from-blue-500 to-cyan-500",
       programs: [
         {
