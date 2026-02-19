@@ -105,7 +105,7 @@ const Programs = () => {
       subtitle: "Bite-sized sessions on practical topics for immediate career wins",
       duration: "1-3 hours",
       format: "Physical/Online, Live Sessions",
-      certification: "No certification",
+      certification: "Certification",
       color: "from-orange-500 to-red-500",
       programs: [
         {
