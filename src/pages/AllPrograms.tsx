@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CheckCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Loader2, CheckCircle, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,13 @@ const categoryConfig: Record<string, { color: string; gradient: string; route: s
 };
 
 const CATEGORIES = ["Short-Course", "Professional", "Masterclass"];
+const PRICE_FILTERS = [
+  { label: "All Prices", value: "all" },
+  { label: "Free", value: "free" },
+  { label: "Under $50/mo", value: "under50" },
+  { label: "$50–$100/mo", value: "50to100" },
+  { label: "Over $100/mo", value: "over100" },
+];
 
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
@@ -106,8 +114,11 @@ const CourseCard = ({ course }: { course: Course }) => {
 
 const AllPrograms = () => {
   const navigate = useNavigate();
-  const [coursesByCategory, setCoursesByCategory] = useState<Record<string, Course[]>>({});
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedPrice, setSelectedPrice] = useState("all");
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -117,17 +128,60 @@ const AllPrograms = () => {
         .eq("approval_status", "approved");
 
       if (!error && data) {
-        const grouped: Record<string, Course[]> = {};
-        for (const cat of CATEGORIES) {
-          const filtered = data.filter((c) => c.category === cat);
-          grouped[cat] = shuffle(filtered).slice(0, 6);
-        }
-        setCoursesByCategory(grouped);
+        setAllCourses(data);
       }
       setLoading(false);
     };
     fetchCourses();
   }, []);
+
+  const isFiltering = search.trim() !== "" || selectedCategory !== "all" || selectedPrice !== "all";
+
+  const filteredCourses = useMemo(() => {
+    return allCourses.filter((course) => {
+      // Keyword search
+      const q = search.toLowerCase();
+      const matchesSearch =
+        !q ||
+        course.title.toLowerCase().includes(q) ||
+        (course.description?.toLowerCase().includes(q) ?? false) ||
+        (course.learning_outcomes?.some((s) => s.toLowerCase().includes(q)) ?? false);
+
+      // Category filter
+      const matchesCategory =
+        selectedCategory === "all" || course.category === selectedCategory;
+
+      // Price filter
+      const price = course.monthly_price ?? course.price;
+      const matchesPrice =
+        selectedPrice === "all" ||
+        (selectedPrice === "free" && price === 0) ||
+        (selectedPrice === "under50" && price > 0 && price < 50) ||
+        (selectedPrice === "50to100" && price >= 50 && price <= 100) ||
+        (selectedPrice === "over100" && price > 100);
+
+      return matchesSearch && matchesCategory && matchesPrice;
+    });
+  }, [allCourses, search, selectedCategory, selectedPrice]);
+
+  // When not filtering, show 6 random per category; when filtering, show all matches flat
+  const coursesByCategory = useMemo(() => {
+    if (isFiltering) return null;
+    const grouped: Record<string, Course[]> = {};
+    for (const cat of CATEGORIES) {
+      const filtered = allCourses.filter((c) => c.category === cat);
+      grouped[cat] = shuffle(filtered).slice(0, 6);
+    }
+    return grouped;
+  }, [allCourses, isFiltering]);
+
+  const hasResults = isFiltering ? filteredCourses.length > 0 : CATEGORIES.some((cat) => (coursesByCategory?.[cat]?.length ?? 0) > 0);
+
+  const clearFilters = () => {
+    setSearch("");
+    setSelectedCategory("all");
+    setSelectedPrice("all");
+  };
 
   return (
     <div className="min-h-screen">
@@ -139,7 +193,7 @@ const AllPrograms = () => {
             Back to Home
           </Button>
 
-          <div className="mx-auto max-w-3xl text-center mb-16">
+          <div className="mx-auto max-w-3xl text-center mb-12">
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl mb-4">
               All Programs
             </h1>
@@ -148,14 +202,120 @@ const AllPrograms = () => {
             </p>
           </div>
 
+          {/* Search & Filter Bar */}
+          <div className="max-w-5xl mx-auto mb-12 space-y-4">
+            {/* Search input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search courses by title, description, or skill..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 pr-10 h-12 text-base"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Filter chips row */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Category filter */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedCategory("all")}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                    selectedCategory === "all"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                  }`}
+                >
+                  All Categories
+                </button>
+                {CATEGORIES.map((cat) => {
+                  const cfg = categoryConfig[cat];
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(selectedCategory === cat ? "all" : cat)}
+                      className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                        selectedCategory === cat
+                          ? `bg-gradient-to-r ${cfg.gradient} text-white border-transparent`
+                          : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {cfg.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Divider */}
+              <div className="h-6 w-px bg-border hidden sm:block" />
+
+              {/* Price filter */}
+              <div className="flex flex-wrap gap-2">
+                {PRICE_FILTERS.map((pf) => (
+                  <button
+                    key={pf.value}
+                    onClick={() => setSelectedPrice(selectedPrice === pf.value ? "all" : pf.value)}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                      selectedPrice === pf.value
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {pf.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Clear all */}
+              {isFiltering && (
+                <button
+                  onClick={clearFilters}
+                  className="ml-auto flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Clear all
+                </button>
+              )}
+            </div>
+
+            {/* Results count when filtering */}
+            {isFiltering && (
+              <p className="text-sm text-muted-foreground">
+                {filteredCourses.length} course{filteredCourses.length !== 1 ? "s" : ""} found
+              </p>
+            )}
+          </div>
+
           {loading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
+          ) : !hasResults ? (
+            <div className="text-center py-20">
+              <p className="text-xl text-muted-foreground mb-4">No courses match your search.</p>
+              <Button variant="outline" onClick={clearFilters}>Clear filters</Button>
+            </div>
+          ) : isFiltering ? (
+            /* Flat grid when filtering */
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
+              {filteredCourses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </div>
           ) : (
+            /* Grouped by category when not filtering */
             CATEGORIES.map((cat) => {
               const config = categoryConfig[cat];
-              const courses = coursesByCategory[cat] || [];
+              const courses = coursesByCategory?.[cat] || [];
               if (courses.length === 0) return null;
               return (
                 <div key={cat} className="mb-20">
@@ -172,7 +332,6 @@ const AllPrograms = () => {
                       View All {config.label}
                     </Button>
                   </div>
-
                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
                     {courses.map((course) => (
                       <CourseCard key={course.id} course={course} />
