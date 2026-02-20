@@ -29,6 +29,7 @@ import InstructorPayoutSettings from "@/components/InstructorPayoutSettings";
 import InstructorWithdrawal from "@/components/InstructorWithdrawal";
 import { CourseInstructorManager } from "@/components/CourseInstructorManager";
 import { CourseDuplicateDialog } from "@/components/CourseDuplicateDialog";
+import { AIFullCourseGenerator } from "@/components/AIFullCourseGenerator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -1181,6 +1182,14 @@ const Instructor = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
+                    <div className="mb-4 flex items-center justify-between">
+                      <AIFullCourseGenerator
+                        courseId={selectedCourse.id}
+                        courseTitle={selectedCourse.title}
+                        courseDescription={selectedCourse.description}
+                        onCourseGenerated={() => fetchCourseContent(selectedCourse.id)}
+                      />
+                    </div>
                     <div className="mb-6">
                       <CourseSectionManager
                         courseId={selectedCourse.id}
