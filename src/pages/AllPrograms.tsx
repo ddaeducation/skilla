@@ -64,7 +64,7 @@ const getFallbackRating = (courseId: string) => {
   for (let i = 0; i < courseId.length; i++) {
     hash = courseId.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return (Math.abs(hash % 15) + 35) / 10;
+  return Math.abs(hash) % 2 === 0 ? 4.5 : 5.0;
 };
 
 const CourseCard = ({
