@@ -456,6 +456,48 @@ export type Database = {
         }
         Relationships: []
       }
+      corporate_admin_invitations: {
+        Row: {
+          company_email: string
+          company_name: string
+          company_phone: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          max_seats: number
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          company_email: string
+          company_name: string
+          company_phone?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          max_seats?: number
+          token?: string
+          used_at?: string | null
+        }
+        Update: {
+          company_email?: string
+          company_name?: string
+          company_phone?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          max_seats?: number
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       corporate_course_licenses: {
         Row: {
           corporate_account_id: string

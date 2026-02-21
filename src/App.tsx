@@ -24,6 +24,7 @@ import NoteReader from "./components/NoteReader";
 import CertificateVerify from "./pages/CertificateVerify";
 import CorporateTraining from "./pages/CorporateTraining";
 import CorporateDashboard from "./pages/CorporateDashboard";
+import AcceptCorporateInvite from "./pages/AcceptCorporateInvite";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/certificate/verify/:certNumber" element={<CertificateVerify />} />
           <Route path="/corporate-training" element={<CorporateTraining />} />
           <Route path="/corporate-dashboard" element={<CorporateDashboard />} />
+          <Route path="/accept-corporate-invite" element={<AcceptCorporateInvite />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

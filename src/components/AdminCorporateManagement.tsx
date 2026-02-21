@@ -44,9 +44,9 @@ const AdminCorporateManagement = () => {
   const [quoteNotes, setQuoteNotes] = useState("");
   const [processing, setProcessing] = useState(false);
 
-  // Account creation
+  // Account creation via invitation
   const [createAccountOpen, setCreateAccountOpen] = useState(false);
-  const [accountForm, setAccountForm] = useState({ name: "", email: "", phone: "", max_seats: 10, admin_user_id: "" });
+  const [accountForm, setAccountForm] = useState({ admin_email: "", name: "", email: "", phone: "", max_seats: 10 });
 
   // Invoice creation
   const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false);
@@ -89,25 +89,26 @@ const AdminCorporateManagement = () => {
     }
   };
 
-  const handleCreateAccount = async () => {
-    if (!accountForm.name || !accountForm.email || !accountForm.admin_user_id) {
+  const handleSendInvitation = async () => {
+    if (!accountForm.admin_email || !accountForm.name || !accountForm.email) {
       toast({ title: "Fill in required fields", variant: "destructive" }); return;
     }
     setProcessing(true);
     try {
-      const { error } = await supabase.from("corporate_accounts").insert({
-        name: accountForm.name,
-        email: accountForm.email,
-        phone: accountForm.phone || null,
-        max_seats: accountForm.max_seats,
-        admin_user_id: accountForm.admin_user_id,
-        status: "active",
+      const { data, error } = await supabase.functions.invoke("send-corporate-admin-invitation", {
+        body: {
+          email: accountForm.admin_email,
+          company_name: accountForm.name,
+          company_email: accountForm.email,
+          company_phone: accountForm.phone || undefined,
+          max_seats: accountForm.max_seats,
+        },
       });
       if (error) throw error;
-      toast({ title: "Corporate account created" });
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Invitation sent!", description: data?.warning || `Invitation email sent to ${accountForm.admin_email}` });
       setCreateAccountOpen(false);
-      setAccountForm({ name: "", email: "", phone: "", max_seats: 10, admin_user_id: "" });
-      await fetchAll();
+      setAccountForm({ admin_email: "", name: "", email: "", phone: "", max_seats: 10 });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -213,7 +214,7 @@ const AdminCorporateManagement = () => {
                 ];
                 exportToExcel(accounts, columns, "corporate-accounts");
               }}><Download className="h-4 w-4 mr-2" /> Export</Button>
-              <Button onClick={() => setCreateAccountOpen(true)}><Plus className="h-4 w-4 mr-2" /> Create Account</Button>
+              <Button onClick={() => setCreateAccountOpen(true)}><Plus className="h-4 w-4 mr-2" /> Invite Corporate Admin</Button>
             </div>
           </div>
           <Table>
@@ -302,14 +303,15 @@ const AdminCorporateManagement = () => {
       {/* Create Account Dialog */}
       <Dialog open={createAccountOpen} onOpenChange={setCreateAccountOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Create Corporate Account</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Invite Corporate Admin</DialogTitle></DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2"><Label>Admin Email *</Label><Input type="email" value={accountForm.admin_email} onChange={(e) => setAccountForm({ ...accountForm, admin_email: e.target.value })} placeholder="Email of the person who will manage this account" /></div>
             <div className="space-y-2"><Label>Company Name *</Label><Input value={accountForm.name} onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Email *</Label><Input type="email" value={accountForm.email} onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Company Email *</Label><Input type="email" value={accountForm.email} onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })} /></div>
             <div className="space-y-2"><Label>Phone</Label><Input value={accountForm.phone} onChange={(e) => setAccountForm({ ...accountForm, phone: e.target.value })} /></div>
             <div className="space-y-2"><Label>Max Seats</Label><Input type="number" value={accountForm.max_seats} onChange={(e) => setAccountForm({ ...accountForm, max_seats: parseInt(e.target.value) || 10 })} /></div>
-            <div className="space-y-2"><Label>Admin User ID *</Label><Input value={accountForm.admin_user_id} onChange={(e) => setAccountForm({ ...accountForm, admin_user_id: e.target.value })} placeholder="User UUID who will manage this account" /></div>
-            <Button className="w-full" onClick={handleCreateAccount} disabled={processing}>{processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Account</Button>
+            <p className="text-sm text-muted-foreground">An invitation email will be sent automatically. When accepted, the corporate account will be created and the admin can start enrolling students.</p>
+            <Button className="w-full" onClick={handleSendInvitation} disabled={processing}>{processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send Invitation</Button>
           </div>
         </DialogContent>
       </Dialog>

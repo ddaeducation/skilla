@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.generate-full-course]
 verify_jwt = false
+
+[functions.accept-corporate-admin-invitation]
+verify_jwt = false
