@@ -10,7 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, Users, BarChart3, FileText, CheckCircle, ArrowRight, Loader2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Building2, Users, BarChart3, FileText, CheckCircle, ArrowRight, Loader2, ChevronsUpDown, X } from "lucide-react";
 
 const CorporateTraining = () => {
   const { toast } = useToast();
@@ -171,18 +174,62 @@ const CorporateTraining = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Courses of Interest</Label>
-                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                    {courses.map((c) => (
-                      <Badge
-                        key={c.id}
-                        variant={selectedCourses.includes(c.id) ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => setSelectedCourses((prev) => prev.includes(c.id) ? prev.filter((id) => id !== c.id) : [...prev, c.id])}
-                      >
-                        {c.title}
-                      </Badge>
-                    ))}
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" className="w-full justify-between h-auto min-h-10 font-normal">
+                        <span className="text-muted-foreground truncate">
+                          {selectedCourses.length === 0
+                            ? "Search and select courses..."
+                            : `${selectedCourses.length} course${selectedCourses.length > 1 ? "s" : ""} selected`}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-popover z-50" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search courses..." />
+                        <CommandList>
+                          <CommandEmpty>No courses found.</CommandEmpty>
+                          <CommandGroup>
+                            {courses.map((c) => (
+                              <CommandItem
+                                key={c.id}
+                                value={c.title}
+                                onSelect={() =>
+                                  setSelectedCourses((prev) =>
+                                    prev.includes(c.id) ? prev.filter((id) => id !== c.id) : [...prev, c.id]
+                                  )
+                                }
+                              >
+                                <Checkbox checked={selectedCourses.includes(c.id)} className="mr-2 pointer-events-none" />
+                                <span className="truncate">{c.title}</span>
+                                <span className="ml-auto text-xs text-muted-foreground">{c.school}</span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {selectedCourses.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {selectedCourses.map((id) => {
+                        const course = courses.find((c) => c.id === id);
+                        return (
+                          <Badge key={id} variant="secondary" className="gap-1 pr-1">
+                            <span className="max-w-[200px] truncate">{course?.title}</span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedCourses((prev) => prev.filter((cid) => cid !== id))}
+                              className="rounded-full hover:bg-muted p-0.5"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="message">Additional Details</Label>
