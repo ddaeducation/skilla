@@ -1518,13 +1518,15 @@ const Admin = () => {
     fetchCourseContent(course.id);
   };
 
-  // Compute removed user IDs (users with no roles and no enrollments)
+  // Compute removed user IDs (users with no roles, no enrollments, and no instructor applications)
+  const applicantUserIds = new Set(instructorApplications.map((app) => app.user_id));
   const removedUserIds = new Set(
     profiles
       .filter((profile) => {
         const hasRoles = userRoles.some((r) => r.user_id === profile.id);
         const hasEnrollments = enrollments.some((e) => e.user_id === profile.id);
-        return !hasRoles && !hasEnrollments;
+        const hasApplication = applicantUserIds.has(profile.id);
+        return !hasRoles && !hasEnrollments && !hasApplication;
       })
       .map((p) => p.id)
   );
