@@ -16,7 +16,7 @@ const schoolDbNameMap: Record<string, string> = {
   business: "Business Studies",
   product: "Product & Innovation",
   "creative-economy": "Digital & Creative Media",
-  computing: "Languages and Communication"
+  computing: "Languages & Comms"
 };
 const SchoolPrograms = () => {
   const {
@@ -288,9 +288,9 @@ const SchoolPrograms = () => {
       }]
     },
     computing: {
-      title: "School of Languages and Communication",
+      title: "School of Languages & Comms",
       subtitle: "Dive into computer science, AI, and advanced programming",
-      description: "Push the boundaries of technology. Our Languages and Communication school covers cutting-edge topics from AI to blockchain, preparing you for the future of tech.",
+      description: "Push the boundaries of technology. Our Languages & Comms school covers cutting-edge topics from AI to blockchain, preparing you for the future of tech.",
       icon: Cpu,
       color: "from-indigo-600 to-violet-600",
       stats: [{

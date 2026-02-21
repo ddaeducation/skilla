@@ -93,7 +93,7 @@ const Navigation = () => {
     name: "Digital & Creative Media",
     href: "/schools/creative-economy"
   }, {
-    name: "Languages and Communication",
+    name: "Languages & Comms",
     href: "/schools/computing"
   }];
   const getInitials = (name: string | null) => {

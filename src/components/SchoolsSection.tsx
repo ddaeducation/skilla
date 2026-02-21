@@ -41,7 +41,7 @@ const SchoolsSection = () => {
       color: "from-pink-600 to-rose-600",
     },
     {
-      name: "Languages and Communication",
+      name: "Languages & Comms",
       slug: "computing",
       description: "Dive into computer science, AI, and advanced programming",
       icon: Cpu,

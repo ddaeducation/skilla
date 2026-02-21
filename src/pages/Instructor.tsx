@@ -113,7 +113,7 @@ const schools = [
   "Data & Analytics",
   "Business Studies",
   "Digital & Creative Media",
-  "Languages and Communication",
+  "Languages & Comms",
 ];
 
 const contentTypes = [

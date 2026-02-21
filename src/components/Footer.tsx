@@ -10,7 +10,7 @@ const Footer = () => {
         "Data & Analytics",
         "Business Studies",
         "Digital & Creative Media",
-        "Languages and Communication",
+        "Languages & Comms",
       ],
     },
     {

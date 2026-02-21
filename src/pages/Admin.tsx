@@ -334,7 +334,7 @@ const Admin = () => {
     "Data & Analytics",
     "Business Studies",
     "Digital & Creative Media",
-    "Languages and Communication",
+    "Languages & Comms",
   ];
 
   useEffect(() => {
@@ -2497,7 +2497,7 @@ const Admin = () => {
                         <SelectItem value="Data & Analytics">Data & Analytics</SelectItem>
                         <SelectItem value="Business Studies">Business Studies</SelectItem>
                         <SelectItem value="Digital & Creative Media">Digital & Creative Media</SelectItem>
-                        <SelectItem value="Languages and Communication">Languages and Communication</SelectItem>
+                        <SelectItem value="Languages & Comms">Languages & Comms</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

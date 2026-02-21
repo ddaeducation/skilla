@@ -50,7 +50,7 @@ const SCHOOLS = [
   "Data & Analytics",
   "Business Studies",
   "Digital & Creative Media",
-  "Languages and Communication"
+  "Languages & Comms"
 ] as const;
 
 const getCategoryBadgeStyle = (category: string) => {

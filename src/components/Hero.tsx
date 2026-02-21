@@ -27,7 +27,7 @@ const schoolUrlMap: Record<string, string> = {
   "Business Studies": "business",
   "Product & Innovation": "product",
   "Digital & Creative Media": "creative-economy",
-  "Languages and Communication": "computing",
+  "Languages & Comms": "computing",
 };
 
 const Hero = () => {
