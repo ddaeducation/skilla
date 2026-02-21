@@ -7,7 +7,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Facebook, Linkedin, PartyPopper } from "lucide-react";
+import { Facebook, Linkedin, Instagram, PartyPopper, Twitter } from "lucide-react";
 
 interface SocialSharePromptProps {
   open: boolean;
@@ -40,6 +40,17 @@ const SocialSharePrompt = ({
   const handleLinkedInShare = () => {
     const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(siteUrl)}&summary=${encodeURIComponent(shareText)}`;
     window.open(url, "_blank", "width=600,height=400");
+  };
+
+  const handleXShare = () => {
+    const url = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(siteUrl)}`;
+    window.open(url, "_blank", "width=600,height=400");
+  };
+
+  const handleInstagramShare = () => {
+    // Instagram doesn't have a direct share URL — open profile/app as a prompt
+    navigator.clipboard.writeText(shareText + " " + siteUrl);
+    window.open("https://www.instagram.com/", "_blank");
   };
 
   const handleSkip = () => {
@@ -79,6 +90,20 @@ const SocialSharePrompt = ({
           >
             <Linkedin className="h-5 w-5" />
             Share on LinkedIn
+          </Button>
+          <Button
+            onClick={handleXShare}
+            className="w-full gap-2 bg-foreground hover:bg-foreground/90 text-background"
+          >
+            <Twitter className="h-5 w-5" />
+            Share on X
+          </Button>
+          <Button
+            onClick={handleInstagramShare}
+            className="w-full gap-2 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white"
+          >
+            <Instagram className="h-5 w-5" />
+            Copy & Open Instagram
           </Button>
         </div>
 
