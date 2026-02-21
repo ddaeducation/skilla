@@ -50,7 +50,8 @@ const AdminCorporateManagement = () => {
 
   // Invoice creation
   const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false);
-  const [invoiceForm, setInvoiceForm] = useState({ corporate_account_id: "", amount: 0, currency: "USD", description: "", due_date: "" });
+  const [invoiceForm, setInvoiceForm] = useState({ corporate_account_id: "", currency: "USD", description: "", due_date: "" });
+  const [invoiceItems, setInvoiceItems] = useState<{ description: string; quantity: number; unit_price: number }[]>([{ description: "", quantity: 1, unit_price: 0 }]);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -116,9 +117,23 @@ const AdminCorporateManagement = () => {
     }
   };
 
+  const invoiceTotal = invoiceItems.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+
+  const handleAddInvoiceItem = () => {
+    setInvoiceItems([...invoiceItems, { description: "", quantity: 1, unit_price: 0 }]);
+  };
+
+  const handleRemoveInvoiceItem = (index: number) => {
+    setInvoiceItems(invoiceItems.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateInvoiceItem = (index: number, field: string, value: any) => {
+    setInvoiceItems(invoiceItems.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  };
+
   const handleCreateInvoice = async () => {
-    if (!invoiceForm.corporate_account_id || !invoiceForm.amount) {
-      toast({ title: "Fill in required fields", variant: "destructive" }); return;
+    if (!invoiceForm.corporate_account_id || invoiceTotal <= 0) {
+      toast({ title: "Fill in required fields and add at least one item", variant: "destructive" }); return;
     }
     setProcessing(true);
     try {
@@ -126,16 +141,18 @@ const AdminCorporateManagement = () => {
       const { error } = await supabase.from("corporate_invoices").insert({
         corporate_account_id: invoiceForm.corporate_account_id,
         invoice_number: invoiceNumber,
-        amount: invoiceForm.amount,
+        amount: invoiceTotal,
         currency: invoiceForm.currency,
         description: invoiceForm.description || null,
         due_date: invoiceForm.due_date || null,
+        items: invoiceItems.filter(i => i.description && i.unit_price > 0),
         status: "sent",
       });
       if (error) throw error;
-      toast({ title: "Invoice created", description: `Invoice ${invoiceNumber}` });
+      toast({ title: "Invoice created", description: `Invoice ${invoiceNumber} — ${invoiceForm.currency} ${invoiceTotal.toLocaleString()}` });
       setCreateInvoiceOpen(false);
-      setInvoiceForm({ corporate_account_id: "", amount: 0, currency: "USD", description: "", due_date: "" });
+      setInvoiceForm({ corporate_account_id: "", currency: "USD", description: "", due_date: "" });
+      setInvoiceItems([{ description: "", quantity: 1, unit_price: 0 }]);
       await fetchAll();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -318,7 +335,7 @@ const AdminCorporateManagement = () => {
 
       {/* Create Invoice Dialog */}
       <Dialog open={createInvoiceOpen} onOpenChange={setCreateInvoiceOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Create Invoice</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -329,7 +346,6 @@ const AdminCorporateManagement = () => {
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Amount *</Label><Input type="number" value={invoiceForm.amount} onChange={(e) => setInvoiceForm({ ...invoiceForm, amount: parseFloat(e.target.value) || 0 })} /></div>
               <div className="space-y-2">
                 <Label>Currency</Label>
                 <Select value={invoiceForm.currency} onValueChange={(v) => setInvoiceForm({ ...invoiceForm, currency: v })}>
@@ -337,10 +353,48 @@ const AdminCorporateManagement = () => {
                   <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="RWF">RWF</SelectItem></SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2"><Label>Due Date</Label><Input type="date" value={invoiceForm.due_date} onChange={(e) => setInvoiceForm({ ...invoiceForm, due_date: e.target.value })} /></div>
             </div>
-            <div className="space-y-2"><Label>Description</Label><Textarea value={invoiceForm.description} onChange={(e) => setInvoiceForm({ ...invoiceForm, description: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Due Date</Label><Input type="date" value={invoiceForm.due_date} onChange={(e) => setInvoiceForm({ ...invoiceForm, due_date: e.target.value })} /></div>
-            <Button className="w-full" onClick={handleCreateInvoice} disabled={processing}>{processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Invoice</Button>
+            <div className="space-y-2"><Label>Description</Label><Textarea value={invoiceForm.description} onChange={(e) => setInvoiceForm({ ...invoiceForm, description: e.target.value })} placeholder="General invoice description..." /></div>
+
+            {/* Line Items */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Line Items</Label>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddInvoiceItem}><Plus className="h-3 w-3 mr-1" /> Add Item</Button>
+              </div>
+              <div className="space-y-2">
+                {invoiceItems.map((item, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                    <div className="col-span-5">
+                      {index === 0 && <Label className="text-xs text-muted-foreground">Description</Label>}
+                      <Input value={item.description} onChange={(e) => handleUpdateInvoiceItem(index, "description", e.target.value)} placeholder="e.g. Course license" />
+                    </div>
+                    <div className="col-span-2">
+                      {index === 0 && <Label className="text-xs text-muted-foreground">Qty</Label>}
+                      <Input type="number" min={1} value={item.quantity} onChange={(e) => handleUpdateInvoiceItem(index, "quantity", parseInt(e.target.value) || 1)} />
+                    </div>
+                    <div className="col-span-3">
+                      {index === 0 && <Label className="text-xs text-muted-foreground">Unit Price</Label>}
+                      <Input type="number" min={0} value={item.unit_price} onChange={(e) => handleUpdateInvoiceItem(index, "unit_price", parseFloat(e.target.value) || 0)} />
+                    </div>
+                    <div className="col-span-2 flex items-center gap-1">
+                      <span className="text-sm font-medium">{(item.quantity * item.unit_price).toLocaleString()}</span>
+                      {invoiceItems.length > 1 && (
+                        <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveInvoiceItem(index)}><XCircle className="h-4 w-4 text-destructive" /></Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end pt-2 border-t">
+                <span className="text-lg font-bold">{invoiceForm.currency} {invoiceTotal.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <Button className="w-full" onClick={handleCreateInvoice} disabled={processing || invoiceTotal <= 0}>
+              {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Invoice — {invoiceForm.currency} {invoiceTotal.toLocaleString()}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

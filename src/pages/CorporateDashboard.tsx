@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
+import { exportToExcel } from "@/lib/exportUtils";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter,
@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import CorporateAssignCourse from "@/components/corporate/CorporateAssignCourse";
 import CorporateLeaderboard from "@/components/corporate/CorporateLeaderboard";
+import CorporateInvoicePayment from "@/components/corporate/CorporateInvoicePayment";
 
 interface CorporateAccount {
   id: string; name: string; email: string; status: string; max_seats: number;
@@ -384,43 +385,12 @@ const CorporateDashboard = () => {
             )}
 
             {activeTab === "invoices" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">Invoices</h2>
-                  <Button variant="outline" onClick={() => {
-                    const columns = [
-                      { header: "Invoice", accessor: (inv: any) => inv.invoice_number },
-                      { header: "Amount", accessor: (inv: any) => `${inv.currency} ${inv.amount}` },
-                      { header: "Status", accessor: (inv: any) => inv.status },
-                      { header: "Date", accessor: (inv: any) => new Date(inv.created_at).toLocaleDateString() },
-                    ];
-                    exportToPDF(invoices, columns, "corporate-invoices", "Corporate Invoices");
-                  }}>
-                    <Download className="h-4 w-4 mr-2" /> Export PDF
-                  </Button>
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Invoice #</TableHead><TableHead>Amount</TableHead><TableHead>Status</TableHead><TableHead>Due Date</TableHead><TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invoices.map((inv) => (
-                      <TableRow key={inv.id}>
-                        <TableCell className="font-mono">{inv.invoice_number}</TableCell>
-                        <TableCell>{inv.currency} {inv.amount.toLocaleString()}</TableCell>
-                        <TableCell><Badge variant={inv.status === "paid" ? "default" : inv.status === "overdue" ? "destructive" : "secondary"}>{inv.status}</Badge></TableCell>
-                        <TableCell>{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : "—"}</TableCell>
-                        <TableCell>{new Date(inv.created_at).toLocaleDateString()}</TableCell>
-                      </TableRow>
-                    ))}
-                    {invoices.length === 0 && (
-                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No invoices yet</TableCell></TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <CorporateInvoicePayment
+                invoices={invoices}
+                accountName={account.name}
+                accountEmail={account.email}
+                onPaymentComplete={() => fetchData(account.id)}
+              />
             )}
           </main>
         </SidebarInset>
