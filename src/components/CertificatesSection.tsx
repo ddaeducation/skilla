@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Award, Download, Loader2, CheckCircle, Clock, GraduationCap } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import CertificateRenderer, { CertificateData } from "@/components/CertificateRenderer";
+import CourseRatingDialog from "@/components/CourseRatingDialog";
 
 interface Certificate {
   id: string;
@@ -82,6 +83,10 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
   const renderRef = useRef<HTMLDivElement>(null);
   // Resolves when CertificateRenderer signals it's fully painted (QR included)
   const rendererReadyResolveRef = useRef<(() => void) | null>(null);
+
+  // Rating dialog state
+  const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
+  const [pendingDownloadCert, setPendingDownloadCert] = useState<Certificate | null>(null);
 
   const { toast } = useToast();
 
@@ -278,6 +283,32 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
     }
   };
 
+  // Intercept download: show rating dialog first
+  const handleDownloadClick = async (cert: Certificate) => {
+    const courseId = cert.course?.id;
+    if (!courseId) {
+      downloadCertificate(cert);
+      return;
+    }
+
+    // Check if already rated
+    const { data: existingRating } = await supabase
+      .from("course_ratings")
+      .select("id")
+      .eq("course_id", courseId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (existingRating) {
+      // Already rated, download directly
+      downloadCertificate(cert);
+    } else {
+      // Show rating dialog first
+      setPendingDownloadCert(cert);
+      setRatingDialogOpen(true);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -335,7 +366,7 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
                   </div>
                   <Button
                     className="w-full"
-                    onClick={() => downloadCertificate(cert)}
+                    onClick={() => handleDownloadClick(cert)}
                     disabled={!!downloading}
                   >
                     {downloading === cert.id ? (
@@ -460,6 +491,24 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
           <p className="text-muted-foreground">Enroll in courses and complete them to earn certificates</p>
         </div>
       )}
+      {/* Rating Dialog */}
+      <CourseRatingDialog
+        open={ratingDialogOpen}
+        onOpenChange={(open) => {
+          setRatingDialogOpen(open);
+          if (!open) setPendingDownloadCert(null);
+        }}
+        courseId={pendingDownloadCert?.course?.id || ""}
+        courseTitle={pendingDownloadCert?.course?.title || ""}
+        userId={user.id}
+        onRatingSubmitted={() => {
+          setRatingDialogOpen(false);
+          if (pendingDownloadCert) {
+            downloadCertificate(pendingDownloadCert);
+            setPendingDownloadCert(null);
+          }
+        }}
+      />
     </div>
   );
 };

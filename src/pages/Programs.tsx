@@ -74,14 +74,15 @@ const Programs = () => {
   const dbCategory = routeToCategoryMap[type as string];
 
   const [instructors, setInstructors] = useState<Record<string, InstructorInfo>>({});
+  const [courseRatings, setCourseRatings] = useState<Record<string, { avg: number; count: number }>>({});
 
-  // Generate a consistent pseudo-rating from course ID
-  const getCourseRating = (courseId: string) => {
+  // Fallback: generate a consistent pseudo-rating from course ID when no real ratings exist
+  const getFallbackRating = (courseId: string) => {
     let hash = 0;
     for (let i = 0; i < courseId.length; i++) {
       hash = courseId.charCodeAt(i) + ((hash << 5) - hash);
     }
-    return (Math.abs(hash % 15) + 35) / 10; // 3.5 to 5.0
+    return (Math.abs(hash % 15) + 35) / 10;
   };
 
   useEffect(() => {
@@ -97,18 +98,48 @@ const Programs = () => {
       if (!error && data) {
         setCourses(data);
 
-        // Fetch instructor profiles and bios
-        const instructorIds = [...new Set(data.map(c => c.instructor_id).filter(Boolean))] as string[];
-        if (instructorIds.length > 0) {
-          const [profilesRes, applicationsRes] = await Promise.all([
-            supabase.from("profiles").select("id, full_name, avatar_url").in("id", instructorIds),
-            supabase.from("instructor_applications").select("user_id, bio").in("user_id", instructorIds),
-          ]);
+        const courseIds = data.map(c => c.id);
 
+        // Fetch instructor profiles, bios, and ratings in parallel
+        const instructorIds = [...new Set(data.map(c => c.instructor_id).filter(Boolean))] as string[];
+
+        // Fetch ratings
+        const ratingsPromise = supabase.from("course_ratings").select("course_id, rating").in("course_id", courseIds.length > 0 ? courseIds : ["none"]);
+
+        let profilesPromise: any = null;
+        let applicationsPromise: any = null;
+        if (instructorIds.length > 0) {
+          profilesPromise = supabase.from("profiles").select("id, full_name, avatar_url").in("id", instructorIds);
+          applicationsPromise = supabase.from("instructor_applications").select("user_id, bio").in("user_id", instructorIds);
+        }
+
+        const [ratingsRes, profilesRes, applicationsRes] = await Promise.all([
+          ratingsPromise,
+          profilesPromise,
+          applicationsPromise,
+        ]);
+
+        // Process ratings
+        if (ratingsRes?.data) {
+          const ratingsMap: Record<string, { total: number; count: number }> = {};
+          for (const r of ratingsRes.data) {
+            if (!ratingsMap[r.course_id]) ratingsMap[r.course_id] = { total: 0, count: 0 };
+            ratingsMap[r.course_id].total += r.rating;
+            ratingsMap[r.course_id].count += 1;
+          }
+          const avgMap: Record<string, { avg: number; count: number }> = {};
+          for (const [cid, val] of Object.entries(ratingsMap)) {
+            avgMap[cid] = { avg: val.total / val.count, count: val.count };
+          }
+          setCourseRatings(avgMap);
+        }
+
+        // Process instructors
+        if (instructorIds.length > 0) {
           const map: Record<string, InstructorInfo> = {};
           for (const id of instructorIds) {
-            const profile = profilesRes.data?.find(p => p.id === id);
-            const app = applicationsRes.data?.find(a => a.user_id === id);
+            const profile = profilesRes?.data?.find((p: any) => p.id === id);
+            const app = applicationsRes?.data?.find((a: any) => a.user_id === id);
             map[id] = {
               full_name: profile?.full_name ?? null,
               avatar_url: profile?.avatar_url ?? null,
@@ -183,7 +214,9 @@ const Programs = () => {
               {courses.map((course, index) => {
                 const price = course.monthly_price ?? course.price;
                 const isUpcoming = course.publish_status === "upcoming";
-                const rating = getCourseRating(course.id);
+                const ratingData = courseRatings[course.id];
+                const rating = ratingData ? ratingData.avg : getFallbackRating(course.id);
+                const ratingCount = ratingData?.count || 0;
                 const instructor = course.instructor_id ? instructors[course.instructor_id] : null;
                 const instructorName = instructor?.full_name || course.instructor_name;
 
@@ -230,7 +263,7 @@ const Programs = () => {
                           />
                         ))}
                         <span className="text-xs text-muted-foreground ml-1">
-                          {rating.toFixed(1)}
+                          {rating.toFixed(1)}{ratingCount > 0 && ` (${ratingCount})`}
                         </span>
                       </div>
                     </CardHeader>
