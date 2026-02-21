@@ -197,8 +197,8 @@ const SchoolPrograms = () => {
     },
     product: {
       title: "School of Product & Innovation",
-      subtitle: "Build expertise in product management and design thinking",
-      description: "Create products that users love. Our Product & Innovation school teaches you the art and science of building successful digital products from concept to launch.",
+      subtitle: "Drive innovation through product strategy, design thinking, and entrepreneurship",
+      description: "Turn bold ideas into market-ready products. Our Product & Innovation school teaches you to identify opportunities, validate concepts, and build solutions that create real impact.",
       icon: TrendingUp,
       color: "from-orange-600 to-red-600",
       stats: [{
@@ -214,7 +214,7 @@ const SchoolPrograms = () => {
         label: "Products Launched",
         value: "320+"
       }],
-      careers: ["Product Manager", "UX Designer", "UI Designer", "Product Analyst", "Design Lead"],
+      careers: ["Product Manager", "Innovation Strategist", "UX Researcher", "Growth Product Lead", "Design Thinking Facilitator"],
       programs: [{
         title: "Product Management Essentials",
         description: "Learn the fundamentals of product management, from ideation to launch. Master user research, roadmapping, and agile methodologies.",
@@ -222,11 +222,11 @@ const SchoolPrograms = () => {
         format: "Self-paced",
         skills: ["User Research", "Roadmapping", "Agile/Scrum", "Product Strategy"]
       }, {
-        title: "Product Design",
-        description: "Transform into a product designer who can lead design projects from concept to completion.",
+        title: "Innovation & Design Thinking",
+        description: "Master human-centered design and innovation frameworks to solve complex problems creatively.",
         duration: "12 months",
         format: "Live classes + recorded lectures",
-        skills: ["Design Systems", "User Research", "Prototyping", "Design Thinking"]
+        skills: ["Design Thinking", "Prototyping", "User Research", "Innovation Frameworks"]
       }, {
         title: "UI/UX Design Basics",
         description: "Master user interface and experience design principles. Create beautiful, intuitive designs that users love.",
@@ -243,8 +243,8 @@ const SchoolPrograms = () => {
     },
     "creative-economy": {
       title: "School of Digital & Creative Media",
-      subtitle: "Explore content creation, music business, and digital arts",
-      description: "Turn your creativity into a career. Our Digital & Creative Media school helps you build sustainable businesses around your creative talents.",
+      subtitle: "Master digital storytelling, media production, and creative technologies",
+      description: "Shape the future of media and entertainment. Our Digital & Creative Media school equips you with the skills to create compelling content, build brands, and thrive in the creative economy.",
       icon: Palette,
       color: "from-pink-600 to-rose-600",
       stats: [{
@@ -260,7 +260,7 @@ const SchoolPrograms = () => {
         label: "Content Views",
         value: "50M+"
       }],
-      careers: ["Content Creator", "Music Producer", "Digital Artist", "Brand Strategist", "Animator"],
+      careers: ["Digital Media Producer", "Content Strategist", "Motion Graphics Designer", "Social Media Manager", "Creative Director"],
       programs: [{
         title: "Content Creation Mastery",
         description: "Learn to create engaging content across platforms including YouTube, Instagram, and TikTok.",
@@ -268,11 +268,11 @@ const SchoolPrograms = () => {
         format: "Live classes + practical projects",
         skills: ["Video Production", "Content Strategy", "Social Media", "Monetization"]
       }, {
-        title: "Music Business & Production",
-        description: "Master the business side of music including rights management, distribution, and marketing.",
+        title: "Digital Media Production",
+        description: "Master audio, video, and multimedia production using industry-standard tools and workflows.",
         duration: "8 months",
         format: "Live classes + mentorship",
-        skills: ["Music Rights", "Distribution", "Marketing", "Production Basics"]
+        skills: ["Video Editing", "Audio Production", "Motion Graphics", "Storytelling"]
       }, {
         title: "Digital Arts & Animation",
         description: "Create stunning digital artwork and animations using industry-standard tools.",
@@ -289,8 +289,8 @@ const SchoolPrograms = () => {
     },
     computing: {
       title: "School of Languages & Comms",
-      subtitle: "Dive into computer science, AI, and advanced programming",
-      description: "Push the boundaries of technology. Our Languages & Comms school covers cutting-edge topics from AI to blockchain, preparing you for the future of tech.",
+      subtitle: "Build fluency in global languages, professional communication, and cross-cultural skills",
+      description: "Communicate with confidence across cultures and industries. Our Languages & Comms school helps you master languages, professional writing, public speaking, and intercultural communication.",
       icon: Cpu,
       color: "from-indigo-600 to-violet-600",
       stats: [{
@@ -300,43 +300,43 @@ const SchoolPrograms = () => {
         label: "Completion Rate",
         value: "88%"
       }, {
-        label: "Research Papers",
-        value: "75+"
+        label: "Languages Offered",
+        value: "8+"
       }, {
-        label: "Tech Companies Hiring",
+        label: "Career Transitions",
         value: "200+"
       }],
-      careers: ["AI Engineer", "Blockchain Developer", "Research Scientist", "Algorithm Engineer"],
+      careers: ["Corporate Communications Specialist", "Technical Writer", "Translator/Interpreter", "Public Relations Manager", "ESL Instructor"],
       programs: [{
-        title: "Artificial Intelligence & Machine Learning",
-        description: "Master AI concepts and build intelligent systems using neural networks and deep learning.",
-        duration: "12 months",
-        format: "Live classes + research projects",
-        skills: ["Neural Networks", "Deep Learning", "NLP", "Computer Vision"]
+        title: "Business English & Professional Writing",
+        description: "Master business communication, report writing, and professional correspondence for the global workplace.",
+        duration: "4-8 weeks",
+        format: "Self-paced + live practice sessions",
+        skills: ["Business Writing", "Email Etiquette", "Report Writing", "Presentation Skills"]
       }, {
-        title: "Advanced Algorithms & Data Structures",
-        description: "Master complex algorithms and data structures for technical interviews and real-world problem solving.",
+        title: "French for Professionals",
+        description: "Build professional-level French language skills for business, diplomacy, and international careers.",
         duration: "6 months",
-        format: "Self-paced + coding challenges",
-        skills: ["Algorithm Design", "Data Structures", "Problem Solving", "Competitive Programming"]
+        format: "Live classes + conversation practice",
+        skills: ["French Grammar", "Business French", "Conversation", "Cultural Fluency"]
       }, {
-        title: "Computer Science Fundamentals",
-        description: "Build a strong foundation in computer science principles, theory, and practical applications.",
-        duration: "10 months",
-        format: "Live classes + projects",
-        skills: ["Programming", "Algorithms", "Computer Architecture", "Operating Systems"]
+        title: "Public Speaking & Persuasion",
+        description: "Develop powerful presentation and public speaking skills to influence and inspire any audience.",
+        duration: "4-8 weeks",
+        format: "Live workshops + recorded lectures",
+        skills: ["Speech Writing", "Delivery Techniques", "Storytelling", "Audience Engagement"]
       }, {
-        title: "Blockchain & Web3 Development",
-        description: "Learn blockchain technology and build decentralized applications on modern platforms.",
-        duration: "8 months",
-        format: "Live classes + projects",
-        skills: ["Smart Contracts", "Solidity", "Web3.js", "DApp Development"]
+        title: "Intercultural Communication",
+        description: "Navigate cross-cultural business environments with confidence and cultural intelligence.",
+        duration: "3 months",
+        format: "Live classes + case studies",
+        skills: ["Cultural Intelligence", "Global Etiquette", "Cross-Cultural Negotiation", "Diversity & Inclusion"]
       }, {
-        title: "Quantum Computing Basics",
-        description: "Introduction to quantum computing concepts and their applications in solving complex problems.",
+        title: "Technical & Scientific Communication",
+        description: "Learn to communicate complex technical and scientific concepts clearly to diverse audiences.",
         duration: "4 months",
-        format: "Live lectures + simulations",
-        skills: ["Quantum Mechanics", "Quantum Algorithms", "Qiskit", "Quantum Applications"]
+        format: "Self-paced + peer review",
+        skills: ["Technical Writing", "Documentation", "Data Visualization", "Scientific Reporting"]
       }]
     }
   };
