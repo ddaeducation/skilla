@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CheckCircle } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle, Star, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Course {
   id: string;
@@ -19,8 +21,15 @@ interface Course {
   monthly_price: number | null;
   duration: string | null;
   image_url: string | null;
+  instructor_id: string | null;
   instructor_name: string | null;
   learning_outcomes: string[] | null;
+}
+
+interface InstructorInfo {
+  full_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
 }
 
 const categoryConfig: Record<string, { color: string; gradient: string; route: string; label: string }> = {
@@ -50,9 +59,28 @@ function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
 }
 
-const CourseCard = ({ course }: { course: Course }) => {
+const getFallbackRating = (courseId: string) => {
+  let hash = 0;
+  for (let i = 0; i < courseId.length; i++) {
+    hash = courseId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return (Math.abs(hash % 15) + 35) / 10;
+};
+
+const CourseCard = ({
+  course,
+  instructor,
+  ratingData,
+}: {
+  course: Course;
+  instructor?: InstructorInfo | null;
+  ratingData?: { avg: number; count: number } | null;
+}) => {
   const config = categoryConfig[course.category || "Short-Course"] || categoryConfig["Short-Course"];
   const price = course.monthly_price ?? course.price;
+  const rating = ratingData ? ratingData.avg : getFallbackRating(course.id);
+  const ratingCount = ratingData?.count || 0;
+  const instructorName = instructor?.full_name || course.instructor_name;
 
   return (
     <Card className="group hover:shadow-2xl transition-all duration-300 border hover:border-primary/50 flex flex-col overflow-hidden">
@@ -76,6 +104,16 @@ const CourseCard = ({ course }: { course: Course }) => {
         <CardDescription className="text-sm leading-relaxed line-clamp-2">
           {course.description}
         </CardDescription>
+        {/* Rating */}
+        <div className="flex items-center gap-1.5 mt-2">
+          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+          <span className="text-sm font-semibold text-foreground">{rating.toFixed(1)}</span>
+          {ratingCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              ({ratingCount} {ratingCount === 1 ? "rating" : "ratings"})
+            </span>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col pt-0">
         {course.learning_outcomes && course.learning_outcomes.length > 0 && (
@@ -95,9 +133,35 @@ const CourseCard = ({ course }: { course: Course }) => {
           <span className="text-sm font-semibold text-primary">
             {price > 0 ? `$${price}/mo` : "Free"}
           </span>
-          <Button asChild size="sm" className="bg-primary hover:bg-primary/90">
-            <Link to={`/course/${course.id}`}>View Course</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            {instructorName && instructor?.bio && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline" className="gap-1.5">
+                    <User className="h-3.5 w-3.5" />
+                    Bio
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72" align="end">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarImage src={instructor?.avatar_url || ""} alt={instructorName} />
+                      <AvatarFallback className="text-xs">
+                        {instructorName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{instructorName}</p>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{instructor.bio}</p>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+            <Button asChild size="sm" className="bg-primary hover:bg-primary/90">
+              <Link to={`/course/${course.id}`}>Enroll Now</Link>
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -107,13 +171,15 @@ const CourseCard = ({ course }: { course: Course }) => {
 const AllPrograms = () => {
   const navigate = useNavigate();
   const [coursesByCategory, setCoursesByCategory] = useState<Record<string, Course[]>>({});
+  const [instructors, setInstructors] = useState<Record<string, InstructorInfo>>({});
+  const [courseRatings, setCourseRatings] = useState<Record<string, { avg: number; count: number }>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCourses = async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title, description, school, category, price, monthly_price, duration, image_url, instructor_name, learning_outcomes")
+        .select("id, title, description, school, category, price, monthly_price, duration, image_url, instructor_id, instructor_name, learning_outcomes")
         .eq("approval_status", "approved");
 
       if (!error && data) {
@@ -123,6 +189,50 @@ const AllPrograms = () => {
           grouped[cat] = shuffle(filtered).slice(0, 6);
         }
         setCoursesByCategory(grouped);
+
+        // Fetch ratings and instructor info
+        const courseIds = data.map(c => c.id);
+        const instructorIds = [...new Set(data.map(c => c.instructor_id).filter(Boolean))] as string[];
+
+        const ratingsPromise = supabase.from("course_ratings").select("course_id, rating").in("course_id", courseIds.length > 0 ? courseIds : ["none"]);
+        let profilesPromise: any = null;
+        let applicationsPromise: any = null;
+        if (instructorIds.length > 0) {
+          profilesPromise = supabase.from("profiles").select("id, full_name, avatar_url").in("id", instructorIds);
+          applicationsPromise = supabase.from("instructor_applications").select("user_id, bio").in("user_id", instructorIds);
+        }
+
+        const [ratingsRes, profilesRes, applicationsRes] = await Promise.all([ratingsPromise, profilesPromise, applicationsPromise]);
+
+        // Process ratings
+        if (ratingsRes?.data) {
+          const ratingsMap: Record<string, { total: number; count: number }> = {};
+          for (const r of ratingsRes.data) {
+            if (!ratingsMap[r.course_id]) ratingsMap[r.course_id] = { total: 0, count: 0 };
+            ratingsMap[r.course_id].total += r.rating;
+            ratingsMap[r.course_id].count += 1;
+          }
+          const avgMap: Record<string, { avg: number; count: number }> = {};
+          for (const [cid, val] of Object.entries(ratingsMap)) {
+            avgMap[cid] = { avg: val.total / val.count, count: val.count };
+          }
+          setCourseRatings(avgMap);
+        }
+
+        // Process instructors
+        if (instructorIds.length > 0) {
+          const map: Record<string, InstructorInfo> = {};
+          for (const id of instructorIds) {
+            const profile = profilesRes?.data?.find((p: any) => p.id === id);
+            const app = applicationsRes?.data?.find((a: any) => a.user_id === id);
+            map[id] = {
+              full_name: profile?.full_name ?? null,
+              avatar_url: profile?.avatar_url ?? null,
+              bio: app?.bio ?? null,
+            };
+          }
+          setInstructors(map);
+        }
       }
       setLoading(false);
     };
@@ -175,7 +285,12 @@ const AllPrograms = () => {
 
                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
                     {courses.map((course) => (
-                      <CourseCard key={course.id} course={course} />
+                      <CourseCard
+                        key={course.id}
+                        course={course}
+                        instructor={course.instructor_id ? instructors[course.instructor_id] : null}
+                        ratingData={courseRatings[course.id] || null}
+                      />
                     ))}
                   </div>
                 </div>
