@@ -25,9 +25,9 @@ const schoolUrlMap: Record<string, string> = {
   "Data Engineering": "engineering",
   "Data & Analytics": "data",
   "Business Studies": "business",
-  "Product Design": "product",
-  "Creative Economy": "creative-economy",
-  "Business Computing": "computing",
+  "Product & Innovation": "product",
+  "Digital & Creative Media": "creative-economy",
+  "Languages and Communication": "computing",
 };
 
 const Hero = () => {

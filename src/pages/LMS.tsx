@@ -46,11 +46,11 @@ import { User } from "@supabase/supabase-js";
 
 const SCHOOLS = [
   "Data Engineering",
-  "Product Design", 
+  "Product & Innovation", 
   "Data & Analytics",
   "Business Studies",
-  "Creative Economy",
-  "Business Computing"
+  "Digital & Creative Media",
+  "Languages and Communication"
 ] as const;
 
 const getCategoryBadgeStyle = (category: string) => {

@@ -330,11 +330,11 @@ const Admin = () => {
 
   const schools = [
     "Data Engineering",
-    "Product Design",
+    "Product & Innovation",
     "Data & Analytics",
     "Business Studies",
-    "Creative Economy",
-    "Business Computing",
+    "Digital & Creative Media",
+    "Languages and Communication",
   ];
 
   useEffect(() => {
@@ -2493,11 +2493,11 @@ const Admin = () => {
                       <SelectContent>
                         <SelectItem value="all">All Schools</SelectItem>
                         <SelectItem value="Data Engineering">Data Engineering</SelectItem>
-                        <SelectItem value="Product Design">Product Design</SelectItem>
+                        <SelectItem value="Product & Innovation">Product & Innovation</SelectItem>
                         <SelectItem value="Data & Analytics">Data & Analytics</SelectItem>
                         <SelectItem value="Business Studies">Business Studies</SelectItem>
-                        <SelectItem value="Creative Economy">Creative Economy</SelectItem>
-                        <SelectItem value="Business Computing">Business Computing</SelectItem>
+                        <SelectItem value="Digital & Creative Media">Digital & Creative Media</SelectItem>
+                        <SelectItem value="Languages and Communication">Languages and Communication</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
