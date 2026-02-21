@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
@@ -18,11 +17,12 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Building2, Users, BookOpen, BarChart3, FileText, Plus, Loader2, LogOut, Download,
-  UserPlus, Trash2,
+  Building2, Users, BookOpen, BarChart3, FileText, Loader2, LogOut, Download,
+  UserPlus, Trash2, Trophy, SendHorizonal,
 } from "lucide-react";
+import CorporateAssignCourse from "@/components/corporate/CorporateAssignCourse";
+import CorporateLeaderboard from "@/components/corporate/CorporateLeaderboard";
 
 interface CorporateAccount {
   id: string; name: string; email: string; status: string; max_seats: number;
@@ -55,8 +55,10 @@ const CorporateDashboard = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [assignCourseOpen, setAssignCourseOpen] = useState(false);
   const [newMember, setNewMember] = useState({ email: "", full_name: "", role: "member" });
   const [addingMember, setAddingMember] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -106,7 +108,21 @@ const CorporateDashboard = () => {
         role: newMember.role as any,
       });
       if (error) throw error;
-      toast({ title: "Member added" });
+
+      // Send invitation email
+      try {
+        await supabase.functions.invoke("send-corporate-member-invitation", {
+          body: {
+            type: "member_added",
+            member_email: newMember.email,
+            member_name: newMember.full_name,
+            company_name: account.name,
+            site_url: window.location.origin,
+          },
+        });
+      } catch { /* email is best-effort */ }
+
+      toast({ title: "Member added & invitation sent", description: `Invitation email sent to ${newMember.email}` });
       setNewMember({ email: "", full_name: "", role: "member" });
       setAddMemberOpen(false);
       await fetchData(account.id);
@@ -114,6 +130,27 @@ const CorporateDashboard = () => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setAddingMember(false);
+    }
+  };
+
+  const handleResendInvite = async (member: Member) => {
+    if (!account) return;
+    setSendingInvite(member.id);
+    try {
+      await supabase.functions.invoke("send-corporate-member-invitation", {
+        body: {
+          type: "member_added",
+          member_email: member.email,
+          member_name: member.full_name,
+          company_name: account.name,
+          site_url: window.location.origin,
+        },
+      });
+      toast({ title: "Invitation resent", description: `Email sent to ${member.email}` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSendingInvite(null);
     }
   };
 
@@ -143,6 +180,7 @@ const CorporateDashboard = () => {
     { id: "team", title: "Team", icon: Users },
     { id: "courses", title: "Courses", icon: BookOpen },
     { id: "progress", title: "Progress", icon: BarChart3 },
+    { id: "leaderboard", title: "Leaderboard", icon: Trophy },
     { id: "invoices", title: "Invoices", icon: FileText },
   ];
 
@@ -214,7 +252,7 @@ const CorporateDashboard = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">Team Members</h2>
-                  <Button onClick={() => setAddMemberOpen(true)}><UserPlus className="h-4 w-4 mr-2" /> Add Member</Button>
+                  <Button onClick={() => setAddMemberOpen(true)}><UserPlus className="h-4 w-4 mr-2" /> Add & Invite Member</Button>
                 </div>
                 <Table>
                   <TableHeader>
@@ -229,7 +267,10 @@ const CorporateDashboard = () => {
                         <TableCell>{m.email}</TableCell>
                         <TableCell><Badge variant="outline">{m.role}</Badge></TableCell>
                         <TableCell><Badge variant={m.status === "active" ? "default" : "secondary"}>{m.status}</Badge></TableCell>
-                        <TableCell>
+                        <TableCell className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => handleResendInvite(m)} disabled={sendingInvite === m.id}>
+                            {sendingInvite === m.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizonal className="h-4 w-4" />}
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleRemoveMember(m.id)}><Trash2 className="h-4 w-4" /></Button>
                         </TableCell>
                       </TableRow>
@@ -238,7 +279,7 @@ const CorporateDashboard = () => {
                 </Table>
                 <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
                   <DialogContent>
-                    <DialogHeader><DialogTitle>Add Team Member</DialogTitle></DialogHeader>
+                    <DialogHeader><DialogTitle>Add & Invite Team Member</DialogTitle></DialogHeader>
                     <div className="space-y-4">
                       <div className="space-y-2"><Label>Full Name</Label><Input value={newMember.full_name} onChange={(e) => setNewMember({ ...newMember, full_name: e.target.value })} /></div>
                       <div className="space-y-2"><Label>Email *</Label><Input type="email" value={newMember.email} onChange={(e) => setNewMember({ ...newMember, email: e.target.value })} required /></div>
@@ -249,8 +290,9 @@ const CorporateDashboard = () => {
                           <SelectContent><SelectItem value="member">Member</SelectItem><SelectItem value="manager">Manager</SelectItem></SelectContent>
                         </Select>
                       </div>
+                      <p className="text-xs text-muted-foreground">An invitation email will be sent automatically to the member.</p>
                       <Button className="w-full" onClick={handleAddMember} disabled={addingMember}>
-                        {addingMember && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Add Member
+                        {addingMember && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Add & Send Invitation
                       </Button>
                     </div>
                   </DialogContent>
@@ -260,7 +302,14 @@ const CorporateDashboard = () => {
 
             {activeTab === "courses" && (
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Course Licenses</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Course Licenses</h2>
+                  {licenses.length > 0 && (
+                    <Button onClick={() => setAssignCourseOpen(true)}>
+                      <BookOpen className="h-4 w-4 mr-2" /> Assign Course
+                    </Button>
+                  )}
+                </div>
                 {licenses.length === 0 ? (
                   <Card><CardContent className="py-8 text-center text-muted-foreground">No course licenses yet. Contact us to purchase bulk course access.</CardContent></Card>
                 ) : (
@@ -281,6 +330,15 @@ const CorporateDashboard = () => {
                     ))}
                   </div>
                 )}
+                <CorporateAssignCourse
+                  open={assignCourseOpen}
+                  onOpenChange={setAssignCourseOpen}
+                  members={activeMembers}
+                  licenses={licenses}
+                  accountId={account.id}
+                  accountName={account.name}
+                  onAssigned={() => fetchData(account.id)}
+                />
               </div>
             )}
 
@@ -319,6 +377,10 @@ const CorporateDashboard = () => {
                   </TableBody>
                 </Table>
               </div>
+            )}
+
+            {activeTab === "leaderboard" && (
+              <CorporateLeaderboard members={activeMembers} enrollments={enrollments} />
             )}
 
             {activeTab === "invoices" && (
