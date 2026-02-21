@@ -81,7 +81,7 @@ const Navigation = () => {
     name: "Data Engineering",
     href: "/schools/engineering"
   }, {
-    name: "Product Design",
+    name: "Product & Innovation",
     href: "/schools/product"
   }, {
     name: "Data & Analytics",
@@ -90,10 +90,10 @@ const Navigation = () => {
     name: "Business Studies",
     href: "/schools/business"
   }, {
-    name: "Creative Economy",
+    name: "Digital & Creative Media",
     href: "/schools/creative-economy"
   }, {
-    name: "Business Computing",
+    name: "Languages and Communication",
     href: "/schools/computing"
   }];
   const getInitials = (name: string | null) => {

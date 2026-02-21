@@ -109,11 +109,11 @@ interface Assignment {
 
 const schools = [
   "Data Engineering",
-  "Product Design",
+  "Product & Innovation",
   "Data & Analytics",
   "Business Studies",
-  "Creative Economy",
-  "Business Computing",
+  "Digital & Creative Media",
+  "Languages and Communication",
 ];
 
 const contentTypes = [

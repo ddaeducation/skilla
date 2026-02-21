@@ -14,9 +14,9 @@ const schoolDbNameMap: Record<string, string> = {
   engineering: "Data Engineering",
   data: "Data & Analytics",
   business: "Business Studies",
-  product: "Product Design",
-  "creative-economy": "Creative Economy",
-  computing: "Business Computing"
+  product: "Product & Innovation",
+  "creative-economy": "Digital & Creative Media",
+  computing: "Languages and Communication"
 };
 const SchoolPrograms = () => {
   const {
@@ -196,9 +196,9 @@ const SchoolPrograms = () => {
       }]
     },
     product: {
-      title: "School of Product Design",
+      title: "School of Product & Innovation",
       subtitle: "Build expertise in product management and design thinking",
-      description: "Create products that users love. Our Product Design school teaches you the art and science of building successful digital products from concept to launch.",
+      description: "Create products that users love. Our Product & Innovation school teaches you the art and science of building successful digital products from concept to launch.",
       icon: TrendingUp,
       color: "from-orange-600 to-red-600",
       stats: [{
@@ -242,9 +242,9 @@ const SchoolPrograms = () => {
       }]
     },
     "creative-economy": {
-      title: "School of Creative Economy",
+      title: "School of Digital & Creative Media",
       subtitle: "Explore content creation, music business, and digital arts",
-      description: "Turn your creativity into a career. Our Creative Economy school helps you build sustainable businesses around your creative talents.",
+      description: "Turn your creativity into a career. Our Digital & Creative Media school helps you build sustainable businesses around your creative talents.",
       icon: Palette,
       color: "from-pink-600 to-rose-600",
       stats: [{
@@ -288,9 +288,9 @@ const SchoolPrograms = () => {
       }]
     },
     computing: {
-      title: "School of Business Computing",
+      title: "School of Languages and Communication",
       subtitle: "Dive into computer science, AI, and advanced programming",
-      description: "Push the boundaries of technology. Our Business Computing school covers cutting-edge topics from AI to blockchain, preparing you for the future of tech.",
+      description: "Push the boundaries of technology. Our Languages and Communication school covers cutting-edge topics from AI to blockchain, preparing you for the future of tech.",
       icon: Cpu,
       color: "from-indigo-600 to-violet-600",
       stats: [{
