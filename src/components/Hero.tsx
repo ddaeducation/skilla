@@ -168,7 +168,7 @@ const Hero = () => {
             </div>
             <div className="text-left">
               <div className="font-semibold">Accredited by RTB</div>
-              <div className="text-xs">(Rwanda TVET Board)</div>
+              <div className="text-xs">(Rwanda TVET Board (coming soon))</div>
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm text-primary-foreground/80">
