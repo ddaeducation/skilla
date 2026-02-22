@@ -86,13 +86,22 @@ const AcceptCourseInstructorInvite = () => {
 
       const res = await supabase.functions.invoke("accept-course-instructor-invitation", {
         body: { token },
-        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
-      // Parse response body if there's a non-2xx from the function
       if (res.error) {
-        // Try to extract the error message from the response data
-        const errMsg = res.data?.error || res.error.message || "Failed to accept invitation";
+        // For non-2xx responses, try to get the actual error from the response
+        let errMsg = "Failed to accept invitation";
+        if (res.data?.error) {
+          errMsg = res.data.error;
+        } else if (res.error instanceof Error && 'context' in res.error) {
+          try {
+            const ctx = res.error as any;
+            const body = await ctx.context?.json?.();
+            if (body?.error) errMsg = body.error;
+          } catch {
+            errMsg = res.error.message || errMsg;
+          }
+        }
         throw new Error(errMsg);
       }
 
