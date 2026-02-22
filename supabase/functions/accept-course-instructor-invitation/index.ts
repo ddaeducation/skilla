@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
@@ -44,11 +44,14 @@ serve(async (req) => {
     }
 
     // Look up the invitation
+    console.log("Looking up invitation with token:", token?.substring(0, 8) + "...");
     const { data: invitation, error: inviteError } = await supabaseAdmin
       .from("course_instructor_invitations")
       .select("*, courses(title)")
       .eq("token", token)
       .maybeSingle();
+
+    console.log("Invitation lookup result:", { found: !!invitation, error: inviteError?.message, status: invitation?.status });
 
     if (inviteError || !invitation) {
       return new Response(
@@ -76,6 +79,7 @@ serve(async (req) => {
     }
 
     // Verify email matches
+    console.log("Email comparison:", { userEmail: user.email?.toLowerCase(), inviteEmail: invitation.email.toLowerCase() });
     if (user.email?.toLowerCase() !== invitation.email.toLowerCase()) {
       return new Response(
         JSON.stringify({
