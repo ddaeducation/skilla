@@ -20,7 +20,8 @@ import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/hooks/useActivityLog";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Loader2, User, Mail, Phone, Save, Lock, Eye, EyeOff, Camera, Trash2, AlertTriangle, History, LogIn, KeyRound, ImageIcon, UserCog } from "lucide-react";
+import { Loader2, User, Mail, Phone, Save, Lock, Eye, EyeOff, Camera, Trash2, AlertTriangle, History, LogIn, KeyRound, ImageIcon, UserCog, GraduationCap } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -70,6 +71,9 @@ const Profile = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [isInstructor, setIsInstructor] = useState(false);
+  const [instructorBio, setInstructorBio] = useState("");
+  const [savingBio, setSavingBio] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -122,8 +126,59 @@ const Profile = () => {
     }
     setLoading(false);
     
+    // Check instructor status and fetch bio
+    await fetchInstructorBio(userId);
     // Fetch activity logs
     await fetchActivityLogs(userId);
+  };
+
+  const fetchInstructorBio = async (userId: string) => {
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "moderator");
+
+    if (roles && roles.length > 0) {
+      setIsInstructor(true);
+      const { data: application } = await supabase
+        .from("instructor_applications")
+        .select("bio")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (application) {
+        setInstructorBio(application.bio || "");
+      }
+    }
+  };
+
+  const handleSaveBio = async () => {
+    if (!user) return;
+    setSavingBio(true);
+
+    const { error } = await supabase
+      .from("instructor_applications")
+      .update({ bio: instructorBio })
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update bio.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Bio updated",
+        description: "Your instructor bio has been saved. It will appear on your courses.",
+      });
+      await logActivity("profile_update", "Updated instructor bio");
+      if (user) await fetchActivityLogs(user.id);
+    }
+    setSavingBio(false);
   };
 
   const fetchActivityLogs = async (userId: string) => {
@@ -619,6 +674,44 @@ const Profile = () => {
               </form>
             </CardContent>
           </Card>
+
+          {/* Instructor Bio Card - Only for instructors */}
+          {isInstructor && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5" />
+                  Instructor Bio
+                </CardTitle>
+                <CardDescription>
+                  This bio will be displayed to students on your course pages
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Textarea
+                    value={instructorBio}
+                    onChange={(e) => setInstructorBio(e.target.value)}
+                    placeholder="Write about yourself, your expertise, and teaching style..."
+                    rows={5}
+                  />
+                  <Button onClick={handleSaveBio} disabled={savingBio} className="w-full sm:w-auto">
+                    {savingBio ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Bio
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Change Password Card */}
           <Card>
