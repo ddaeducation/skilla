@@ -63,6 +63,7 @@ interface Course {
   image_url: string | null;
   certificate_template_url: string | null;
   instructor_name: string | null;
+  instructor_id: string | null;
   category: string | null;
 }
 
@@ -328,6 +329,7 @@ const Admin = () => {
   const [userActionType, setUserActionType] = useState<"suspend" | "remove" | "reactivate" | null>(null);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [processingUserAction, setProcessingUserAction] = useState(false);
+  const [selectedInstructorForCourses, setSelectedInstructorForCourses] = useState<string>("");
 
   const schools = [
     "Data Engineering",
@@ -2679,6 +2681,64 @@ const Admin = () => {
                       )}
                     </TableBody>
                   </Table>
+                </Card>
+              </div>
+
+              {/* Instructor Courses Lookup Section */}
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Instructor Courses</h2>
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="space-y-2">
+                      <Label>Select Instructor</Label>
+                      <Select
+                        value={selectedInstructorForCourses}
+                        onValueChange={setSelectedInstructorForCourses}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose an instructor..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {instructorUsers.map((inst) => (
+                            <SelectItem key={inst.user_id} value={inst.user_id}>
+                              {inst.profiles?.full_name || inst.profiles?.email || "Unknown"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {selectedInstructorForCourses && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Courses by {instructorUsers.find(i => i.user_id === selectedInstructorForCourses)?.profiles?.full_name || "this instructor"}:
+                        </p>
+                        {courses.filter(c => c.instructor_id === selectedInstructorForCourses).length > 0 ? (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Title</TableHead>
+                                <TableHead>School</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead>Price</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {courses.filter(c => c.instructor_id === selectedInstructorForCourses).map(c => (
+                                <TableRow key={c.id}>
+                                  <TableCell className="font-medium">{c.title}</TableCell>
+                                  <TableCell>{c.school}</TableCell>
+                                  <TableCell>{c.category || "-"}</TableCell>
+                                  <TableCell>${c.price}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-4">No courses found for this instructor.</p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
                 </Card>
               </div>
 
