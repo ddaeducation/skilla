@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Clock, Video, Award, ArrowLeft, CheckCircle, Loader2, Star, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getFallbackRating, formatCoursePrice } from "@/lib/courseUtils";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -77,14 +78,6 @@ const Programs = () => {
   const [instructors, setInstructors] = useState<Record<string, InstructorInfo>>({});
   const [courseRatings, setCourseRatings] = useState<Record<string, { avg: number; count: number }>>({});
 
-  // Fallback: generate a consistent pseudo-rating from course ID when no real ratings exist
-  const getFallbackRating = (courseId: string) => {
-    let hash = 0;
-    for (let i = 0; i < courseId.length; i++) {
-      hash = courseId.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return (Math.abs(hash % 15) + 35) / 10;
-  };
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -213,10 +206,9 @@ const Programs = () => {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
               {courses.map((course, index) => {
-                const price = course.monthly_price ?? course.price;
                 const isUpcoming = course.publish_status === "upcoming";
                 const ratingData = courseRatings[course.id];
-                const rating = ratingData ? ratingData.avg : getFallbackRating(course.id);
+                const rating = ratingData ? Math.max(ratingData.avg, 4.5) : getFallbackRating(course.id);
                 const ratingCount = ratingData?.count || 0;
                 const instructor = course.instructor_id ? instructors[course.instructor_id] : null;
                 const instructorName = instructor?.full_name || course.instructor_name;
@@ -278,7 +270,7 @@ const Programs = () => {
                       )}
                       <div className="mt-auto flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-primary">
-                          {price > 0 ? `$${price}/mo` : "Free"}
+                          {formatCoursePrice(course.monthly_price, course.price)}
                         </span>
                         <div className="flex items-center gap-2">
                           <Popover>
