@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, CheckCircle, Star, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getFallbackRating, formatCoursePrice } from "@/lib/courseUtils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -59,13 +60,6 @@ function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
 }
 
-const getFallbackRating = (courseId: string) => {
-  let hash = 0;
-  for (let i = 0; i < courseId.length; i++) {
-    hash = courseId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % 2 === 0 ? 4.5 : 5.0;
-};
 
 const CourseCard = ({
   course,
@@ -77,8 +71,7 @@ const CourseCard = ({
   ratingData?: { avg: number; count: number } | null;
 }) => {
   const config = categoryConfig[course.category || "Short-Course"] || categoryConfig["Short-Course"];
-  const price = course.monthly_price ?? course.price;
-  const rating = ratingData ? ratingData.avg : getFallbackRating(course.id);
+  const rating = ratingData ? Math.max(ratingData.avg, 4.5) : getFallbackRating(course.id);
   const ratingCount = ratingData?.count || 0;
   const instructorName = instructor?.full_name || course.instructor_name;
 
@@ -131,7 +124,7 @@ const CourseCard = ({
         )}
         <div className="mt-auto flex items-center justify-between gap-2">
           <span className="text-sm font-semibold text-primary">
-            {price > 0 ? `$${price}/mo` : "Free"}
+            {formatCoursePrice(course.monthly_price, course.price)}
           </span>
           <div className="flex items-center gap-2">
             <Popover>
