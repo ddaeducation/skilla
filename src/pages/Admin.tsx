@@ -1583,7 +1583,7 @@ const Admin = () => {
                         <Users className="w-6 h-6 text-primary" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold">{profiles.length - removedUserIds.size}</p>
+                        <p className="text-2xl font-bold">{profiles.length}</p>
                         <p className="text-sm text-muted-foreground">Total Users</p>
                       </div>
                     </div>
@@ -2045,19 +2045,14 @@ const Admin = () => {
                         );
                         
                         // Determine user status
-                        let userStatus: "active" | "suspended" | "removed" = "active";
-                        if (roles.length === 0 && !hasEnrollments) {
-                          userStatus = "removed";
-                        } else if (roles.length === 0 || hasSuspendedEnrollment) {
+                        let userStatus: "active" | "suspended" = "active";
+                        if (hasSuspendedEnrollment) {
                           userStatus = "suspended";
                         }
                         
                         return { ...profile, roles, userStatus };
                       })
                       .filter((profile) => {
-                        // Always exclude removed users from the list
-                        if (profile.userStatus === "removed") return false;
-                        
                         // Filter by search query
                         if (userSearchQuery) {
                           const query = userSearchQuery.toLowerCase();
