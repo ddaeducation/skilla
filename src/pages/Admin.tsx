@@ -1884,7 +1884,7 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredInstructorApplications.map((application) => (
+                    {instructorApplications.map((application) => (
                       <TableRow key={application.id}>
                         <TableCell className="font-medium">{application.full_name}</TableCell>
                         <TableCell>{application.email}</TableCell>
@@ -1937,7 +1937,7 @@ const Admin = () => {
                         </TableCell>
                       </TableRow>
                     ))}
-                    {filteredInstructorApplications.length === 0 && (
+                    {instructorApplications.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center text-muted-foreground">
                           No applications yet
