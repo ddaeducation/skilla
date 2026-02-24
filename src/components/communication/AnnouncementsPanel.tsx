@@ -71,7 +71,7 @@ export const AnnouncementsPanel = ({ userId, userRole, courses, enrolledCourseId
   const [form, setForm] = useState({
     title: "",
     content: "",
-    course_id: "",
+    course_ids: [] as string[],
     is_global: false,
     comments_enabled: true,
     image_url: "",
@@ -240,17 +240,32 @@ export const AnnouncementsPanel = ({ userId, userRole, courses, enrolledCourseId
         .eq("id", userId)
         .single();
 
-      const { error } = await supabase.from("announcements").insert({
-        title: form.title,
-        content: form.content,
-        course_id: form.course_id || null,
-        is_global: form.is_global,
-        author_id: userId,
-        comments_enabled: form.comments_enabled,
-        image_url: form.image_url || null,
-      });
-
-      if (error) throw error;
+      if (form.is_global) {
+        // Single global announcement
+        const { error } = await supabase.from("announcements").insert({
+          title: form.title,
+          content: form.content,
+          course_id: null,
+          is_global: true,
+          author_id: userId,
+          comments_enabled: form.comments_enabled,
+          image_url: form.image_url || null,
+        });
+        if (error) throw error;
+      } else {
+        // Insert one announcement per selected course
+        const inserts = form.course_ids.map((courseId) => ({
+          title: form.title,
+          content: form.content,
+          course_id: courseId,
+          is_global: false,
+          author_id: userId,
+          comments_enabled: form.comments_enabled,
+          image_url: form.image_url || null,
+        }));
+        const { error } = await supabase.from("announcements").insert(inserts);
+        if (error) throw error;
+      }
 
       // Send email notifications in background
       supabase.functions.invoke("send-notification", {
@@ -259,7 +274,7 @@ export const AnnouncementsPanel = ({ userId, userRole, courses, enrolledCourseId
           announcement: {
             title: form.title,
             content: form.content,
-            course_id: form.course_id || null,
+            course_id: form.course_ids[0] || null,
             is_global: form.is_global,
             author_name: profile?.full_name || "Admin",
           },
@@ -268,7 +283,7 @@ export const AnnouncementsPanel = ({ userId, userRole, courses, enrolledCourseId
 
       toast({ title: "Announcement posted successfully" });
       setDialogOpen(false);
-      setForm({ title: "", content: "", course_id: "", is_global: false, comments_enabled: true, image_url: "" });
+      setForm({ title: "", content: "", course_ids: [], is_global: false, comments_enabled: true, image_url: "" });
       fetchAnnouncements();
     } catch (error) {
       console.error("Error creating announcement:", error);
@@ -632,31 +647,55 @@ export const AnnouncementsPanel = ({ userId, userRole, courses, enrolledCourseId
                   )}
                 </div>
 
-                {userRole === "admin" && (
+                {(userRole === "admin" || userRole === "instructor") && (
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={form.is_global}
-                      onCheckedChange={(checked) => setForm({ ...form, is_global: checked, course_id: "" })}
+                      onCheckedChange={(checked) => setForm({ ...form, is_global: checked, course_ids: [] })}
                     />
                     <Label>Global announcement (visible to all users)</Label>
                   </div>
                 )}
                 {!form.is_global && (
                   <div className="space-y-2">
-                    <Label>Target Course</Label>
-                    <Select value={form.course_id} onValueChange={(v) => setForm({ ...form, course_id: v })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a course" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {courses.map((course) => (
-                          <SelectItem key={course.id} value={course.id}>
-                            {course.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                </div>
+                    <Label>Target Course(s)</Label>
+                    <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto">
+                      {courses.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No courses available</p>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 pb-2 border-b">
+                            <Checkbox
+                              checked={form.course_ids.length === courses.length && courses.length > 0}
+                              onCheckedChange={(checked) => {
+                                setForm({ ...form, course_ids: checked ? courses.map(c => c.id) : [] });
+                              }}
+                            />
+                            <Label className="text-sm font-medium cursor-pointer">Select All</Label>
+                          </div>
+                          {courses.map((course) => (
+                            <div key={course.id} className="flex items-center gap-2">
+                              <Checkbox
+                                checked={form.course_ids.includes(course.id)}
+                                onCheckedChange={(checked) => {
+                                  setForm({
+                                    ...form,
+                                    course_ids: checked
+                                      ? [...form.course_ids, course.id]
+                                      : form.course_ids.filter(id => id !== course.id),
+                                  });
+                                }}
+                              />
+                              <Label className="text-sm cursor-pointer">{course.title}</Label>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                    {form.course_ids.length > 0 && (
+                      <p className="text-xs text-muted-foreground">{form.course_ids.length} course(s) selected</p>
+                    )}
+                  </div>
                 )}
                 <div className="flex items-center gap-2">
                   <Switch
@@ -665,7 +704,7 @@ export const AnnouncementsPanel = ({ userId, userRole, courses, enrolledCourseId
                   />
                   <Label>Allow comments</Label>
                 </div>
-                <Button onClick={handleCreate} className="w-full" disabled={!form.title || !form.content || uploading}>
+                <Button onClick={handleCreate} className="w-full" disabled={!form.title || !form.content || uploading || (!form.is_global && form.course_ids.length === 0)}>
                   Post Announcement
                 </Button>
               </div>
@@ -790,7 +829,7 @@ export const AnnouncementsPanel = ({ userId, userRole, courses, enrolledCourseId
               )}
             </div>
 
-            {userRole === "admin" && (
+            {(userRole === "admin" || userRole === "instructor") && (
               <div className="flex items-center gap-2">
                 <Switch
                   checked={editForm.is_global}

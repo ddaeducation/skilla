@@ -335,8 +335,8 @@ export const LiveSessionsPanel = ({ userId, userRole, courses }: LiveSessionsPan
                   />
                 </div>
                 
-                {/* Global Toggle (Admin only) */}
-                {userRole === "admin" && (
+                {/* Global Toggle */}
+                {(userRole === "admin" || userRole === "instructor") && (
                   <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
                     <Switch
                       id="session-global"
