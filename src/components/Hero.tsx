@@ -27,7 +27,7 @@ const schoolUrlMap: Record<string, string> = {
   "Business Studies": "business",
   "Product & Innovation": "product",
   "Digital & Creative Media": "creative-economy",
-  "Languages & Comms": "computing",
+  "Languages & Comms": "computing"
 };
 
 const Hero = () => {
@@ -47,12 +47,12 @@ const Hero = () => {
         return;
       }
       setIsSearching(true);
-      const { data } = await supabase
-        .from("courses")
-        .select("id, title, school, category")
-        .ilike("title", `%${q}%`)
-        .eq("approval_status", "approved")
-        .limit(8);
+      const { data } = await supabase.
+      from("courses").
+      select("id, title, school, category").
+      ilike("title", `%${q}%`).
+      eq("approval_status", "approved").
+      limit(8);
       setResults(data || []);
       setShowResults(true);
       setIsSearching(false);
@@ -96,10 +96,10 @@ const Hero = () => {
       <div className="container relative z-10 px-4 py-16 md:py-24">
         {/* Hero content */}
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl animate-fade-in lg:text-5xl" id="main-heading">Job-Ready Tech Skills For Global Careers</h1>
+          <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl animate-fade-in lg:text-5xl" id="main-heading">Master and Monetize Skills.</h1>
           <p className="mx-auto mb-8 max-w-2xl text-lg leading-relaxed text-primary-foreground/90 sm:text-xl md:text-2xl animate-fade-in" style={{
           animationDelay: "0.1s"
-        }}>Achieve career clarity and global relevance through flexible short courses or full professional programs—built for international success.</p>
+        }}>Learn job-ready skills from real professionals and turn knowledge into career growth.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: "0.2s" }}>
             <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 text-base font-semibold px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-all" onClick={() => navigate("/programs/all")}>
               Explore all programs
@@ -109,39 +109,39 @@ const Hero = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary-foreground/50 z-10" />
               {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-foreground/50 animate-spin z-10" />}
               <Input
-                placeholder="Search courses..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => results.length > 0 && setShowResults(true)}
-                className="pl-10 py-6 h-auto bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/50 focus-visible:ring-accent"
-              />
-              {showResults && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-lg shadow-xl overflow-hidden z-50">
-                  {results.length === 0 ? (
-                    <div className="px-4 py-3 text-sm text-muted-foreground">No courses found</div>
-                  ) : (
-                    results.map((course) => (
-                      <button
-                        key={course.id}
-                        className="w-full text-left px-4 py-3 hover:bg-accent/10 transition-colors border-b border-border last:border-0 flex items-center justify-between gap-2"
-                        onClick={() => {
-                          setShowResults(false);
-                          setSearchQuery("");
-                          const schoolSlug = schoolUrlMap[course.school];
-                          if (schoolSlug) {
-                            navigate(`/schools/${schoolSlug}`);
-                          } else {
-                            navigate(`/programs/all`);
-                          }
-                        }}
-                      >
+              placeholder="Search courses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => results.length > 0 && setShowResults(true)}
+              className="pl-10 py-6 h-auto bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/50 focus-visible:ring-accent" />
+
+              {showResults &&
+            <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-lg shadow-xl overflow-hidden z-50">
+                  {results.length === 0 ?
+              <div className="px-4 py-3 text-sm text-muted-foreground">No courses found</div> :
+
+              results.map((course) =>
+              <button
+                key={course.id}
+                className="w-full text-left px-4 py-3 hover:bg-accent/10 transition-colors border-b border-border last:border-0 flex items-center justify-between gap-2"
+                onClick={() => {
+                  setShowResults(false);
+                  setSearchQuery("");
+                  const schoolSlug = schoolUrlMap[course.school];
+                  if (schoolSlug) {
+                    navigate(`/schools/${schoolSlug}`);
+                  } else {
+                    navigate(`/programs/all`);
+                  }
+                }}>
+
                         <span className="text-sm font-medium text-foreground truncate">{course.title}</span>
                         <span className="text-xs text-muted-foreground whitespace-nowrap">{course.category || course.school}</span>
                       </button>
-                    ))
-                  )}
+              )
+              }
                 </div>
-              )}
+            }
             </div>
           </div>
         </div>
