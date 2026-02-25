@@ -263,7 +263,7 @@ export function CourseContentSidebar({
         ) : (
           <span className="flex-shrink-0">{icon}</span>
         )}
-        <span className="truncate flex-1">{label}</span>
+        <span className="break-words flex-1 min-w-0">{label}</span>
         {badgeContent && (
           <Badge
             variant="outline"
@@ -306,7 +306,7 @@ export function CourseContentSidebar({
                 <ChevronRight className="w-4 h-4 flex-shrink-0" />
               )}
               {getSectionIcon(level)}
-              <span className="font-medium text-sm truncate flex-1">
+              <span className="font-medium text-sm break-words flex-1 min-w-0">
                 {section.title}
               </span>
               <Badge variant="secondary" className="text-xs">
@@ -355,7 +355,7 @@ export function CourseContentSidebar({
               <ChevronRight className="w-4 h-4 flex-shrink-0" />
             )}
               {getSectionIcon(level)}
-            <span className="font-medium text-sm truncate flex-1">
+            <span className="font-medium text-sm break-words flex-1 min-w-0">
               {section.title}
             </span>
             <Badge variant="secondary" className="text-xs">
