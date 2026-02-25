@@ -99,7 +99,7 @@ const Hero = () => {
           <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl animate-fade-in lg:text-5xl" id="main-heading">Master and Monetize Skills.</h1>
           <p className="mx-auto mb-8 max-w-2xl text-lg leading-relaxed text-primary-foreground/90 sm:text-xl md:text-2xl animate-fade-in" style={{
           animationDelay: "0.1s"
-        }}>Learn job-ready skills from real professionals and turn knowledge into career growth.</p>
+        }}>Learn Job-Ready Skills. Monitize Your Professional Experience. </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: "0.2s" }}>
             <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 text-base font-semibold px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-all" onClick={() => navigate("/programs/all")}>
               Explore all programs
