@@ -124,6 +124,7 @@ const CourseDetail = () => {
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
   const [assignmentSubmissions, setAssignmentSubmissions] = useState<AssignmentSubmission[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isInstructor, setIsInstructor] = useState(false);
   const [loading, setLoading] = useState(true);
   const [contentCounts, setContentCounts] = useState<{ lesson_count: number; quiz_count: number } | null>(null);
   const [activeContent, setActiveContent] = useState<ContentItem | null>(null);
@@ -221,6 +222,33 @@ const CourseDetail = () => {
   };
 
   const checkEnrollment = async (userId: string) => {
+    // Check if user is the course instructor
+    const { data: courseData } = await supabase
+      .from("courses")
+      .select("instructor_id")
+      .eq("id", courseId)
+      .maybeSingle();
+
+    let instructorAccess = courseData?.instructor_id === userId;
+
+    // Also check if user is a co-instructor
+    if (!instructorAccess) {
+      const { data: coInstructor } = await supabase
+        .from("course_instructors")
+        .select("id")
+        .eq("course_id", courseId)
+        .eq("instructor_id", userId)
+        .maybeSingle();
+      if (coInstructor) instructorAccess = true;
+    }
+
+    if (instructorAccess) {
+      setIsInstructor(true);
+      setIsEnrolled(true);
+      await fetchCourseContent(userId);
+      return;
+    }
+
     const { data } = await supabase
       .from("enrollments")
       .select("*")
@@ -909,7 +937,9 @@ const CourseDetail = () => {
   };
 
   // Sequential locking: an item is locked if the previous item is not completed
+  // Instructors bypass all locks
   const isItemLocked = (item: ContentItem) => {
+    if (isInstructor) return false;
     const currentIndex = unifiedContent.findIndex(
       (i) => i.type === item.type && i.data.id === item.data.id
     );
@@ -977,11 +1007,20 @@ const CourseDetail = () => {
               </div>
             </div>
             {isEnrolled && (
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground mb-1">Your Progress</div>
-                <div className="flex items-center gap-2">
-                  <Progress value={progressPercentage} className="w-32 h-2" />
-                  <span className="font-medium">{progressPercentage}%</span>
+              <div className="text-right flex items-center gap-3">
+                {isInstructor && (
+                  <Badge variant="secondary" className="text-xs">
+                    Instructor Preview
+                  </Badge>
+                )}
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">
+                    {isInstructor ? "Course Progress" : "Your Progress"}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Progress value={progressPercentage} className="w-32 h-2" />
+                    <span className="font-medium">{progressPercentage}%</span>
+                  </div>
                 </div>
               </div>
             )}
