@@ -106,14 +106,9 @@ const Hero = () => {
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <div className="relative w-full max-w-xs" ref={searchRef}>
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary-foreground/50 z-10" />
-              {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-foreground/50 animate-spin z-10" />}
-              <Input
-              placeholder="Search courses..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => results.length > 0 && setShowResults(true)}
-              className="pl-10 py-6 h-auto bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/50 focus-visible:ring-accent" />
+              <Button size="lg" variant="outline" className="w-full border-white/20 bg-white/10 text-primary-foreground hover:bg-white/20 text-base font-semibold px-8 py-6 h-auto" onClick={() => navigate("/become-instructor")}>
+                Create & Sell Course
+              </Button>
 
               {showResults &&
             <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-lg shadow-xl overflow-hidden z-50">
