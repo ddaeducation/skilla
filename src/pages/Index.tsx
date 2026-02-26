@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Helmet } from "react-helmet";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
@@ -5,14 +6,17 @@ import PathwaysSection from "@/components/PathwaysSection";
 import SchoolsSection from "@/components/SchoolsSection";
 import WhySection from "@/components/WhySection";
 import CareerSection from "@/components/CareerSection";
-import ResourcesSection from "@/components/ResourcesSection";
 import FAQSection from "@/components/FAQSection";
 import DonateSection from "@/components/DonateSection";
 import Footer from "@/components/Footer";
 import CourseAssistant from "@/components/CourseAssistant";
 import SkipNavigation from "@/components/SkipNavigation";
 
+export type NavTab = "home" | "why" | "career" | "faqs" | "resources";
+
 const Index = () => {
+  const [activeTab, setActiveTab] = useState<NavTab>("home");
+
   return (
     <>
       <Helmet>
@@ -29,16 +33,19 @@ const Index = () => {
       </Helmet>
       <div className="min-h-screen">
         <SkipNavigation />
-        <Navigation />
+        <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
         <main id="main-content" role="main" aria-label="Page content">
-          <Hero />
-          <PathwaysSection />
-          <SchoolsSection />
-          <WhySection />
-          <CareerSection />
-          
-          <FAQSection />
-          <DonateSection />
+          {activeTab === "home" && (
+            <>
+              <Hero />
+              <PathwaysSection />
+              <SchoolsSection />
+            </>
+          )}
+          {activeTab === "why" && <WhySection />}
+          {activeTab === "career" && <CareerSection />}
+          {activeTab === "faqs" && <FAQSection />}
+          {activeTab === "resources" && <DonateSection />}
         </main>
         <Footer />
         <CourseAssistant />

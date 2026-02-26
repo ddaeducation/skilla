@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import AccessibilityPanel from "@/components/AccessibilityPanel";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/hooks/useActivityLog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import gniLogo from "@/assets/gni-logo.png";
+import type { NavTab } from "@/pages/Index";
 
 interface UserProfile {
   avatar_url: string | null;
   full_name: string | null;
 }
 
-const Navigation = () => {
+interface NavigationProps {
+  activeTab?: NavTab;
+  onTabChange?: (tab: NavTab) => void;
+}
+
+const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -74,26 +83,35 @@ const Navigation = () => {
           <img src={gniLogo} alt="Global Nexus Institute" className="h-12 w-auto" />
         </a>
 
-        {/* Desktop Navigation */}
         <div className="hidden md:flex md:items-center md:space-x-6">
-          <Link to="/" className="text-sm font-medium transition-colors hover:text-primary">
-            Home
-          </Link>
-          <a href="#why" className="text-sm font-medium transition-colors hover:text-primary">
-            Why Us
-          </a>
-          <a href="#career" className="text-sm font-medium transition-colors hover:text-primary">
-            Career
-          </a>
+          {[
+            { id: "home" as NavTab, label: "Home" },
+            { id: "why" as NavTab, label: "Why Us" },
+            { id: "career" as NavTab, label: "Career" },
+            { id: "faqs" as NavTab, label: "FAQs" },
+            { id: "resources" as NavTab, label: "Resources" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                if (isHomePage && onTabChange) {
+                  onTabChange(item.id);
+                } else {
+                  window.location.href = `/#${item.id}`;
+                }
+              }}
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                isHomePage && activeTab === item.id
+                  ? "text-primary border-b-2 border-primary pb-0.5"
+                  : ""
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
           <Link to="/corporate-training" className="text-sm font-medium transition-colors hover:text-primary">
             Corporate
           </Link>
-          <a href="#resources" className="text-sm font-medium transition-colors hover:text-primary">
-            Resources
-          </a>
-          <a href="#faqs" className="text-sm font-medium transition-colors hover:text-primary">
-            FAQs
-          </a>
         </div>
 
         {/* Right side buttons */}
@@ -147,24 +165,33 @@ const Navigation = () => {
         <div className="border-t md:hidden">
           <div className="container space-y-3 px-4 py-6">
             <div className="space-y-2">
-              <Link to="/" className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent" onClick={() => setIsMenuOpen(false)}>
-                Home
-              </Link>
-              <a href="#why" className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent" onClick={() => setIsMenuOpen(false)}>
-                Why Us
-              </a>
-              <a href="#career" className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent" onClick={() => setIsMenuOpen(false)}>
-                Career
-              </a>
+              {[
+                { id: "home" as NavTab, label: "Home" },
+                { id: "why" as NavTab, label: "Why Us" },
+                { id: "career" as NavTab, label: "Career" },
+                { id: "faqs" as NavTab, label: "FAQs" },
+                { id: "resources" as NavTab, label: "Resources" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    if (isHomePage && onTabChange) {
+                      onTabChange(item.id);
+                    } else {
+                      window.location.href = `/#${item.id}`;
+                    }
+                    setIsMenuOpen(false);
+                  }}
+                  className={`block w-full text-left rounded-md px-3 py-2 text-sm font-medium hover:bg-accent ${
+                    isHomePage && activeTab === item.id ? "bg-accent text-primary" : ""
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
               <Link to="/corporate-training" className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent" onClick={() => setIsMenuOpen(false)}>
                 Corporate
               </Link>
-              <a href="#resources" className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent" onClick={() => setIsMenuOpen(false)}>
-                Resources
-              </a>
-              <a href="#faqs" className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent" onClick={() => setIsMenuOpen(false)}>
-                FAQs
-              </a>
             </div>
             <div className="space-y-2 border-t pt-3">
               <Button variant="outline" asChild className="w-full">
