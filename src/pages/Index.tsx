@@ -12,7 +12,7 @@ import Footer from "@/components/Footer";
 import CourseAssistant from "@/components/CourseAssistant";
 import SkipNavigation from "@/components/SkipNavigation";
 
-export type NavTab = "home" | "why" | "career" | "faqs" | "resources";
+export type NavTab = "home" | "why" | "career" | "faqs" | "donate";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<NavTab>("home");
@@ -45,7 +45,7 @@ const Index = () => {
           {activeTab === "why" && <WhySection />}
           {activeTab === "career" && <CareerSection />}
           {activeTab === "faqs" && <FAQSection />}
-          {activeTab === "resources" && <DonateSection />}
+          {activeTab === "donate" && <DonateSection />}
         </main>
         <Footer />
         <CourseAssistant />

@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Building2, Users, BarChart3, FileText, CheckCircle, ArrowRight, Loader2, ChevronsUpDown, X } from "lucide-react";
 
 const CorporateTraining = () => {
@@ -20,6 +21,7 @@ const CorporateTraining = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<{ id: string; title: string; school: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
   const [form, setForm] = useState({
     company_name: "",
     contact_name: "",
@@ -63,6 +65,7 @@ const CorporateTraining = () => {
       toast({ title: "Quote request submitted!", description: "We'll get back to you within 48 hours." });
       setForm({ company_name: "", contact_name: "", contact_email: "", contact_phone: "", number_of_employees: 1, message: "" });
       setSelectedCourses([]);
+      setQuoteOpen(false);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
@@ -71,108 +74,73 @@ const CorporateTraining = () => {
   };
 
   const features = [
-    { icon: Building2, title: "Company Accounts", description: "Centralized account for your organization with full team management capabilities" },
-    { icon: Users, title: "Bulk Enrollment", description: "Enroll your entire team in courses with a single purchase and seat-based licensing" },
-    { icon: BarChart3, title: "Progress Tracking", description: "Monitor employee learning progress, completion rates, and performance metrics" },
-    { icon: FileText, title: "Invoicing & Reporting", description: "Centralized payment, invoicing, and exportable reports for your organization" },
+    { icon: Building2, title: "Company Accounts", description: "Centralized account with full team management" },
+    { icon: Users, title: "Bulk Enrollment", description: "Enroll your team with seat-based licensing" },
+    { icon: BarChart3, title: "Progress Tracking", description: "Monitor completion rates and performance" },
+    { icon: FileText, title: "Invoicing & Reporting", description: "Centralized billing and exportable reports" },
+  ];
+
+  const benefits = [
+    "Custom pricing with volume discounts",
+    "Dedicated company dashboard",
+    "Employee progress tracking & analytics",
+    "Centralized billing & invoicing",
+    "Add or remove team members anytime",
+    "Exportable performance reports",
+    "Priority support for corporate accounts",
+    "Custom course bundles available",
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      {/* Hero */}
-      <section className="relative py-20 overflow-hidden" style={{ background: "var(--hero-gradient)" }}>
+      {/* Hero - compact */}
+      <section className="relative py-12 overflow-hidden" style={{ background: "var(--hero-gradient)" }}>
         <div className="container px-4 text-center">
-          <Badge variant="secondary" className="mb-4">Corporate Training</Badge>
-          <h1 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-4">
+          <Badge variant="secondary" className="mb-3">Corporate Training</Badge>
+          <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-3">
             Upskill Your Entire Team
           </h1>
-          <p className="text-lg text-primary-foreground/80 max-w-2xl mx-auto mb-8">
-            Custom training solutions for organizations. Get volume discounts, centralized management, and detailed progress reports.
+          <p className="text-base text-primary-foreground/80 max-w-xl mx-auto mb-5">
+            Custom training solutions with volume discounts, centralized management, and detailed progress reports.
           </p>
-          <Button size="lg" variant="secondary" onClick={() => document.getElementById("quote-form")?.scrollIntoView({ behavior: "smooth" })}>
-            Request a Quote <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-16 container px-4">
-        <h2 className="text-3xl font-bold text-center mb-12">Why Corporate Training?</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((f) => (
-            <Card key={f.title} className="text-center hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <f.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground">{f.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Benefits */}
-      <section className="py-16 bg-muted/30">
-        <div className="container px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Benefits for Your Organization</h2>
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {[
-              "Custom pricing with volume discounts",
-              "Dedicated company dashboard",
-              "Employee progress tracking & analytics",
-              "Centralized billing & invoicing",
-              "Add or remove team members anytime",
-              "Exportable performance reports",
-              "Priority support for corporate accounts",
-              "Custom course bundles available",
-            ].map((benefit) => (
-              <div key={benefit} className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                <span>{benefit}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Quote Form */}
-      <section id="quote-form" className="py-16 container px-4">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-2">Request a Custom Quote</h2>
-          <p className="text-muted-foreground text-center mb-8">Tell us about your training needs and we'll create a tailored proposal.</p>
-
-          <Card>
-            <CardContent className="pt-6">
+          <Dialog open={quoteOpen} onOpenChange={setQuoteOpen}>
+            <DialogTrigger asChild>
+              <Button size="lg" variant="secondary">
+                Request a Custom Quote <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-background">
+              <DialogHeader>
+                <DialogTitle>Request a Custom Quote</DialogTitle>
+              </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
                     <Label htmlFor="company_name">Company Name *</Label>
                     <Input id="company_name" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} required />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="contact_name">Contact Person *</Label>
                     <Input id="contact_name" value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} required />
                   </div>
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
                     <Label htmlFor="contact_email">Email *</Label>
                     <Input id="contact_email" type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} required />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="contact_phone">Phone</Label>
                     <Input id="contact_phone" value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="num_employees">Number of Employees *</Label>
                   <Input id="num_employees" type="number" min={1} value={form.number_of_employees} onChange={(e) => setForm({ ...form, number_of_employees: parseInt(e.target.value) || 1 })} required />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label>Courses of Interest</Label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -185,7 +153,7 @@ const CorporateTraining = () => {
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-popover z-50" align="start">
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-popover z-[100]" align="start">
                       <Command>
                         <CommandInput placeholder="Search courses..." />
                         <CommandList>
@@ -231,17 +199,45 @@ const CorporateTraining = () => {
                     </div>
                   )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="message">Additional Details</Label>
-                  <Textarea id="message" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Tell us about your training goals, timeline, etc." rows={4} />
+                  <Textarea id="message" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Training goals, timeline, etc." rows={3} />
                 </div>
                 <Button type="submit" className="w-full" disabled={submitting}>
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Submit Quote Request
                 </Button>
               </form>
-            </CardContent>
-          </Card>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </section>
+
+      {/* Features + Benefits combined */}
+      <section className="py-10 container px-4">
+        <h2 className="text-2xl font-bold text-center mb-6">Why Corporate Training?</h2>
+        <div className="grid md:grid-cols-4 gap-4 mb-10">
+          {features.map((f) => (
+            <Card key={f.title} className="text-center hover:shadow-lg transition-shadow">
+              <CardContent className="pt-5 pb-4">
+                <div className="mx-auto w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3">
+                  <f.icon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-semibold text-sm mb-1">{f.title}</h3>
+                <p className="text-xs text-muted-foreground">{f.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <h2 className="text-2xl font-bold text-center mb-6">Benefits for Your Organization</h2>
+        <div className="grid md:grid-cols-2 gap-3 max-w-3xl mx-auto">
+          {benefits.map((benefit) => (
+            <div key={benefit} className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-sm">{benefit}</span>
+            </div>
+          ))}
         </div>
       </section>
 

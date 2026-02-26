@@ -88,8 +88,6 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
             { id: "home" as NavTab, label: "Home" },
             { id: "why" as NavTab, label: "Why Us" },
             { id: "career" as NavTab, label: "Career" },
-            { id: "faqs" as NavTab, label: "FAQs" },
-            { id: "resources" as NavTab, label: "Resources" },
           ].map((item) => (
             <button
               key={item.id}
@@ -112,6 +110,28 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
           <Link to="/corporate-training" className="text-sm font-medium transition-colors hover:text-primary">
             Corporate
           </Link>
+          {[
+            { id: "faqs" as NavTab, label: "FAQs" },
+            { id: "donate" as NavTab, label: "Donate" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                if (isHomePage && onTabChange) {
+                  onTabChange(item.id);
+                } else {
+                  window.location.href = `/#${item.id}`;
+                }
+              }}
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                isHomePage && activeTab === item.id
+                  ? "text-primary border-b-2 border-primary pb-0.5"
+                  : ""
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
 
         {/* Right side buttons */}
@@ -169,8 +189,6 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
                 { id: "home" as NavTab, label: "Home" },
                 { id: "why" as NavTab, label: "Why Us" },
                 { id: "career" as NavTab, label: "Career" },
-                { id: "faqs" as NavTab, label: "FAQs" },
-                { id: "resources" as NavTab, label: "Resources" },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -192,6 +210,27 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
               <Link to="/corporate-training" className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent" onClick={() => setIsMenuOpen(false)}>
                 Corporate
               </Link>
+              {[
+                { id: "faqs" as NavTab, label: "FAQs" },
+                { id: "donate" as NavTab, label: "Donate" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    if (isHomePage && onTabChange) {
+                      onTabChange(item.id);
+                    } else {
+                      window.location.href = `/#${item.id}`;
+                    }
+                    setIsMenuOpen(false);
+                  }}
+                  className={`block w-full text-left rounded-md px-3 py-2 text-sm font-medium hover:bg-accent ${
+                    isHomePage && activeTab === item.id ? "bg-accent text-primary" : ""
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
             <div className="space-y-2 border-t pt-3">
               <Button variant="outline" asChild className="w-full">
