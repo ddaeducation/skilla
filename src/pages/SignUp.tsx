@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Loader2, Eye, EyeOff, ArrowLeft, ArrowRight } from "lucide-react";
+import { Loader2, Eye, EyeOff, ArrowLeft, ArrowRight, Gift } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { z } from "zod";
@@ -84,6 +84,7 @@ const SignUp = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const redirectUrl = searchParams.get("redirect") || "/";
+  const referralCode = searchParams.get("ref") || "";
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -153,6 +154,7 @@ const SignUp = () => {
           employment_status: employmentStatus,
           linkedin_profile: linkedIn.trim() || null,
           hear_about: hearAbout || null,
+          referred_by_code: referralCode || null,
         },
         emailRedirectTo: `${window.location.origin}/`,
       },
@@ -323,6 +325,12 @@ const SignUp = () => {
           <CardHeader>
             <CardTitle>Create Account</CardTitle>
             <CardDescription>{stepTitles[step - 1]}</CardDescription>
+            {referralCode && (
+              <div className="mt-2 rounded-md bg-primary/10 border border-primary/20 px-3 py-2 text-xs text-primary flex items-center gap-2">
+                <Gift className="h-3.5 w-3.5" />
+                You were referred! You and your friend will earn rewards.
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             {renderStepIndicator()}
