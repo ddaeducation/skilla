@@ -1799,8 +1799,12 @@ export type Database = {
           created_at: string | null
           education_level: string | null
           email: string | null
+          employment_status: string | null
           full_name: string | null
+          gender: string | null
+          hear_about: string | null
           id: string
+          linkedin_profile: string | null
           phone: string | null
           year_of_birth: number | null
         }
@@ -1810,8 +1814,12 @@ export type Database = {
           created_at?: string | null
           education_level?: string | null
           email?: string | null
+          employment_status?: string | null
           full_name?: string | null
+          gender?: string | null
+          hear_about?: string | null
           id: string
+          linkedin_profile?: string | null
           phone?: string | null
           year_of_birth?: number | null
         }
@@ -1821,8 +1829,12 @@ export type Database = {
           created_at?: string | null
           education_level?: string | null
           email?: string | null
+          employment_status?: string | null
           full_name?: string | null
+          gender?: string | null
+          hear_about?: string | null
           id?: string
+          linkedin_profile?: string | null
           phone?: string | null
           year_of_birth?: number | null
         }
