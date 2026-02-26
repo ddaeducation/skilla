@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, Search } from "lucide-react";
 import AccessibilityPanel from "@/components/AccessibilityPanel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/hooks/useActivityLog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,6 +22,7 @@ interface NavigationProps {
 
 const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isHomePage = location.pathname === "/";
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,6 +30,42 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isInstructor, setIsInstructor] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{ id: string; title: string; school: string }[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+        setSearchResults([]);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setIsSearching(true);
+      const { data } = await supabase
+        .from("courses")
+        .select("id, title, school")
+        .ilike("title", `%${searchQuery}%`)
+        .eq("publish_status", "published")
+        .limit(8);
+      setSearchResults(data || []);
+      setIsSearching(false);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -132,6 +170,47 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
               {item.label}
             </button>
           ))}
+
+          {/* Search */}
+          <div className="relative" ref={searchRef}>
+            <button
+              onClick={() => { setSearchOpen(!searchOpen); setSearchQuery(""); setSearchResults([]); }}
+              className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1"
+              aria-label="Search courses"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+            {searchOpen && (
+              <div className="absolute top-8 right-0 w-80 bg-popover border border-border rounded-lg shadow-lg z-50 p-3">
+                <Input
+                  autoFocus
+                  placeholder="What do you want to learn?"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="mb-2"
+                />
+                {isSearching && <p className="text-xs text-muted-foreground text-center py-2">Searching...</p>}
+                {!isSearching && searchQuery && searchResults.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">No courses found</p>
+                )}
+                {searchResults.map((course) => (
+                  <button
+                    key={course.id}
+                    onClick={() => {
+                      navigate(`/course/${course.id}`);
+                      setSearchOpen(false);
+                      setSearchQuery("");
+                      setSearchResults([]);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-accent text-sm transition-colors"
+                  >
+                    <span className="font-medium">{course.title}</span>
+                    <span className="block text-xs text-muted-foreground">{course.school}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right side buttons */}
@@ -231,6 +310,38 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
                   {item.label}
                 </button>
               ))}
+
+              {/* Mobile Search */}
+              <div className="pt-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="What do you want to learn?"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                {isSearching && <p className="text-xs text-muted-foreground text-center py-2">Searching...</p>}
+                {!isSearching && searchQuery && searchResults.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">No courses found</p>
+                )}
+                {searchResults.map((course) => (
+                  <button
+                    key={course.id}
+                    onClick={() => {
+                      navigate(`/course/${course.id}`);
+                      setIsMenuOpen(false);
+                      setSearchQuery("");
+                      setSearchResults([]);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-accent text-sm transition-colors"
+                  >
+                    <span className="font-medium">{course.title}</span>
+                    <span className="block text-xs text-muted-foreground">{course.school}</span>
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="space-y-2 border-t pt-3">
               <Button variant="outline" asChild className="w-full">
