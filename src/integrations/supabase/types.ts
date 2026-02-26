@@ -2168,6 +2168,18 @@ export type Database = {
         Args: { p_course_id: string }
         Returns: Json
       }
+      get_course_curriculum: {
+        Args: { p_course_id: string }
+        Returns: {
+          content_type: string
+          duration_minutes: number
+          id: string
+          is_free_preview: boolean
+          order_index: number
+          section_id: string
+          title: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
