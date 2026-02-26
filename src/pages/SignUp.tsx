@@ -55,7 +55,7 @@ const getPasswordStrength = (pwd: string) => {
   return { score: 100, label: "Very Strong", color: "text-emerald-600" };
 };
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 const SignUp = () => {
   const [step, setStep] = useState(1);
@@ -111,10 +111,11 @@ const SignUp = () => {
     if (s === 3) {
       if (!educationLevel) errors.educationLevel = "Please select your education level";
       if (!employmentStatus) errors.employmentStatus = "Please select your employment status";
-      // Gender is optional
     }
     if (s === 4) {
       if (!agreeTerms) errors.agreeTerms = "You must agree to the Terms & Conditions";
+    }
+    if (s === 5) {
       if (!confirmAccuracy) errors.confirmAccuracy = "You must confirm the accuracy of your information";
     }
 
@@ -284,18 +285,35 @@ const SignUp = () => {
           </Label>
         </div>
         {stepErrors.agreeTerms && <p className="text-xs text-destructive ml-7">{stepErrors.agreeTerms}</p>}
-        <div className="flex items-start space-x-2">
-          <Checkbox id="accuracy" checked={confirmAccuracy} onCheckedChange={(v) => setConfirmAccuracy(v === true)} className="mt-0.5" />
-          <Label htmlFor="accuracy" className="text-sm font-normal leading-snug cursor-pointer">
-            I confirm that the information provided is accurate *
-          </Label>
-        </div>
-        {stepErrors.confirmAccuracy && <p className="text-xs text-destructive ml-7">{stepErrors.confirmAccuracy}</p>}
       </div>
     </div>
   );
 
-  const stepTitles = ["Personal Info", "Contact Details", "Background", "Final Details"];
+  const renderStep5 = () => (
+    <div className="space-y-4">
+      <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+        <h4 className="text-sm font-semibold text-foreground">Review & Confirm</h4>
+        <p className="text-xs text-muted-foreground">Please confirm that all the information you provided is accurate before creating your account.</p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+          <span className="text-muted-foreground">Name:</span><span className="font-medium truncate">{fullName}</span>
+          <span className="text-muted-foreground">Email:</span><span className="font-medium truncate">{email}</span>
+          <span className="text-muted-foreground">Phone:</span><span className="font-medium">{phone}</span>
+          <span className="text-muted-foreground">Country:</span><span className="font-medium">{country}</span>
+          <span className="text-muted-foreground">Education:</span><span className="font-medium">{educationLevel}</span>
+          <span className="text-muted-foreground">Employment:</span><span className="font-medium">{employmentStatus}</span>
+        </div>
+      </div>
+      <div className="flex items-start space-x-2">
+        <Checkbox id="accuracy" checked={confirmAccuracy} onCheckedChange={(v) => setConfirmAccuracy(v === true)} className="mt-0.5" />
+        <Label htmlFor="accuracy" className="text-sm font-normal leading-snug cursor-pointer">
+          I confirm that the information provided is accurate *
+        </Label>
+      </div>
+      {stepErrors.confirmAccuracy && <p className="text-xs text-destructive ml-7">{stepErrors.confirmAccuracy}</p>}
+    </div>
+  );
+
+  const stepTitles = ["Personal Info", "Contact Details", "Background", "Final Details", "Confirm & Submit"];
 
   return (
     <div className="min-h-screen bg-background">
@@ -313,6 +331,7 @@ const SignUp = () => {
               {step === 2 && renderStep2()}
               {step === 3 && renderStep3()}
               {step === 4 && renderStep4()}
+              {step === 5 && renderStep5()}
 
               <div className="flex gap-3">
                 {step > 1 && (
