@@ -3,16 +3,20 @@ import * as pdfjsLib from "pdfjs-dist";
 import {
   ChevronLeft,
   ChevronRight,
-  Maximize2,
   Minimize2,
   X,
   Presentation,
   ZoomIn,
   ZoomOut,
   Grid3X3,
+  Download,
+  Menu,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -32,13 +36,16 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
   const [showGrid, setShowGrid] = useState(false);
   const [scale, setScale] = useState(1);
   const [controlsVisible, setControlsVisible] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const mainCanvasAreaRef = useRef<HTMLDivElement>(null);
   const thumbnailCanvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const hideTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const renderTaskRef = useRef<any>(null);
+  const activeThumbnailRef = useRef<HTMLButtonElement>(null);
 
-  // Load the PDF document
+  // Load PDF
   useEffect(() => {
     let cancelled = false;
     pdfjsLib.getDocument(url).promise.then((doc) => {
@@ -53,23 +60,19 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
   // Render current page
   const renderPage = useCallback(async (pageNum: number) => {
     if (!pdf || !canvasRef.current) return;
-    
-    // Cancel any in-progress render
     if (renderTaskRef.current) {
       try { renderTaskRef.current.cancel(); } catch {}
     }
-
     const page = await pdf.getPage(pageNum);
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Calculate scale to fit container
-    const container = containerRef.current;
+    const container = mainCanvasAreaRef.current || containerRef.current;
     const containerW = container?.clientWidth || 960;
     const containerH = container?.clientHeight || 540;
     const viewport = page.getViewport({ scale: 1 });
-    const fitScale = Math.min(containerW / viewport.width, containerH / viewport.height) * scale;
+    const fitScale = Math.min(containerW / viewport.width, containerH / viewport.height) * 0.92 * scale;
     const scaledViewport = page.getViewport({ scale: fitScale });
 
     canvas.width = scaledViewport.width;
@@ -80,11 +83,8 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
     try { await task.promise; } catch {}
   }, [pdf, scale]);
 
-  useEffect(() => {
-    renderPage(currentPage);
-  }, [currentPage, renderPage, isPresenting]);
+  useEffect(() => { renderPage(currentPage); }, [currentPage, renderPage, isPresenting, sidebarOpen]);
 
-  // Resize handler
   useEffect(() => {
     const onResize = () => renderPage(currentPage);
     window.addEventListener("resize", onResize);
@@ -93,42 +93,31 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
 
   // Keyboard navigation
   useEffect(() => {
-    if (!isPresenting) return;
     const handleKey = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case "ArrowRight":
-        case "ArrowDown":
-        case " ":
-          e.preventDefault();
-          setCurrentPage((p) => Math.min(p + 1, totalPages));
-          break;
-        case "ArrowLeft":
-        case "ArrowUp":
-          e.preventDefault();
-          setCurrentPage((p) => Math.max(p - 1, 1));
-          break;
-        case "Escape":
-          e.preventDefault();
-          exitPresentation();
-          break;
-        case "Home":
-          e.preventDefault();
-          setCurrentPage(1);
-          break;
-        case "End":
-          e.preventDefault();
-          setCurrentPage(totalPages);
-          break;
-        case "g":
-          setShowGrid((v) => !v);
-          break;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown" || (isPresenting && e.key === " ")) {
+        e.preventDefault();
+        setCurrentPage((p) => Math.min(p + 1, totalPages));
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setCurrentPage((p) => Math.max(p - 1, 1));
+      } else if (e.key === "Escape" && isPresenting) {
+        e.preventDefault();
+        exitPresentation();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setCurrentPage(1);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        setCurrentPage(totalPages);
+      } else if (e.key === "g" || e.key === "G") {
+        setShowGrid((v) => !v);
       }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [isPresenting, totalPages]);
 
-  // Auto-hide controls in presentation mode
+  // Auto-hide controls in presentation
   useEffect(() => {
     if (!isPresenting) return;
     const handleMove = () => {
@@ -144,23 +133,23 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
     };
   }, [isPresenting]);
 
+  // Scroll active thumbnail into view
+  useEffect(() => {
+    activeThumbnailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [currentPage]);
+
   const enterPresentation = async () => {
     setIsPresenting(true);
     setShowGrid(false);
-    try {
-      await document.documentElement.requestFullscreen();
-    } catch {}
+    try { await document.documentElement.requestFullscreen(); } catch {}
   };
 
   const exitPresentation = () => {
     setIsPresenting(false);
     setScale(1);
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
-    }
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   };
 
-  // Listen for fullscreen exit
   useEffect(() => {
     const handler = () => {
       if (!document.fullscreenElement && isPresenting) {
@@ -176,7 +165,7 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
   const renderThumbnail = useCallback(async (pageNum: number, canvas: HTMLCanvasElement) => {
     if (!pdf) return;
     const page = await pdf.getPage(pageNum);
-    const viewport = page.getViewport({ scale: 0.3 });
+    const viewport = page.getViewport({ scale: 0.25 });
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     const ctx = canvas.getContext("2d");
@@ -184,7 +173,9 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
     await page.render({ canvasContext: ctx, viewport }).promise;
   }, [pdf]);
 
-  // Grid view
+  const zoomPercent = Math.round(scale * 100);
+
+  // Grid overlay
   const GridView = () => {
     const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
     return (
@@ -206,12 +197,7 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
               )}
             >
               <canvas
-                ref={(el) => {
-                  if (el && pdf) {
-                    thumbnailCanvasRefs.current.set(num, el);
-                    renderThumbnail(num, el);
-                  }
-                }}
+                ref={(el) => { if (el && pdf) renderThumbnail(num, el); }}
                 className="w-full h-auto"
               />
               <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-2">
@@ -224,6 +210,41 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
     );
   };
 
+  // Thumbnail sidebar (shared between inline & presenting)
+  const ThumbnailSidebar = ({ dark = false }: { dark?: boolean }) => (
+    <ScrollArea className={cn(
+      "flex-shrink-0 border-r",
+      dark ? "bg-neutral-900 border-neutral-700 w-[180px]" : "bg-muted/40 border-border w-[160px] lg:w-[180px]"
+    )}>
+      <div className="flex flex-col gap-2 p-3">
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+          <button
+            key={num}
+            ref={num === currentPage ? activeThumbnailRef : undefined}
+            onClick={() => setCurrentPage(num)}
+            className={cn(
+              "relative rounded-md overflow-hidden border-2 transition-all hover:shadow-md group",
+              currentPage === num
+                ? (dark ? "border-blue-500 ring-2 ring-blue-500/40" : "border-primary ring-2 ring-primary/30")
+                : (dark ? "border-neutral-700 hover:border-neutral-500" : "border-transparent hover:border-muted-foreground/30")
+            )}
+          >
+            <canvas
+              ref={(el) => { if (el && pdf) renderThumbnail(num, el); }}
+              className="w-full h-auto"
+            />
+            <span className={cn(
+              "absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium px-1.5 py-0.5 rounded",
+              dark ? "bg-black/60 text-white/80" : "bg-background/80 text-muted-foreground"
+            )}>
+              {num}
+            </span>
+          </button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+
   if (!pdf) {
     return (
       <div className="flex items-center justify-center h-[400px] border rounded-lg bg-muted/30">
@@ -232,64 +253,86 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
     );
   }
 
-  // Inline (non-presentation) mode
+  // ─── Inline (non-presentation) mode ───
   if (!isPresenting) {
     return (
-      <div className="space-y-3">
-        <div
-          ref={containerRef}
-          className="relative flex items-center justify-center bg-muted/30 border rounded-lg overflow-hidden"
-          style={{ minHeight: 500 }}
-        >
-          {showGrid && <GridView />}
-          <canvas ref={canvasRef} className="max-w-full max-h-[600px]" />
-        </div>
+      <div className="border rounded-lg overflow-hidden bg-background shadow-sm" style={{ height: 600 }}>
+        {/* Top toolbar */}
+        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/60 border-b">
+          <div className="flex items-center gap-2 min-w-0">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen((v) => !v)} title="Toggle sidebar">
+              <Menu className="w-4 h-4" />
+            </Button>
+            <span className="text-sm font-medium text-foreground truncate max-w-[240px]">{title || "PDF Document"}</span>
+          </div>
 
-        {/* Controls bar */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <span className="text-sm text-muted-foreground px-2 min-w-[80px] text-center">
+            <span className="text-xs font-medium bg-muted rounded px-2 py-1 min-w-[48px] text-center">
               {currentPage} / {totalPages}
             </span>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>
               <ChevronRight className="w-4 h-4" />
             </Button>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setShowGrid((v) => !v)} title="Grid overview">
+
+            <div className="w-px h-5 bg-border mx-1" />
+
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setScale((s) => Math.max(s - 0.15, 0.5))} title="Zoom out">
+              <Minus className="w-4 h-4" />
+            </Button>
+            <span className="text-xs text-muted-foreground w-10 text-center font-medium">{zoomPercent}%</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setScale((s) => Math.min(s + 0.15, 3))} title="Zoom in">
+              <Plus className="w-4 h-4" />
+            </Button>
+
+            <div className="w-px h-5 bg-border mx-1" />
+
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowGrid((v) => !v)} title="Grid overview">
               <Grid3X3 className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setScale((s) => Math.max(s - 0.25, 0.5))} title="Zoom out">
-              <ZoomOut className="w-4 h-4" />
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={enterPresentation} title="Present">
+              <Presentation className="w-4 h-4" />
             </Button>
-            <span className="text-xs text-muted-foreground w-12 text-center">{Math.round(scale * 100)}%</span>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setScale((s) => Math.min(s + 0.25, 3))} title="Zoom in">
-              <ZoomIn className="w-4 h-4" />
+            <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Download">
+              <a href={url} download target="_blank" rel="noopener noreferrer">
+                <Download className="w-4 h-4" />
+              </a>
             </Button>
-            <Button variant="default" size="sm" onClick={enterPresentation} className="ml-2">
-              <Presentation className="w-4 h-4 mr-1" />
-              Present
-            </Button>
+          </div>
+        </div>
+
+        {/* Body: sidebar + canvas */}
+        <div ref={containerRef} className="flex relative" style={{ height: "calc(100% - 44px)" }}>
+          {showGrid && <GridView />}
+
+          {sidebarOpen && <ThumbnailSidebar />}
+
+          <div ref={mainCanvasAreaRef} className="flex-1 flex items-center justify-center overflow-auto bg-muted/20">
+            <canvas ref={canvasRef} className="max-w-full max-h-full" />
           </div>
         </div>
       </div>
     );
   }
 
-  // Fullscreen presentation mode
+  // ─── Fullscreen presentation mode ───
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[9999] bg-black flex items-center justify-center select-none"
+      className="fixed inset-0 z-[9999] bg-black flex select-none"
       style={{ cursor: controlsVisible ? "default" : "none" }}
     >
       {showGrid ? (
         <GridView />
       ) : (
-        <canvas ref={canvasRef} className="max-w-full max-h-full" />
+        <>
+          {controlsVisible && <ThumbnailSidebar dark />}
+          <div ref={mainCanvasAreaRef} className="flex-1 flex items-center justify-center">
+            <canvas ref={canvasRef} className="max-w-full max-h-full" />
+          </div>
+        </>
       )}
 
       {/* Top bar */}
@@ -311,12 +354,12 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
         </div>
       </div>
 
-      {/* Side navigation */}
+      {/* Side navigation arrows */}
       <button
         onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
         disabled={currentPage === 1}
         className={cn(
-          "absolute left-0 top-0 bottom-0 w-20 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-opacity duration-300 disabled:opacity-0",
+          "absolute left-[180px] top-0 bottom-0 w-16 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-opacity duration-300 disabled:opacity-0",
           controlsVisible ? "opacity-100" : "opacity-0"
         )}
       >
@@ -326,7 +369,7 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
         onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
         disabled={currentPage === totalPages}
         className={cn(
-          "absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-opacity duration-300 disabled:opacity-0",
+          "absolute right-0 top-0 bottom-0 w-16 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-opacity duration-300 disabled:opacity-0",
           controlsVisible ? "opacity-100" : "opacity-0"
         )}
       >
@@ -334,16 +377,11 @@ export default function PdfPresentationViewer({ url, title }: PdfPresentationVie
       </button>
 
       {/* Bottom progress */}
-      <div
-        className={cn(
-          "absolute bottom-0 inset-x-0 h-1 bg-white/10 transition-opacity duration-300",
-          controlsVisible ? "opacity-100" : "opacity-0"
-        )}
-      >
-        <div
-          className="h-full bg-primary transition-all duration-300"
-          style={{ width: `${(currentPage / totalPages) * 100}%` }}
-        />
+      <div className={cn(
+        "absolute bottom-0 inset-x-0 h-1 bg-white/10 transition-opacity duration-300",
+        controlsVisible ? "opacity-100" : "opacity-0"
+      )}>
+        <div className="h-full bg-primary transition-all duration-300" style={{ width: `${(currentPage / totalPages) * 100}%` }} />
       </div>
     </div>
   );
