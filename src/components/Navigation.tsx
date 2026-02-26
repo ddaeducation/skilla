@@ -59,7 +59,7 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
         .from("courses")
         .select("id, title, school")
         .ilike("title", `%${searchQuery}%`)
-        .eq("publish_status", "published")
+        .in("publish_status", ["live", "upcoming"])
         .limit(8);
       setSearchResults(data || []);
       setIsSearching(false);
