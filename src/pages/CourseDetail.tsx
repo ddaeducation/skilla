@@ -134,6 +134,8 @@ const CourseDetail = () => {
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
   const [averageRating, setAverageRating] = useState<number | null>(null);
   const [totalRatings, setTotalRatings] = useState(0);
+  const [previewLesson, setPreviewLesson] = useState<LessonContent | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   // Get active lesson ID for time tracking
   const activeLessonId = activeContent?.type === "lesson" ? activeContent.data.id : undefined;
@@ -438,6 +440,31 @@ const CourseDetail = () => {
       return;
     }
     navigate(`/apply?courseId=${courseId}`);
+  };
+
+  const handleFreePreviewClick = async (lesson: LessonContent) => {
+    if (!user) {
+      navigate(`/signin?redirect=/course/${courseId}`);
+      return;
+    }
+    setLoadingPreview(true);
+    const { data } = await supabase.rpc("get_free_preview_lesson", { p_lesson_id: lesson.id });
+    if (data && (data as any[]).length > 0) {
+      const item = (data as any[])[0];
+      setPreviewLesson({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        content_type: item.content_type,
+        content_url: item.content_url,
+        content_text: item.content_text,
+        order_index: item.order_index,
+        duration_minutes: item.duration_minutes,
+        is_free_preview: item.is_free_preview,
+        section_id: item.section_id,
+      });
+    }
+    setLoadingPreview(false);
   };
 
   const isLessonCompleted = (lessonId: string) => {
@@ -1161,7 +1188,16 @@ const CourseDetail = () => {
                                           .map((lesson) => (
                                             <div
                                               key={lesson.id}
-                                              className="p-3 pl-6 flex items-center gap-3 text-sm"
+                                              className={`p-3 pl-6 flex items-center gap-3 text-sm ${
+                                                lesson.is_free_preview
+                                                  ? "cursor-pointer hover:bg-muted/50 transition-colors"
+                                                  : ""
+                                              }`}
+                                              onClick={() => {
+                                                if (lesson.is_free_preview) {
+                                                  handleFreePreviewClick(lesson);
+                                                }
+                                              }}
                                             >
                                               {getContentIcon(lesson.content_type)}
                                               <span className="flex-1">{lesson.title}</span>
@@ -1172,7 +1208,7 @@ const CourseDetail = () => {
                                               )}
                                               {lesson.duration_minutes && (
                                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                  <Lock className="w-3 h-3" />
+                                                  {!lesson.is_free_preview && <Lock className="w-3 h-3" />}
                                                   {lesson.duration_minutes} min
                                                 </span>
                                               )}
@@ -1197,15 +1233,41 @@ const CourseDetail = () => {
                   </>
                 )}
 
-                <div className="text-center">
-                  <Button onClick={handleEnrollClick} size="lg" className="w-full">
-                    <Play className="w-4 h-4 mr-2" />
-                    {user ? "Enroll Now" : "Sign Up to Enroll"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                                {/* Free Preview Content Viewer */}
+                                {previewLesson && (
+                                  <>
+                                    <Separator />
+                                    <div>
+                                      <div className="flex items-center justify-between mb-3">
+                                        <h3 className="font-semibold text-lg">Free Preview</h3>
+                                        <Button variant="ghost" size="sm" onClick={() => setPreviewLesson(null)}>
+                                          Close Preview
+                                        </Button>
+                                      </div>
+                                      <Card>
+                                        <CardContent className="p-6">
+                                          {renderLessonContent(previewLesson)}
+                                        </CardContent>
+                                      </Card>
+                                    </div>
+                                  </>
+                                )}
+
+                                {loadingPreview && (
+                                  <div className="text-center py-4">
+                                    <p className="text-sm text-muted-foreground">Loading preview...</p>
+                                  </div>
+                                )}
+
+                                <div className="text-center">
+                                  <Button onClick={handleEnrollClick} size="lg" className="w-full">
+                                    <Play className="w-4 h-4 mr-2" />
+                                    {user ? "Enroll Now" : "Sign Up to Enroll"}
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
         ) : (
           /* Enrolled View with Tabs */
           <Tabs defaultValue="content" className="w-full">

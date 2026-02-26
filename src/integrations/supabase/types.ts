@@ -2180,6 +2180,21 @@ export type Database = {
           title: string
         }[]
       }
+      get_free_preview_lesson: {
+        Args: { p_lesson_id: string }
+        Returns: {
+          content_text: string
+          content_type: string
+          content_url: string
+          description: string
+          duration_minutes: number
+          id: string
+          is_free_preview: boolean
+          order_index: number
+          section_id: string
+          title: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
