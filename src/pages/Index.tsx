@@ -36,7 +36,7 @@ const Index = () => {
           <SchoolsSection />
           <WhySection />
           <CareerSection />
-          <ResourcesSection />
+          
           <FAQSection />
           <DonateSection />
         </main>
