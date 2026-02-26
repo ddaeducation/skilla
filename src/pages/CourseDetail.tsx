@@ -136,6 +136,7 @@ const CourseDetail = () => {
   const [totalRatings, setTotalRatings] = useState(0);
   const [previewLesson, setPreviewLesson] = useState<LessonContent | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [selectedCurriculumSection, setSelectedCurriculumSection] = useState<string | null>(null);
 
   // Get active lesson ID for time tracking
   const activeLessonId = activeContent?.type === "lesson" ? activeContent.data.id : undefined;
@@ -1145,88 +1146,127 @@ const CourseDetail = () => {
                   </>
                 )}
 
-                {/* Curriculum / Sections with Free Preview */}
+                {/* Curriculum / Sections with Free Preview - Split Layout */}
                 {sections.length > 0 && (
                   <>
                     <div>
                       <h3 className="font-semibold text-lg mb-3">Course Curriculum</h3>
-                      <div className="space-y-2">
-                        {sections
-                          .filter((s) => !s.parent_id)
-                          .sort((a, b) => a.order_index - b.order_index)
-                          .map((section) => {
-                            const sectionLessons = lessons.filter(
-                              (l) => l.section_id === section.id
-                            );
-                            const childSections = sections
-                              .filter((s) => s.parent_id === section.id)
-                              .sort((a, b) => a.order_index - b.order_index);
-                            const childLessons = childSections.flatMap((cs) =>
-                              lessons.filter((l) => l.section_id === cs.id)
-                            );
-                            const allLessons = [...sectionLessons, ...childLessons];
+                      <div className="flex gap-0 border rounded-lg overflow-hidden min-h-[300px]">
+                        {/* Left: Module list */}
+                        <div className="w-1/2 border-r divide-y bg-background">
+                          {sections
+                            .filter((s) => !s.parent_id)
+                            .sort((a, b) => a.order_index - b.order_index)
+                            .map((section) => {
+                              const sectionLessons = lessons.filter(
+                                (l) => l.section_id === section.id
+                              );
+                              const childSections = sections
+                                .filter((s) => s.parent_id === section.id)
+                                .sort((a, b) => a.order_index - b.order_index);
+                              const childLessons = childSections.flatMap((cs) =>
+                                lessons.filter((l) => l.section_id === cs.id)
+                              );
+                              const allLessons = [...sectionLessons, ...childLessons];
+                              const isSelected = selectedCurriculumSection === section.id;
 
-                            return (
-                              <Collapsible key={section.id} defaultOpen={false}>
-                                <div className="border rounded-lg overflow-hidden">
-                                  <CollapsibleTrigger className="w-full p-3 bg-muted/50 font-medium flex items-center justify-between hover:bg-muted/80 transition-colors">
-                                    <div className="flex items-center gap-2">
-                                      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-                                      <span className="text-left">{section.title}</span>
+                              return (
+                                <button
+                                  key={section.id}
+                                  onClick={() => setSelectedCurriculumSection(isSelected ? null : section.id)}
+                                  className={`w-full p-3 flex items-center justify-between text-left text-sm transition-colors ${
+                                    isSelected
+                                      ? "bg-primary/10 border-l-2 border-l-primary font-semibold"
+                                      : "hover:bg-muted/50"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <ChevronRight className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isSelected ? "rotate-90" : ""}`} />
+                                    <span className="break-words">{section.title}</span>
+                                  </div>
+                                  {allLessons.length > 0 && (
+                                    <Badge variant="secondary" className="text-xs shrink-0 ml-2">
+                                      {allLessons.length} {allLessons.length === 1 ? "lesson" : "lessons"}
+                                    </Badge>
+                                  )}
+                                </button>
+                              );
+                            })}
+                        </div>
+                        {/* Right: Lessons for selected module */}
+                        <div className="w-1/2 bg-muted/20">
+                          {selectedCurriculumSection ? (
+                            (() => {
+                              const section = sections.find((s) => s.id === selectedCurriculumSection);
+                              if (!section) return null;
+                              const sectionLessons = lessons.filter(
+                                (l) => l.section_id === section.id
+                              );
+                              const childSections = sections
+                                .filter((s) => s.parent_id === section.id)
+                                .sort((a, b) => a.order_index - b.order_index);
+                              const childLessons = childSections.flatMap((cs) =>
+                                lessons.filter((l) => l.section_id === cs.id)
+                              );
+                              const allLessons = [...sectionLessons, ...childLessons].sort(
+                                (a, b) => a.order_index - b.order_index
+                              );
+
+                              return (
+                                <div>
+                                  <div className="p-3 border-b bg-muted/50 font-medium text-sm flex items-center justify-between">
+                                    <span>{section.title}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {allLessons.length} {allLessons.length === 1 ? "lesson" : "lessons"}
+                                    </Badge>
+                                  </div>
+                                  {allLessons.length > 0 ? (
+                                    <div className="divide-y">
+                                      {allLessons.map((lesson) => (
+                                        <div
+                                          key={lesson.id}
+                                          className={`p-3 flex items-center gap-3 text-sm ${
+                                            lesson.is_free_preview
+                                              ? "cursor-pointer hover:bg-muted/50 transition-colors"
+                                              : ""
+                                          }`}
+                                          onClick={() => {
+                                            if (lesson.is_free_preview) {
+                                              handleFreePreviewClick(lesson);
+                                            }
+                                          }}
+                                        >
+                                          {getContentIcon(lesson.content_type)}
+                                          <span className="flex-1 break-words">{lesson.title}</span>
+                                          {lesson.is_free_preview && (
+                                            <Badge className="text-xs bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20 shrink-0">
+                                              Free Preview
+                                            </Badge>
+                                          )}
+                                          {lesson.duration_minutes && (
+                                            <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                                              {!lesson.is_free_preview && <Lock className="w-3 h-3" />}
+                                              {lesson.duration_minutes} min
+                                            </span>
+                                          )}
+                                          {!lesson.is_free_preview && !lesson.duration_minutes && (
+                                            <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                          )}
+                                        </div>
+                                      ))}
                                     </div>
-                                    {allLessons.length > 0 && (
-                                      <Badge variant="outline" className="text-xs shrink-0">
-                                        {allLessons.length} {allLessons.length === 1 ? "lesson" : "lessons"}
-                                      </Badge>
-                                    )}
-                                  </CollapsibleTrigger>
-                                  <CollapsibleContent>
-                                    {allLessons.length > 0 && (
-                                      <div className="divide-y">
-                                        {allLessons
-                                          .sort((a, b) => a.order_index - b.order_index)
-                                          .map((lesson) => (
-                                            <div
-                                              key={lesson.id}
-                                              className={`p-3 pl-6 flex items-center gap-3 text-sm ${
-                                                lesson.is_free_preview
-                                                  ? "cursor-pointer hover:bg-muted/50 transition-colors"
-                                                  : ""
-                                              }`}
-                                              onClick={() => {
-                                                if (lesson.is_free_preview) {
-                                                  handleFreePreviewClick(lesson);
-                                                }
-                                              }}
-                                            >
-                                              {getContentIcon(lesson.content_type)}
-                                              <span className="flex-1">{lesson.title}</span>
-                                              {lesson.is_free_preview && (
-                                                <Badge className="text-xs bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20">
-                                                  Free Preview
-                                                </Badge>
-                                              )}
-                                              {lesson.duration_minutes && (
-                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                  {!lesson.is_free_preview && <Lock className="w-3 h-3" />}
-                                                  {lesson.duration_minutes} min
-                                                </span>
-                                              )}
-                                              {!lesson.is_free_preview && !lesson.duration_minutes && (
-                                                <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                                              )}
-                                            </div>
-                                          ))}
-                                      </div>
-                                    )}
-                                    {allLessons.length === 0 && (
-                                      <p className="p-3 pl-6 text-sm text-muted-foreground italic">No lessons yet</p>
-                                    )}
-                                  </CollapsibleContent>
+                                  ) : (
+                                    <p className="p-4 text-sm text-muted-foreground italic text-center">No lessons yet</p>
+                                  )}
                                 </div>
-                              </Collapsible>
-                            );
-                          })}
+                              );
+                            })()
+                          ) : (
+                            <div className="flex items-center justify-center h-full p-6">
+                              <p className="text-sm text-muted-foreground">Select a module to view its lessons</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <Separator />
