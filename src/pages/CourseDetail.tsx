@@ -157,13 +157,44 @@ const CourseDetail = () => {
     const {
       data: { session },
     } = await supabase.auth.getSession();
-    if (!session?.user) {
-      navigate("/auth");
-      return;
+    if (session?.user) {
+      setUser(session.user);
     }
-    setUser(session.user);
     await fetchCourse();
-    await checkEnrollment(session.user.id);
+    if (session?.user) {
+      await checkEnrollment(session.user.id);
+    } else {
+      // Fetch sections and free preview lessons for unauthenticated visitors
+      await fetchPublicCourseContent();
+    }
+  };
+
+  const fetchPublicCourseContent = async () => {
+    const [sectionsRes, curriculumRes] = await Promise.all([
+      supabase
+        .from("course_sections")
+        .select("*")
+        .eq("course_id", courseId)
+        .order("order_index"),
+      supabase.rpc("get_course_curriculum", { p_course_id: courseId }),
+    ]);
+    if (sectionsRes.data) setSections(sectionsRes.data);
+    if (curriculumRes.data) {
+      // Map curriculum data to LessonContent shape (without actual content)
+      const mappedLessons: LessonContent[] = (curriculumRes.data as any[]).map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        description: null,
+        content_type: item.content_type,
+        content_url: null,
+        content_text: null,
+        order_index: item.order_index,
+        duration_minutes: item.duration_minutes,
+        is_free_preview: item.is_free_preview,
+        section_id: item.section_id,
+      }));
+      setLessons(mappedLessons);
+    }
   };
 
   const fetchCourse = async () => {
@@ -261,6 +292,9 @@ const CourseDetail = () => {
     if (data) {
       setIsEnrolled(true);
       await fetchCourseContent(userId);
+    } else {
+      // User is authenticated but not enrolled — show sections and free preview lessons
+      await fetchPublicCourseContent();
     }
   };
 
@@ -397,6 +431,10 @@ const CourseDetail = () => {
   }, [lessons, quizzes, assignments]);
 
   const handleEnrollClick = () => {
+    if (!user) {
+      navigate(`/signin?redirect=/course/${courseId}`);
+      return;
+    }
     navigate(`/apply?courseId=${courseId}`);
   };
 
@@ -1078,13 +1116,78 @@ const CourseDetail = () => {
                   </>
                 )}
 
+                {/* Curriculum / Sections with Free Preview */}
+                {sections.length > 0 && (
+                  <>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3">Course Curriculum</h3>
+                      <div className="space-y-2">
+                        {sections
+                          .filter((s) => !s.parent_id)
+                          .sort((a, b) => a.order_index - b.order_index)
+                          .map((section) => {
+                            const sectionLessons = lessons.filter(
+                              (l) => l.section_id === section.id
+                            );
+                            const childSections = sections
+                              .filter((s) => s.parent_id === section.id)
+                              .sort((a, b) => a.order_index - b.order_index);
+                            const childLessons = childSections.flatMap((cs) =>
+                              lessons.filter((l) => l.section_id === cs.id)
+                            );
+                            const allLessons = [...sectionLessons, ...childLessons];
+
+                            return (
+                              <div key={section.id} className="border rounded-lg overflow-hidden">
+                                <div className="p-3 bg-muted/50 font-medium flex items-center justify-between">
+                                  <span>{section.title}</span>
+                                  {allLessons.length > 0 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {allLessons.length} {allLessons.length === 1 ? "lesson" : "lessons"}
+                                    </Badge>
+                                  )}
+                                </div>
+                                {allLessons.length > 0 && (
+                                  <div className="divide-y">
+                                    {allLessons
+                                      .sort((a, b) => a.order_index - b.order_index)
+                                      .map((lesson) => (
+                                        <div
+                                          key={lesson.id}
+                                          className="p-3 pl-6 flex items-center gap-3 text-sm"
+                                        >
+                                          {getContentIcon(lesson.content_type)}
+                                          <span className="flex-1">{lesson.title}</span>
+                                          {lesson.is_free_preview && (
+                                            <Badge variant="secondary" className="text-xs">
+                                              Free Preview
+                                            </Badge>
+                                          )}
+                                          {!lesson.is_free_preview && (
+                                            <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                                          )}
+                                          {lesson.duration_minutes && (
+                                            <span className="text-xs text-muted-foreground">
+                                              {lesson.duration_minutes} min
+                                            </span>
+                                          )}
+                                        </div>
+                                      ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                    <Separator />
+                  </>
+                )}
+
                 <div className="text-center">
-                  {/* <p className="text-3xl font-bold text-green-600 mb-2">
-                    {Number(course.price) === 0 ? "FREE" : `$${course.price}/month`}
-                  </p> */}
                   <Button onClick={handleEnrollClick} size="lg" className="w-full">
                     <Play className="w-4 h-4 mr-2" />
-                    Enroll Now
+                    {user ? "Enroll Now" : "Sign Up to Enroll"}
                   </Button>
                 </div>
               </CardContent>
