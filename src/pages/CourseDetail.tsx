@@ -32,7 +32,9 @@ import {
   Lock,
   Star,
   User,
+  ChevronDown,
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -1138,44 +1140,55 @@ const CourseDetail = () => {
                             const allLessons = [...sectionLessons, ...childLessons];
 
                             return (
-                              <div key={section.id} className="border rounded-lg overflow-hidden">
-                                <div className="p-3 bg-muted/50 font-medium flex items-center justify-between">
-                                  <span>{section.title}</span>
-                                  {allLessons.length > 0 && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {allLessons.length} {allLessons.length === 1 ? "lesson" : "lessons"}
-                                    </Badge>
-                                  )}
+                              <Collapsible key={section.id} defaultOpen={false}>
+                                <div className="border rounded-lg overflow-hidden">
+                                  <CollapsibleTrigger className="w-full p-3 bg-muted/50 font-medium flex items-center justify-between hover:bg-muted/80 transition-colors">
+                                    <div className="flex items-center gap-2">
+                                      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                                      <span className="text-left">{section.title}</span>
+                                    </div>
+                                    {allLessons.length > 0 && (
+                                      <Badge variant="outline" className="text-xs shrink-0">
+                                        {allLessons.length} {allLessons.length === 1 ? "lesson" : "lessons"}
+                                      </Badge>
+                                    )}
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    {allLessons.length > 0 && (
+                                      <div className="divide-y">
+                                        {allLessons
+                                          .sort((a, b) => a.order_index - b.order_index)
+                                          .map((lesson) => (
+                                            <div
+                                              key={lesson.id}
+                                              className="p-3 pl-6 flex items-center gap-3 text-sm"
+                                            >
+                                              {getContentIcon(lesson.content_type)}
+                                              <span className="flex-1">{lesson.title}</span>
+                                              {lesson.is_free_preview && (
+                                                <Badge className="text-xs bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20">
+                                                  Free Preview
+                                                </Badge>
+                                              )}
+                                              {lesson.duration_minutes && (
+                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                  <Lock className="w-3 h-3" />
+                                                  {lesson.duration_minutes} min
+                                                </span>
+                                              )}
+                                              {!lesson.is_free_preview && !lesson.duration_minutes && (
+                                                <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                                              )}
+                                            </div>
+                                          ))}
+                                      </div>
+                                    )}
+                                    {allLessons.length === 0 && (
+                                      <p className="p-3 pl-6 text-sm text-muted-foreground italic">No lessons yet</p>
+                                    )}
+                                  </CollapsibleContent>
                                 </div>
-                                {allLessons.length > 0 && (
-                                  <div className="divide-y">
-                                    {allLessons
-                                      .sort((a, b) => a.order_index - b.order_index)
-                                      .map((lesson) => (
-                                        <div
-                                          key={lesson.id}
-                                          className="p-3 pl-6 flex items-center gap-3 text-sm"
-                                        >
-                                          {getContentIcon(lesson.content_type)}
-                                          <span className="flex-1">{lesson.title}</span>
-                                          {lesson.is_free_preview && (
-                                            <Badge variant="secondary" className="text-xs">
-                                              Free Preview
-                                            </Badge>
-                                          )}
-                                          {!lesson.is_free_preview && (
-                                            <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                                          )}
-                                          {lesson.duration_minutes && (
-                                            <span className="text-xs text-muted-foreground">
-                                              {lesson.duration_minutes} min
-                                            </span>
-                                          )}
-                                        </div>
-                                      ))}
-                                  </div>
-                                )}
-                              </div>
+                              </Collapsible>
                             );
                           })}
                       </div>
