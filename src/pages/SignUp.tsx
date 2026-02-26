@@ -9,9 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Loader2, Eye, EyeOff, Check, X } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { Loader2, Eye, EyeOff, ArrowLeft, ArrowRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { z } from "zod";
 
 const countries = [
@@ -26,20 +26,20 @@ const educationLevels = [
   "PhD/Doctorate", "Professional Certificate", "Other"
 ];
 
+const employmentStatuses = [
+  "Student", "Employed (Full-time)", "Employed (Part-time)", "Self-employed",
+  "Freelancer", "Unemployed", "Retired", "Other"
+];
+
+const genderOptions = ["Male", "Female", "Non-binary", "Prefer not to say"];
+
+const hearAboutOptions = [
+  "Social Media", "Google Search", "Friend/Colleague", "University/School",
+  "Online Ad", "Blog/Article", "Event/Conference", "Other"
+];
+
 const currentYear = new Date().getFullYear();
 const birthYears = Array.from({ length: 80 }, (_, i) => currentYear - 16 - i);
-
-const signupSchema = z.object({
-  fullName: z.string().trim().min(2, "Full name must be at least 2 characters").max(100),
-  email: z.string().trim().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters").max(72),
-  phone: z.string().trim().min(7, "Phone number must be at least 7 digits").max(20).regex(/^[+]?[\d\s()-]+$/, "Please enter a valid phone number"),
-  country: z.string().min(1, "Please select your country"),
-  educationLevel: z.string().min(1, "Please select your education level"),
-  yearOfBirth: z.string().min(1, "Please select your year of birth"),
-});
-
-type SignupFormErrors = Partial<Record<keyof z.infer<typeof signupSchema>, string>>;
 
 const getPasswordStrength = (pwd: string) => {
   let score = 0;
@@ -55,21 +55,34 @@ const getPasswordStrength = (pwd: string) => {
   return { score: 100, label: "Very Strong", color: "text-emerald-600" };
 };
 
+const TOTAL_STEPS = 4;
+
 const SignUp = () => {
+  const [step, setStep] = useState(1);
+  // Step 1
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  // Step 2
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("");
-  const [educationLevel, setEducationLevel] = useState("");
   const [yearOfBirth, setYearOfBirth] = useState("");
+  // Step 3
+  const [gender, setGender] = useState("");
+  const [educationLevel, setEducationLevel] = useState("");
+  const [employmentStatus, setEmploymentStatus] = useState("");
+  // Step 4
+  const [linkedIn, setLinkedIn] = useState("");
+  const [hearAbout, setHearAbout] = useState("");
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [confirmAccuracy, setConfirmAccuracy] = useState(false);
+
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [formErrors, setFormErrors] = useState<SignupFormErrors>({});
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-
   const redirectUrl = searchParams.get("redirect") || "/";
 
   useEffect(() => {
@@ -82,34 +95,63 @@ const SignUp = () => {
     return () => subscription.unsubscribe();
   }, [navigate, redirectUrl]);
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormErrors({});
+  const validateStep = (s: number): boolean => {
+    const errors: Record<string, string> = {};
 
-    const validationResult = signupSchema.safeParse({ fullName, email, password, phone, country, educationLevel, yearOfBirth });
-
-    if (!validationResult.success) {
-      const errors: SignupFormErrors = {};
-      validationResult.error.errors.forEach((err) => {
-        const field = err.path[0] as keyof SignupFormErrors;
-        if (!errors[field]) errors[field] = err.message;
-      });
-      setFormErrors(errors);
-      toast({ title: "Validation Error", description: "Please fix the errors in the form.", variant: "destructive" });
-      return;
+    if (s === 1) {
+      if (!fullName.trim() || fullName.trim().length < 2) errors.fullName = "Full name must be at least 2 characters";
+      if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errors.email = "Please enter a valid email address";
+      if (!password || password.length < 6) errors.password = "Password must be at least 6 characters";
     }
+    if (s === 2) {
+      if (!phone.trim() || phone.trim().length < 7 || !/^[+]?[\d\s()-]+$/.test(phone.trim())) errors.phone = "Please enter a valid phone number";
+      if (!country) errors.country = "Please select your country";
+      if (!yearOfBirth) errors.yearOfBirth = "Please select your year of birth";
+    }
+    if (s === 3) {
+      if (!educationLevel) errors.educationLevel = "Please select your education level";
+      if (!employmentStatus) errors.employmentStatus = "Please select your employment status";
+      // Gender is optional
+    }
+    if (s === 4) {
+      if (!agreeTerms) errors.agreeTerms = "You must agree to the Terms & Conditions";
+      if (!confirmAccuracy) errors.confirmAccuracy = "You must confirm the accuracy of your information";
+    }
+
+    setStepErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep(step)) {
+      setStep(step + 1);
+    }
+  };
+
+  const handleBack = () => {
+    setStepErrors({});
+    setStep(step - 1);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateStep(step)) return;
 
     setLoading(true);
     const { error } = await supabase.auth.signUp({
-      email: validationResult.data.email,
-      password: validationResult.data.password,
+      email: email.trim(),
+      password,
       options: {
         data: {
-          full_name: validationResult.data.fullName,
-          phone: validationResult.data.phone,
-          country: validationResult.data.country,
-          education_level: validationResult.data.educationLevel,
-          year_of_birth: parseInt(validationResult.data.yearOfBirth),
+          full_name: fullName.trim(),
+          phone: phone.trim(),
+          country,
+          education_level: educationLevel,
+          year_of_birth: parseInt(yearOfBirth),
+          gender: gender || null,
+          employment_status: employmentStatus,
+          linkedin_profile: linkedIn.trim() || null,
+          hear_about: hearAbout || null,
         },
         emailRedirectTo: `${window.location.origin}/`,
       },
@@ -124,6 +166,136 @@ const SignUp = () => {
   };
 
   const passwordStrength = getPasswordStrength(password);
+  const progressPercent = (step / TOTAL_STEPS) * 100;
+
+  const renderStepIndicator = () => (
+    <div className="space-y-2 mb-6">
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>Step {step} of {TOTAL_STEPS}</span>
+        <span>{Math.round(progressPercent)}%</span>
+      </div>
+      <Progress value={progressPercent} className="h-2" />
+    </div>
+  );
+
+  const renderStep1 = () => (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="fullName">Full Name *</Label>
+        <Input id="fullName" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        {stepErrors.fullName && <p className="text-xs text-destructive">{stepErrors.fullName}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="signup-email">Email *</Label>
+        <Input id="signup-email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        {stepErrors.email && <p className="text-xs text-destructive">{stepErrors.email}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="signup-password">Password *</Label>
+        <div className="relative">
+          <Input id="signup-password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)}>
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+        </div>
+        {password && (
+          <div className="space-y-1">
+            <Progress value={passwordStrength.score} className="h-1.5" />
+            <p className={`text-xs ${passwordStrength.color}`}>{passwordStrength.label}</p>
+          </div>
+        )}
+        {stepErrors.password && <p className="text-xs text-destructive">{stepErrors.password}</p>}
+      </div>
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="phone">Phone *</Label>
+        <Input id="phone" type="tel" placeholder="+250 7XX XXX XXX" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        {stepErrors.phone && <p className="text-xs text-destructive">{stepErrors.phone}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label>Country *</Label>
+        <Select value={country} onValueChange={setCountry}>
+          <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
+          <SelectContent>{countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+        </Select>
+        {stepErrors.country && <p className="text-xs text-destructive">{stepErrors.country}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label>Year of Birth *</Label>
+        <Select value={yearOfBirth} onValueChange={setYearOfBirth}>
+          <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
+          <SelectContent>{birthYears.map((y) => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}</SelectContent>
+        </Select>
+        {stepErrors.yearOfBirth && <p className="text-xs text-destructive">{stepErrors.yearOfBirth}</p>}
+      </div>
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Gender</Label>
+        <Select value={gender} onValueChange={setGender}>
+          <SelectTrigger><SelectValue placeholder="Select gender (optional)" /></SelectTrigger>
+          <SelectContent>{genderOptions.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label>Education Level *</Label>
+        <Select value={educationLevel} onValueChange={setEducationLevel}>
+          <SelectTrigger><SelectValue placeholder="Select education level" /></SelectTrigger>
+          <SelectContent>{educationLevels.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+        </Select>
+        {stepErrors.educationLevel && <p className="text-xs text-destructive">{stepErrors.educationLevel}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label>Employment Status *</Label>
+        <Select value={employmentStatus} onValueChange={setEmploymentStatus}>
+          <SelectTrigger><SelectValue placeholder="Select employment status" /></SelectTrigger>
+          <SelectContent>{employmentStatuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+        </Select>
+        {stepErrors.employmentStatus && <p className="text-xs text-destructive">{stepErrors.employmentStatus}</p>}
+      </div>
+    </div>
+  );
+
+  const renderStep4 = () => (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="linkedin">LinkedIn Profile (Optional)</Label>
+        <Input id="linkedin" type="url" placeholder="https://linkedin.com/in/yourname" value={linkedIn} onChange={(e) => setLinkedIn(e.target.value)} />
+      </div>
+      <div className="space-y-2">
+        <Label>How Did You Hear About Us?</Label>
+        <Select value={hearAbout} onValueChange={setHearAbout}>
+          <SelectTrigger><SelectValue placeholder="Select an option (optional)" /></SelectTrigger>
+          <SelectContent>{hearAboutOptions.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-3 pt-2">
+        <div className="flex items-start space-x-2">
+          <Checkbox id="terms" checked={agreeTerms} onCheckedChange={(v) => setAgreeTerms(v === true)} className="mt-0.5" />
+          <Label htmlFor="terms" className="text-sm font-normal leading-snug cursor-pointer">
+            I agree to the <span className="text-primary underline">Terms & Conditions</span> and <span className="text-primary underline">Privacy Policy</span> *
+          </Label>
+        </div>
+        {stepErrors.agreeTerms && <p className="text-xs text-destructive ml-7">{stepErrors.agreeTerms}</p>}
+        <div className="flex items-start space-x-2">
+          <Checkbox id="accuracy" checked={confirmAccuracy} onCheckedChange={(v) => setConfirmAccuracy(v === true)} className="mt-0.5" />
+          <Label htmlFor="accuracy" className="text-sm font-normal leading-snug cursor-pointer">
+            I confirm that the information provided is accurate *
+          </Label>
+        </div>
+        {stepErrors.confirmAccuracy && <p className="text-xs text-destructive ml-7">{stepErrors.confirmAccuracy}</p>}
+      </div>
+    </div>
+  );
+
+  const stepTitles = ["Personal Info", "Contact Details", "Background", "Final Details"];
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,92 +304,38 @@ const SignUp = () => {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Create Account</CardTitle>
-            <CardDescription>Sign up to start your learning journey</CardDescription>
+            <CardDescription>{stepTitles[step - 1]}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center"><Separator className="w-full" /></div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">create with email</span>
-                </div>
+            {renderStepIndicator()}
+            <form onSubmit={step === TOTAL_STEPS ? handleSubmit : (e) => { e.preventDefault(); handleNext(); }} className="space-y-6">
+              {step === 1 && renderStep1()}
+              {step === 2 && renderStep2()}
+              {step === 3 && renderStep3()}
+              {step === 4 && renderStep4()}
+
+              <div className="flex gap-3">
+                {step > 1 && (
+                  <Button type="button" variant="outline" className="flex-1" onClick={handleBack}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                  </Button>
+                )}
+                {step < TOTAL_STEPS ? (
+                  <Button type="submit" className="flex-1">
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button type="submit" className="flex-1" disabled={loading}>
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : "Create Account"}
+                  </Button>
+                )}
               </div>
+            </form>
 
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name *</Label>
-                  <Input id="fullName" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-                  {formErrors.fullName && <p className="text-xs text-destructive">{formErrors.fullName}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email *</Label>
-                  <Input id="signup-email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                  {formErrors.email && <p className="text-xs text-destructive">{formErrors.email}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password *</Label>
-                  <div className="relative">
-                    <Input id="signup-password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                    <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)}>
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  {password && (
-                    <div className="space-y-1">
-                      <Progress value={passwordStrength.score} className="h-1.5" />
-                      <p className={`text-xs ${passwordStrength.color}`}>{passwordStrength.label}</p>
-                    </div>
-                  )}
-                  {formErrors.password && <p className="text-xs text-destructive">{formErrors.password}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone *</Label>
-                  <Input id="phone" type="tel" placeholder="+250 7XX XXX XXX" value={phone} onChange={(e) => setPhone(e.target.value)} required />
-                  {formErrors.phone && <p className="text-xs text-destructive">{formErrors.phone}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Country *</Label>
-                  <Select value={country} onValueChange={setCountry}>
-                    <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
-                    <SelectContent>{countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
-                  {formErrors.country && <p className="text-xs text-destructive">{formErrors.country}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Education Level *</Label>
-                  <Select value={educationLevel} onValueChange={setEducationLevel}>
-                    <SelectTrigger><SelectValue placeholder="Select education level" /></SelectTrigger>
-                    <SelectContent>{educationLevels.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
-                  </Select>
-                  {formErrors.educationLevel && <p className="text-xs text-destructive">{formErrors.educationLevel}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Year of Birth *</Label>
-                  <Select value={yearOfBirth} onValueChange={setYearOfBirth}>
-                    <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
-                    <SelectContent>{birthYears.map((y) => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}</SelectContent>
-                  </Select>
-                  {formErrors.yearOfBirth && <p className="text-xs text-destructive">{formErrors.yearOfBirth}</p>}
-                </div>
-
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating account...</> : "Create Account"}
-                </Button>
-              </form>
-
-              <p className="text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link to="/signin" className="text-primary font-medium hover:underline">
-                  Sign in
-                </Link>
-              </p>
-            </div>
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              Already have an account?{" "}
+              <Link to="/signin" className="text-primary font-medium hover:underline">Sign in</Link>
+            </p>
           </CardContent>
         </Card>
       </div>
