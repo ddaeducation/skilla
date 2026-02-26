@@ -9,6 +9,8 @@ import AllPrograms from "./pages/AllPrograms";
 import Apply from "./pages/Apply";
 import SchoolPrograms from "./pages/SchoolPrograms";
 import Auth from "./pages/Auth";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
 import Admin from "./pages/Admin";
 import LMS from "./pages/LMS";
 import CourseDetail from "./pages/CourseDetail";
@@ -36,8 +38,11 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/programs" element={<AllPrograms />} />
           <Route path="/programs/all" element={<AllPrograms />} />
           <Route path="/programs/:type" element={<Programs />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
           <Route path="/schools/:school" element={<SchoolPrograms />} />
           <Route path="/apply" element={<Apply />} />
           <Route path="/auth" element={<Auth />} />
