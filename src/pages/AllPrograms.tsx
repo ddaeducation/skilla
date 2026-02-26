@@ -26,6 +26,7 @@ interface Course {
   instructor_id: string | null;
   instructor_name: string | null;
   learning_outcomes: string[] | null;
+  publish_status: string;
 }
 
 interface InstructorInfo {
@@ -64,6 +65,7 @@ const CourseCard = ({ course, instructor, ratingData }: {
   const rating = ratingData ? Math.max(ratingData.avg, 4.5) : getFallbackRating(course.id);
   const ratingCount = ratingData?.count || 0;
   const instructorName = instructor?.full_name || course.instructor_name;
+  const isUpcoming = course.publish_status === "upcoming";
   const navigate = useNavigate();
 
   const handleEnroll = async () => {
@@ -86,7 +88,14 @@ const CourseCard = ({ course, instructor, ratingData }: {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg font-bold text-foreground leading-tight">{course.title}</CardTitle>
-          <Badge variant="outline" className={`shrink-0 text-xs ${config.color}`}>{course.category}</Badge>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <Badge variant="outline" className={`text-xs ${config.color}`}>{course.category}</Badge>
+            {isUpcoming && (
+              <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+                Upcoming
+              </Badge>
+            )}
+          </div>
         </div>
         <CardDescription className="text-sm leading-relaxed line-clamp-2">{course.description}</CardDescription>
         <div className="flex items-center gap-1.5 mt-2">
@@ -135,9 +144,15 @@ const CourseCard = ({ course, instructor, ratingData }: {
             <Button size="sm" variant="outline" asChild>
               <Link to={`/course/${course.id}`}>View Details</Link>
             </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={handleEnroll}>
-              Enroll Now
-            </Button>
+            {isUpcoming ? (
+              <Button size="sm" disabled variant="outline">
+                Coming Soon
+              </Button>
+            ) : (
+              <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={handleEnroll}>
+                Enroll Now
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>
@@ -157,7 +172,7 @@ const AllPrograms = () => {
     const fetchCourses = async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title, description, school, category, price, monthly_price, duration, image_url, instructor_id, instructor_name, learning_outcomes")
+        .select("id, title, description, school, category, price, monthly_price, duration, image_url, instructor_id, instructor_name, learning_outcomes, publish_status")
         .eq("approval_status", "approved")
         .in("publish_status", ["live", "upcoming"]);
 

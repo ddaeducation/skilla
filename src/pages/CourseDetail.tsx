@@ -1105,6 +1105,11 @@ const CourseDetail = () => {
             <div>
               <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
               <div className="flex items-center gap-3 flex-wrap">
+                {course.publish_status === "upcoming" && (
+                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+                    Upcoming
+                  </Badge>
+                )}
                 <p className="text-muted-foreground">{course.school}</p>
                 {averageRating && (
                   <>
@@ -1216,6 +1221,31 @@ const CourseDetail = () => {
                   <>
                     <div>
                       <h3 className="font-semibold text-lg mb-3">Course Curriculum</h3>
+                      {course.publish_status === "upcoming" ? (
+                        /* Upcoming course: show only module names, no units */
+                        <div className="border rounded-lg overflow-hidden">
+                          <div className="divide-y bg-background">
+                            {sections
+                              .filter((s) => !s.parent_id)
+                              .sort((a, b) => a.order_index - b.order_index)
+                              .map((section) => (
+                                <div
+                                  key={section.id}
+                                  className="p-3 flex items-center gap-2 text-sm"
+                                >
+                                  <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+                                  <span className="font-medium">{section.title}</span>
+                                  <Lock className="h-3.5 w-3.5 text-muted-foreground ml-auto shrink-0" />
+                                </div>
+                              ))}
+                          </div>
+                          <div className="p-4 bg-muted/30 border-t text-center">
+                            <p className="text-sm text-muted-foreground">
+                              Course content will be available once the course goes live.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
                       <div className="flex gap-0 border rounded-lg overflow-hidden min-h-[300px]">
                         {/* Left: Module list */}
                         <div className="w-1/2 border-r divide-y bg-background">
@@ -1333,6 +1363,7 @@ const CourseDetail = () => {
                           )}
                         </div>
                       </div>
+                      )}
                     </div>
                     <Separator />
                   </>
@@ -1365,10 +1396,16 @@ const CourseDetail = () => {
                                 )}
 
                                 <div className="text-center">
-                                  <Button onClick={handleEnrollClick} size="lg" className="w-full">
-                                    <Play className="w-4 h-4 mr-2" />
-                                    {user ? "Enroll Now" : "Sign Up to Enroll"}
-                                  </Button>
+                                  {course.publish_status === "upcoming" ? (
+                                    <Button size="lg" className="w-full" disabled variant="outline">
+                                      Coming Soon
+                                    </Button>
+                                  ) : (
+                                    <Button onClick={handleEnrollClick} size="lg" className="w-full">
+                                      <Play className="w-4 h-4 mr-2" />
+                                      {user ? "Enroll Now" : "Sign Up to Enroll"}
+                                    </Button>
+                                  )}
                                 </div>
                               </CardContent>
                             </Card>
