@@ -72,6 +72,13 @@ interface Profile {
   full_name: string | null;
   email: string | null;
   phone: string | null;
+  country: string | null;
+  year_of_birth: number | null;
+  gender: string | null;
+  education_level: string | null;
+  employment_status: string | null;
+  linkedin_profile: string | null;
+  hear_about: string | null;
   created_at: string | null;
 }
 
@@ -1966,6 +1973,13 @@ const Admin = () => {
                         { header: "Name", accessor: (r: Profile) => r.full_name || "-" },
                         { header: "Email", accessor: (r: Profile) => r.email || "-" },
                         { header: "Phone", accessor: (r: Profile) => r.phone || "-" },
+                        { header: "Country", accessor: (r: Profile) => r.country || "-" },
+                        { header: "Gender", accessor: (r: Profile) => r.gender || "-" },
+                        { header: "Education", accessor: (r: Profile) => r.education_level || "-" },
+                        { header: "Employment", accessor: (r: Profile) => r.employment_status || "-" },
+                        { header: "Year of Birth", accessor: (r: Profile) => r.year_of_birth?.toString() || "-" },
+                        { header: "LinkedIn", accessor: (r: Profile) => r.linkedin_profile || "-" },
+                        { header: "Heard About", accessor: (r: Profile) => r.hear_about || "-" },
                         { header: "Role", accessor: (r: Profile) => {
                           const roles = userRoles.filter(ur => ur.user_id === r.id).map(ur => ur.role);
                           return roles.length > 0 ? roles.join(", ") : "user";
@@ -1981,6 +1995,13 @@ const Admin = () => {
                         { header: "Name", accessor: (r: Profile) => r.full_name || "-" },
                         { header: "Email", accessor: (r: Profile) => r.email || "-" },
                         { header: "Phone", accessor: (r: Profile) => r.phone || "-" },
+                        { header: "Country", accessor: (r: Profile) => r.country || "-" },
+                        { header: "Gender", accessor: (r: Profile) => r.gender || "-" },
+                        { header: "Education", accessor: (r: Profile) => r.education_level || "-" },
+                        { header: "Employment", accessor: (r: Profile) => r.employment_status || "-" },
+                        { header: "Year of Birth", accessor: (r: Profile) => r.year_of_birth?.toString() || "-" },
+                        { header: "LinkedIn", accessor: (r: Profile) => r.linkedin_profile || "-" },
+                        { header: "Heard About", accessor: (r: Profile) => r.hear_about || "-" },
                         { header: "Role", accessor: (r: Profile) => {
                           const roles = userRoles.filter(ur => ur.user_id === r.id).map(ur => ur.role);
                           return roles.length > 0 ? roles.join(", ") : "user";
@@ -2020,13 +2041,20 @@ const Admin = () => {
                 </Select>
               </div>
               
-              <Card>
+               <Card className="overflow-x-auto">
                 <Table>
-                  <TableHeader>
+                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Phone</TableHead>
+                      <TableHead>Country</TableHead>
+                      <TableHead>Gender</TableHead>
+                      <TableHead>Education</TableHead>
+                      <TableHead>Employment</TableHead>
+                      <TableHead>Year of Birth</TableHead>
+                      <TableHead>LinkedIn</TableHead>
+                      <TableHead>Heard About</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Joined</TableHead>
@@ -2077,6 +2105,17 @@ const Admin = () => {
                             <TableCell className="font-medium">{profile.full_name || "-"}</TableCell>
                             <TableCell>{profile.email || "-"}</TableCell>
                             <TableCell>{profile.phone || "-"}</TableCell>
+                            <TableCell>{profile.country || "-"}</TableCell>
+                            <TableCell>{profile.gender || "-"}</TableCell>
+                            <TableCell>{profile.education_level || "-"}</TableCell>
+                            <TableCell>{profile.employment_status || "-"}</TableCell>
+                            <TableCell>{profile.year_of_birth || "-"}</TableCell>
+                            <TableCell>
+                              {profile.linkedin_profile ? (
+                                <a href={profile.linkedin_profile} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">View</a>
+                              ) : "-"}
+                            </TableCell>
+                            <TableCell>{profile.hear_about || "-"}</TableCell>
                             <TableCell>
                               {profile.roles.length > 0 ? (
                                 <div className="flex flex-wrap gap-1">
