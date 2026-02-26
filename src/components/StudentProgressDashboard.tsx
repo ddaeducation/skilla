@@ -192,7 +192,7 @@ export const StudentProgressDashboard = ({ instructorId, courses }: StudentProgr
         ).length || 0;
         
         // Calculate lesson progress percentage
-        const lessonProgress = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+        const lessonProgress = totalLessons > 0 ? Math.min(100, (completedLessons / totalLessons) * 100) : 0;
 
         // Count quizzes for this course
         const courseQuizzes = quizzes?.filter(q => q.course_id === enrollment.course_id) || [];
@@ -249,7 +249,7 @@ export const StudentProgressDashboard = ({ instructorId, courses }: StudentProgr
                            (totalAssignments > 0 ? weights.assignments : 0);
         
         const overallProgress = totalWeight > 0 
-          ? (lessonWeight + quizWeight + assignmentWeight) / totalWeight 
+          ? Math.min(100, (lessonWeight + quizWeight + assignmentWeight) / totalWeight)
           : 0;
 
         progressData.push({

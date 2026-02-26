@@ -611,7 +611,7 @@ const CourseDetail = () => {
   const submittedAssignments = assignmentSubmissions.length;
   const totalItems = lessons.length + quizzes.length + assignments.length;
   const completedItems = completedLessons + passedQuizzes + submittedAssignments;
-  const progressPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+  const progressPercentage = totalItems > 0 ? Math.min(100, Math.round((completedItems / totalItems) * 100)) : 0;
 
   if (loading) {
     return (

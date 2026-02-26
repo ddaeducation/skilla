@@ -174,7 +174,7 @@ const CorporateDashboard = () => {
   const totalSeats = licenses.reduce((sum, l) => sum + l.total_seats, 0);
   const usedSeats = licenses.reduce((sum, l) => sum + l.used_seats, 0);
   const completedEnrollments = enrollments.filter((e) => e.status === "completed").length;
-  const completionRate = enrollments.length > 0 ? Math.round((completedEnrollments / enrollments.length) * 100) : 0;
+  const completionRate = enrollments.length > 0 ? Math.min(100, Math.round((completedEnrollments / enrollments.length) * 100)) : 0;
 
   const sidebarItems = [
     { id: "overview", title: "Overview", icon: Building2 },

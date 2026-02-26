@@ -161,7 +161,7 @@ const GradeBook = ({ user }: GradeBookProps) => {
       const totalItems = courseLessons.length + courseQuizzes.length + courseAssignments.length;
       const completedItems =
         completedLessons + completedQuizzes.length + gradedAssignments.length;
-      const overallProgress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+      const overallProgress = totalItems > 0 ? Math.min(100, (completedItems / totalItems) * 100) : 0;
 
       return {
         courseId,

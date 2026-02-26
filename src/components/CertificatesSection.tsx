@@ -142,7 +142,7 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
         const submittedAssignments = courseAssignments.filter(a => submittedAssignmentIds.has(a.id)).length;
         const totalItems = courseLessons.length + courseQuizzes.length + courseAssignments.length;
         const completedItems = completedLessons + passedQuizzes + submittedAssignments;
-        const percentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+        const percentage = totalItems > 0 ? Math.min(100, Math.round((completedItems / totalItems) * 100)) : 0;
 
         return {
           courseId: enrollment.course_id,

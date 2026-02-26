@@ -424,7 +424,7 @@ export const StudentQuizTaker = ({
   const currentQuestion = questions[currentQuestionIndex];
   const currentOptions = currentQuestion ? options[currentQuestion.id] || [] : [];
   const answeredCount = Object.keys(answers).length;
-  const progressPercentage = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
+  const progressPercentage = questions.length > 0 ? Math.min(100, (answeredCount / questions.length) * 100) : 0;
 
   const renderQuestionInput = () => {
     if (!currentQuestion) return null;
