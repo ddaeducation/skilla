@@ -9,7 +9,8 @@ import {
   FileText,
   ClipboardCheck,
   BarChart3,
-  HelpCircle
+  HelpCircle,
+  Gift
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,6 +54,7 @@ const learningItems = [
 const achievementItems = [
   { id: "certificates", title: "Certificates", icon: Award },
   { id: "leaderboard", title: "Leaderboard", icon: BarChart3 },
+  { id: "referrals", title: "Referrals", icon: Gift },
 ];
 
 const LMSSidebar = ({ user, activeView, onViewChange }: LMSSidebarProps) => {

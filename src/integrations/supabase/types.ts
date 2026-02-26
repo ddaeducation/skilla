@@ -1854,6 +1854,7 @@ export type Database = {
           id: string
           linkedin_profile: string | null
           phone: string | null
+          referred_by_code: string | null
           year_of_birth: number | null
         }
         Insert: {
@@ -1869,6 +1870,7 @@ export type Database = {
           id: string
           linkedin_profile?: string | null
           phone?: string | null
+          referred_by_code?: string | null
           year_of_birth?: number | null
         }
         Update: {
@@ -1884,6 +1886,7 @@ export type Database = {
           id?: string
           linkedin_profile?: string | null
           phone?: string | null
+          referred_by_code?: string | null
           year_of_birth?: number | null
         }
         Relationships: []
@@ -2118,6 +2121,98 @@ export type Database = {
           },
         ]
       }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_points: {
+        Row: {
+          created_at: string
+          dollar_value: number
+          id: string
+          points: number
+          reason: string
+          referral_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dollar_value?: number
+          id?: string
+          points: number
+          reason: string
+          referral_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dollar_value?: number
+          id?: string
+          points?: number
+          reason?: string
+          referral_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_points_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          points_awarded_enrollment: boolean
+          points_awarded_signup: boolean
+          referred_id: string
+          referrer_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points_awarded_enrollment?: boolean
+          points_awarded_signup?: boolean
+          referred_id: string
+          referrer_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points_awarded_enrollment?: boolean
+          points_awarded_signup?: boolean
+          referred_id?: string
+          referrer_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_progress: {
         Row: {
           completed: boolean
@@ -2224,6 +2319,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_referral_code: { Args: { p_user_id: string }; Returns: string }
       get_course_content_counts: {
         Args: { p_course_id: string }
         Returns: Json

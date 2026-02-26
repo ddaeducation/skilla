@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import CourseAssistant from "@/components/CourseAssistant";
 import LMSSidebar from "@/components/LMSSidebar";
 import CertificatesSection from "@/components/CertificatesSection";
+import ReferralSection from "@/components/ReferralSection";
 import GradeBook from "@/components/GradeBook";
 import { StudentAssignmentSubmission } from "@/components/StudentAssignmentSubmission";
 import { StudentQuizTaker } from "@/components/StudentQuizTaker";
@@ -951,6 +952,9 @@ const LMS = () => {
         return user ? (
           <LeaderboardSection user={user} enrolledCourseIds={enrolledCourseIds} />
         ) : null;
+
+      case "referrals":
+        return user ? <ReferralSection user={user} /> : null;
 
 
       case "settings":
