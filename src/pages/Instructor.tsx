@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, BookOpen, Users, DollarSign, Plus, Pencil, Trash2, FileText, Video, Image, Youtube, FileQuestion, ClipboardList, Eye, ClipboardCheck, CalendarIcon, X, MoreVertical, Ban, UserX, UserCheck, GraduationCap, CheckCircle, Clock, TrendingUp, Users2, Download, Copy } from "lucide-react";
+import { Loader2, BookOpen, Users, DollarSign, Plus, Pencil, Trash2, FileText, Video, Image, Youtube, FileQuestion, ClipboardList, Eye, ClipboardCheck, CalendarIcon, X, MoreVertical, Ban, UserX, UserCheck, GraduationCap, CheckCircle, Clock, TrendingUp, Users2, Download, Copy, ArrowLeft, ArrowRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -150,6 +151,7 @@ const Instructor = () => {
 
   // Dialog states
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
+  const [courseFormStep, setCourseFormStep] = useState(1);
   const [lessonDialogOpen, setLessonDialogOpen] = useState(false);
   const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
@@ -919,10 +921,11 @@ const Instructor = () => {
             <TabsContent value="courses" className="space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-semibold">My Courses</h2>
-                <Dialog open={courseDialogOpen} onOpenChange={setCourseDialogOpen}>
+                <Dialog open={courseDialogOpen} onOpenChange={(open) => { setCourseDialogOpen(open); if (!open) setCourseFormStep(1); }}>
                   <DialogTrigger asChild>
                     <Button onClick={() => {
                       setEditingCourse(null);
+                      setCourseFormStep(1);
                       setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "" });
                     }}>
                       <Plus className="mr-2 h-4 w-4" />
@@ -933,98 +936,130 @@ const Instructor = () => {
                     <DialogHeader>
                       <DialogTitle>{editingCourse ? "Edit Course" : "Create New Course"}</DialogTitle>
                       <DialogDescription>
-                        {editingCourse ? "Update your course details." : "Fill in the details to create a new course."}
+                        {editingCourse ? "Update your course details." : `Step ${courseFormStep} of 2 — ${courseFormStep === 1 ? "Basic Info" : "Details & Media"}`}
                       </DialogDescription>
                     </DialogHeader>
+                    <div className="mb-4">
+                      <Progress value={courseFormStep * 50} className="h-2" />
+                    </div>
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Title</Label>
-                        <Input
-                          value={courseForm.title}
-                          onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
-                          placeholder="Course title"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>School</Label>
-                        <Select
-                          value={courseForm.school}
-                          onValueChange={(value) => setCourseForm({ ...courseForm, school: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select school" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {schools.map((school) => (
-                              <SelectItem key={school} value={school}>
-                                {school}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Category</Label>
-                        <Select
-                          value={courseForm.category}
-                          onValueChange={(value) => setCourseForm({ ...courseForm, category: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Short-Course">Short-Course</SelectItem>
-                            <SelectItem value="Professional">Professional</SelectItem>
-                            <SelectItem value="Masterclass">Masterclass</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Description</Label>
-                        <Textarea
-                          value={courseForm.description}
-                          onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
-                          placeholder="Course description"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Duration</Label>
-                          <Input
-                            value={courseForm.duration}
-                            onChange={(e) => setCourseForm({ ...courseForm, duration: e.target.value })}
-                            placeholder="e.g., 12 weeks"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Monthly Price ($)</Label>
-                          <Input
-                            type="number"
-                            value={courseForm.monthly_price}
-                            onChange={(e) => setCourseForm({ ...courseForm, monthly_price: Number(e.target.value) })}
-                            placeholder="e.g., 20"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Learning Outcomes (comma-separated)</Label>
-                        <Input
-                          value={courseForm.learning_outcomes}
-                          onChange={(e) => setCourseForm({ ...courseForm, learning_outcomes: e.target.value })}
-                          placeholder="e.g., React, TypeScript, Web Performance"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Image URL</Label>
-                        <Input
-                          value={courseForm.image_url}
-                          onChange={(e) => setCourseForm({ ...courseForm, image_url: e.target.value })}
-                          placeholder="https://..."
-                        />
-                      </div>
-                      <Button onClick={handleSaveCourse} className="w-full">
-                        {editingCourse ? "Update Course" : "Create Course"}
-                      </Button>
+                      {courseFormStep === 1 && (
+                        <>
+                          <div className="space-y-2">
+                            <Label>Title *</Label>
+                            <Input
+                              value={courseForm.title}
+                              onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
+                              placeholder="Course title"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>School *</Label>
+                            <Select
+                              value={courseForm.school}
+                              onValueChange={(value) => setCourseForm({ ...courseForm, school: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select school" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {schools.map((school) => (
+                                  <SelectItem key={school} value={school}>
+                                    {school}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Category</Label>
+                            <Select
+                              value={courseForm.category}
+                              onValueChange={(value) => setCourseForm({ ...courseForm, category: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Short-Course">Short-Course</SelectItem>
+                                <SelectItem value="Professional">Professional</SelectItem>
+                                <SelectItem value="Masterclass">Masterclass</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Description</Label>
+                            <Textarea
+                              value={courseForm.description}
+                              onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
+                              placeholder="Course description"
+                            />
+                          </div>
+                          <Button
+                            className="w-full"
+                            onClick={() => {
+                              if (!courseForm.title.trim()) {
+                                toast({ title: "Title is required", variant: "destructive" });
+                                return;
+                              }
+                              if (!courseForm.school) {
+                                toast({ title: "School is required", variant: "destructive" });
+                                return;
+                              }
+                              setCourseFormStep(2);
+                            }}
+                          >
+                            Next <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                      {courseFormStep === 2 && (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Duration</Label>
+                              <Input
+                                value={courseForm.duration}
+                                onChange={(e) => setCourseForm({ ...courseForm, duration: e.target.value })}
+                                placeholder="e.g., 12 weeks"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Monthly Price ($)</Label>
+                              <Input
+                                type="number"
+                                value={courseForm.monthly_price}
+                                onChange={(e) => setCourseForm({ ...courseForm, monthly_price: Number(e.target.value) })}
+                                placeholder="e.g., 20"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Learning Outcomes (comma-separated)</Label>
+                            <Input
+                              value={courseForm.learning_outcomes}
+                              onChange={(e) => setCourseForm({ ...courseForm, learning_outcomes: e.target.value })}
+                              placeholder="e.g., React, TypeScript, Web Performance"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Image URL</Label>
+                            <Input
+                              value={courseForm.image_url}
+                              onChange={(e) => setCourseForm({ ...courseForm, image_url: e.target.value })}
+                              placeholder="https://..."
+                            />
+                          </div>
+                          <div className="flex gap-3">
+                            <Button variant="outline" className="flex-1" onClick={() => setCourseFormStep(1)}>
+                              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                            </Button>
+                            <Button onClick={handleSaveCourse} className="flex-1">
+                              {editingCourse ? "Update Course" : "Create Course"}
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </DialogContent>
                 </Dialog>
