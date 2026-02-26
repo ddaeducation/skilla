@@ -101,7 +101,7 @@ const Hero = () => {
           animationDelay: "0.1s"
         }}>Learn Job-Ready Skills. Monitize Your Professional Experience. </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 text-base font-semibold px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-all" onClick={() => navigate("/programs/all")}>
+            <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 text-base font-semibold px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-all" onClick={() => navigate("/programs")}>
               Explore all programs
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>

@@ -103,7 +103,7 @@ const LMS = () => {
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
-      navigate("/auth");
+      navigate("/signin?redirect=/lms");
       return;
     }
     setUser(session.user);
