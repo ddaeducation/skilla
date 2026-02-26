@@ -331,6 +331,41 @@ const LeaderboardSection = ({ user, enrolledCourseIds }: LeaderboardSectionProps
                   </div>
                 </div>
               ))}
+
+              {/* Show current user's position if outside top 20 */}
+              {currentUserRank && currentUserRank.rank > 20 && (
+                <>
+                  <div className="flex items-center justify-center py-2 text-muted-foreground text-xs">
+                    ••• {currentUserRank.rank - 21} more students •••
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-center w-8 h-8">
+                        {getRankIcon(currentUserRank.rank)}
+                      </div>
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={currentUserRank.avatarUrl || undefined} />
+                        <AvatarFallback>
+                          {currentUserRank.fullName.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">
+                          {currentUserRank.fullName}
+                          <Badge variant="secondary" className="ml-2">You</Badge>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {currentUserRank.lessonsCompleted} lessons • {currentUserRank.quizzesPassed} quizzes
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{currentUserRank.score}</p>
+                      <p className="text-xs text-muted-foreground">points</p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
