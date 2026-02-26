@@ -541,15 +541,20 @@ const Instructor = () => {
     }
   };
 
-  const handlePublishCourse = async (course: any) => {
-    const nextStatus = course.publish_status === "draft" ? "live" : "draft";
+  const handleSetPublishStatus = async (course: any, newStatus: string) => {
+    if (course.publish_status === newStatus) return;
     try {
       const { error } = await supabase
         .from("courses")
-        .update({ publish_status: nextStatus })
+        .update({ publish_status: newStatus })
         .eq("id", course.id);
       if (error) throw error;
-      toast({ title: nextStatus === "live" ? "Course published!" : "Course unpublished", description: nextStatus === "live" ? "Students can now see and enroll in your course." : "Course is now a draft and hidden from students." });
+      const messages: Record<string, { title: string; description: string }> = {
+        live: { title: "Course published!", description: "Students can now see and enroll in your course." },
+        upcoming: { title: "Course set to upcoming!", description: "Students can see the course but cannot enroll yet." },
+        draft: { title: "Course unpublished", description: "Course is now a draft and hidden from students." },
+      };
+      toast(messages[newStatus]);
       fetchData(currentUserId!);
     } catch (error) {
       toast({ title: "Error", description: "Failed to update course status", variant: "destructive" });
@@ -1108,14 +1113,29 @@ const Instructor = () => {
                       <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
                         <div className="flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            variant={(course as any).publish_status === "live" ? "outline" : "default"}
-                            className={(course as any).publish_status !== "live" ? "bg-green-600 hover:bg-green-700 text-white" : ""}
-                            onClick={() => handlePublishCourse(course)}
-                          >
-                            {(course as any).publish_status === "live" ? "Unpublish" : "Publish"}
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant={(course as any).publish_status === "live" ? "outline" : "default"}
+                                className={(course as any).publish_status === "live" ? "" : (course as any).publish_status === "upcoming" ? "bg-yellow-600 hover:bg-yellow-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}
+                              >
+                                {(course as any).publish_status === "live" ? "Unpublish" : (course as any).publish_status === "upcoming" ? "Upcoming" : "Publish"}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              <DropdownMenuItem onClick={() => handleSetPublishStatus(course, "live")} disabled={(course as any).publish_status === "live"}>
+                                <CheckCircle className="mr-2 h-4 w-4 text-green-600" /> Publish (Live)
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleSetPublishStatus(course, "upcoming")} disabled={(course as any).publish_status === "upcoming"}>
+                                <Clock className="mr-2 h-4 w-4 text-yellow-600" /> Set as Upcoming
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleSetPublishStatus(course, "draft")} disabled={(course as any).publish_status === "draft"}>
+                                <Ban className="mr-2 h-4 w-4 text-muted-foreground" /> Unpublish (Draft)
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                           <Button
                             size="sm"
                             variant="outline"
