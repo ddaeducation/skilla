@@ -35,10 +35,12 @@ interface InstructorInfo {
 }
 
 const SCHOOLS = [
-  { label: "Data Science & AI", values: ["Data Engineering", "Data & Analytics"] },
-  { label: "Business & Analytics", values: ["Business Studies"] },
-  { label: "Technology & Cybersecurity", values: ["Product & Innovation"] },
-  { label: "Career Development", values: ["Digital & Creative Media", "Languages & Comms"] },
+  { label: "Data Engineering", values: ["Data Engineering"] },
+  { label: "Product & Innovation", values: ["Product & Innovation"] },
+  { label: "Data & Analytics", values: ["Data & Analytics"] },
+  { label: "Business Studies", values: ["Business Studies"] },
+  { label: "Digital & Creative Media", values: ["Digital & Creative Media"] },
+  { label: "Languages & Comms", values: ["Languages & Comms"] },
 ];
 
 const CATEGORIES = [
