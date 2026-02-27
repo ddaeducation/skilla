@@ -86,22 +86,22 @@ Return a JSON object with this exact structure:
   "modules": [
     {
       "title": "Module 1: Title",
-      "description": "Module description",
+      "description": "Plain text module description without any HTML tags",
       "units": [
         {
           "title": "Unit 1.1: Title",
-          "description": "Unit description",
+          "description": "Plain text unit description without any HTML tags",
           "lessons": [
             {
               "title": "Lesson Title",
-              "description": "2-3 sentence description",
+              "description": "2-3 sentence plain text description without any HTML tags",
               "content_text": "<h2>Title</h2><p>Detailed lesson content with multiple paragraphs...</p><h3>Section</h3><p>More content...</p><h3>Key Takeaways</h3><ul><li>Point 1</li><li>Point 2</li></ul>",
               "duration_minutes": 20
             }
           ],
           "quiz": ${includeQuizzes ? `{
             "title": "Quiz: Unit Title",
-            "description": "Test your knowledge",
+            "description": "Plain text description without HTML tags",
             "passing_score": 70,
             "questions": [
               {
@@ -120,7 +120,7 @@ Return a JSON object with this exact structure:
           }` : "null"},
           "assignment": ${includeAssignments ? `{
             "title": "Assignment: Practical Exercise",
-            "description": "Brief description",
+            "description": "Plain text brief description without HTML tags",
             "instructions": "<h3>Overview</h3><p>Instructions...</p><ol><li>Step 1</li><li>Step 2</li></ol>",
             "max_score": 100
           }` : "null"}
@@ -131,7 +131,9 @@ Return a JSON object with this exact structure:
   "learning_outcomes": ["Outcome 1", "Outcome 2", "Outcome 3"]
 }
 
-Generate ${lessonsPerModule} lessons per unit, with 3-5 quiz questions per quiz. Make content substantive and educational.`;
+Generate ${lessonsPerModule} lessons per unit, with 3-5 quiz questions per quiz. Make content substantive and educational.
+
+IMPORTANT: All "description" fields MUST be plain text only - NO HTML tags whatsoever. Only "content_text" and "instructions" fields should contain HTML.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -180,6 +182,12 @@ Generate ${lessonsPerModule} lessons per unit, with 3-5 quiz questions per quiz.
       throw new Error("Failed to parse generated course structure");
     }
 
+    // Strip HTML tags from descriptions
+    const stripHtml = (text: string | null): string | null => {
+      if (!text) return null;
+      return text.replace(/<[^>]*>/g, '').trim();
+    };
+
     // Now save everything to the database
     let totalLessons = 0;
     let totalQuizzes = 0;
@@ -194,7 +202,7 @@ Generate ${lessonsPerModule} lessons per unit, with 3-5 quiz questions per quiz.
         .insert({
           course_id: courseId,
           title: mod.title,
-          description: mod.description || null,
+          description: stripHtml(mod.description) || null,
           order_index: mi,
           section_level: 1,
           parent_id: null,
@@ -216,7 +224,7 @@ Generate ${lessonsPerModule} lessons per unit, with 3-5 quiz questions per quiz.
           .insert({
             course_id: courseId,
             title: unit.title,
-            description: unit.description || null,
+            description: stripHtml(unit.description) || null,
             order_index: ui,
             section_level: 2,
             parent_id: moduleSection.id,
@@ -238,7 +246,7 @@ Generate ${lessonsPerModule} lessons per unit, with 3-5 quiz questions per quiz.
               course_id: courseId,
               section_id: unitSection.id,
               title: lesson.title,
-              description: lesson.description || null,
+              description: stripHtml(lesson.description) || null,
               content_text: lesson.content_text || null,
               content_type: "text",
               order_index: contentIndex++,
@@ -257,7 +265,7 @@ Generate ${lessonsPerModule} lessons per unit, with 3-5 quiz questions per quiz.
               course_id: courseId,
               section_id: unitSection.id,
               title: unit.quiz.title,
-              description: unit.quiz.description || null,
+              description: stripHtml(unit.quiz.description) || null,
               passing_score: unit.quiz.passing_score || 70,
               order_index: contentIndex++,
             })
@@ -307,7 +315,7 @@ Generate ${lessonsPerModule} lessons per unit, with 3-5 quiz questions per quiz.
               course_id: courseId,
               section_id: unitSection.id,
               title: unit.assignment.title,
-              description: unit.assignment.description || null,
+              description: stripHtml(unit.assignment.description) || null,
               instructions: unit.assignment.instructions || null,
               max_score: unit.assignment.max_score || 100,
               order_index: contentIndex++,

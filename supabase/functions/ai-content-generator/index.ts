@@ -53,7 +53,7 @@ ${additionalContext ? `Additional context: ${additionalContext}` : ""}
 
 For each lesson, provide:
 1. A clear, descriptive title
-2. A brief description (2-3 sentences)
+2. A brief description (2-3 sentences, plain text only - NO HTML tags)
 3. Detailed content as well-structured HTML (use <h2>, <h3>, <p>, <ul>, <ol>, <strong>, <em> tags). Each paragraph must be a separate <p> block with clear headings.
 4. Estimated duration in minutes
 
@@ -61,7 +61,7 @@ Return as JSON array:
 [
   {
     "title": "Lesson Title",
-    "description": "Brief description",
+    "description": "Plain text brief description without HTML tags",
     "content_text": "<h2>Section Heading</h2><p>First paragraph...</p><p>Second paragraph...</p>",
     "duration_minutes": 30
   }
@@ -82,14 +82,14 @@ ${existingContent ? `The previous version was about: ${existingContent}. Please 
 
 Provide:
 1. A clear, descriptive title
-2. A brief description (2-3 sentences)
+2. A brief description (2-3 sentences, plain text only - NO HTML tags)
 3. Detailed content as well-structured HTML (use <h2>, <h3>, <p>, <ul>, <ol>, <strong>, <em> tags)
 4. Estimated duration in minutes
 
 Return as JSON object (NOT an array):
 {
   "title": "Lesson Title",
-  "description": "Brief description",
+  "description": "Plain text brief description without HTML tags",
   "content_text": "<h2>Section Heading</h2><p>First paragraph...</p><p>Second paragraph...</p>",
   "duration_minutes": 30
 }`;
@@ -110,7 +110,7 @@ For each question, provide:
 Return as JSON:
 {
   "title": "Quiz Title",
-  "description": "Quiz description",
+  "description": "Plain text quiz description without HTML tags",
   "passing_score": 70,
   "questions": [
     {
@@ -173,7 +173,7 @@ Provide:
 Return as JSON:
 {
   "title": "Assignment Title",
-  "description": "Brief description of what students will do",
+  "description": "Plain text description of what students will do, no HTML tags",
   "instructions": "<h3>Overview</h3><p>Introduction paragraph...</p><h3>Steps</h3><ol><li>Step one...</li></ol>",
   "max_score": 100,
   "rubric": [
@@ -302,10 +302,15 @@ Return ONLY the HTML content. Start directly with <h2>.`;
       });
     }
 
+    // Strip HTML from description fields
+    const stripHtml = (text: string | null): string | null => {
+      if (!text) return null;
+      return text.replace(/<[^>]*>/g, '').trim();
+    };
+
     // Extract JSON from the response
     let parsedContent;
     try {
-      // Try to find JSON in the response
       const jsonMatch = content.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
       if (jsonMatch) {
         parsedContent = JSON.parse(jsonMatch[0]);
@@ -318,6 +323,18 @@ Return ONLY the HTML content. Start directly with <h2>.`;
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Clean descriptions in parsed content
+    if (Array.isArray(parsedContent)) {
+      parsedContent = parsedContent.map((item: any) => ({
+        ...item,
+        description: stripHtml(item.description),
+      }));
+    } else if (parsedContent && typeof parsedContent === 'object') {
+      if (parsedContent.description) {
+        parsedContent.description = stripHtml(parsedContent.description);
+      }
     }
 
     return new Response(JSON.stringify({ success: true, data: parsedContent }), {
