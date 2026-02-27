@@ -37,7 +37,7 @@ const Footer = () => {
             <div className="mb-4">
               <img src={gniLogo} alt="Global Nexus Institute" className="h-16 w-auto bg-white rounded-lg p-2" />
             </div>
-            <p className="text-sm font-medium text-primary-foreground/90 mb-4">Learn/Teach. Build. Get Hired.</p>
+            <p className="text-sm font-medium text-primary-foreground/90 mb-4">Learn. Build. Get Hired.</p>
             <div className="flex space-x-4" role="list" aria-label="Social media links">
               {socialLinks.map(({ Icon, href }, index) => {
                 const labels = ["Facebook", "Twitter", "Instagram", "LinkedIn", "YouTube"];
