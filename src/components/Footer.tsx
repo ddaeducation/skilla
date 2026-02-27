@@ -1,31 +1,10 @@
 import { Facebook, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
 import gniLogo from "@/assets/gni-logo.png";
 const Footer = () => {
-  const footerSections = [
-    {
-      title: "Schools",
-      links: [
-        "Data Engineering",
-        "Product & Innovation",
-        "Data & Analytics",
-        "Business Studies",
-        "Digital & Creative Media",
-        "Languages & Comms",
-      ],
-    },
-    {
-      title: "Programs",
-      links: ["Frontend Engineering", "Backend Engineering", "Data Science", "Product Management", "Digital Marketing"],
-    },
-    {
-      title: "Company",
-      links: ["About Us", "Why Global Nexus Institute", "Career", "Blog", "Contact"],
-    },
-    {
-      title: "Resources",
-      links: ["FAQs", "Scholarship", "Terms of Service", "Privacy Policy", "Collaborate with us"],
-    },
-  ];
+  const schoolsCol1 = ["Data Engineering", "Product & Innovation", "Data & Analytics"];
+  const schoolsCol2 = ["Business Studies", "Digital & Creative Media", "Languages & Comms"];
+  const companyLinks = ["About Us", "Career"];
+  const resourcesLinks = ["FAQs", "Scholarship", "Terms of Service"];
   const socialLinks = [
     {
       Icon: Facebook,
@@ -57,7 +36,6 @@ const Footer = () => {
             <div className="mb-4">
               <img src={gniLogo} alt="Global Nexus Institute" className="h-16 w-auto bg-white rounded-lg p-2" />
             </div>
-            <p className="text-sm text-primary-foreground/80 mb-4">Africa's premier online learning platform</p>
             <div className="flex space-x-4" role="list" aria-label="Social media links">
               {socialLinks.map(({ Icon, href }, index) => {
                 const labels = ["Facebook", "Twitter", "Instagram", "LinkedIn", "YouTube"];
@@ -77,24 +55,50 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Footer sections */}
-          {footerSections.map((section, index) => (
-            <div key={index}>
-              <h4 className="font-semibold mb-4">{section.title}</h4>
+          {/* Schools - two columns */}
+          <div className="lg:col-span-2">
+            <h4 className="font-semibold mb-4">Schools</h4>
+            <div className="grid grid-cols-2 gap-x-8">
               <ul className="space-y-2">
-                {section.links.map((link, linkIndex) => (
-                  <li key={linkIndex}>
-                    <a
-                      href="#"
-                      className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
-                    >
-                      {link}
-                    </a>
+                {schoolsCol1.map((link, i) => (
+                  <li key={i}>
+                    <a href="#" className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors">{link}</a>
+                  </li>
+                ))}
+              </ul>
+              <ul className="space-y-2">
+                {schoolsCol2.map((link, i) => (
+                  <li key={i}>
+                    <a href="#" className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors">{link}</a>
                   </li>
                 ))}
               </ul>
             </div>
-          ))}
+          </div>
+
+          {/* Company */}
+          <div>
+            <h4 className="font-semibold mb-4">Company</h4>
+            <ul className="space-y-2">
+              {companyLinks.map((link, i) => (
+                <li key={i}>
+                  <a href="#" className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors">{link}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Resources */}
+          <div>
+            <h4 className="font-semibold mb-4">Resources</h4>
+            <ul className="space-y-2">
+              {resourcesLinks.map((link, i) => (
+                <li key={i}>
+                  <a href="#" className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors">{link}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-primary-foreground/20">
