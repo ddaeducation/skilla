@@ -14,13 +14,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Building2, Users, BarChart3, FileText, CheckCircle, Loader2, ChevronsUpDown, X, Briefcase } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Building2, Users, BarChart3, FileText, CheckCircle, Loader2, ChevronsUpDown, X, Briefcase, ArrowRight } from "lucide-react";
 
 const CorporateTraining = () => {
   const { toast } = useToast();
   const [courses, setCourses] = useState<{ id: string; title: string; school: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
   const [form, setForm] = useState({
     company_name: "",
     contact_name: "",
@@ -138,51 +140,55 @@ const CorporateTraining = () => {
               </div>
             </div>
 
-            {/* Form */}
-            {submitted ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <div className="inline-flex items-center justify-center p-3 rounded-full bg-green-100 text-green-600 mb-4">
-                    <Briefcase className="h-8 w-8" />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-2">Thank You!</h2>
-                  <p className="text-muted-foreground">Your quote request has been submitted. Our team will review it and contact you within 48 hours.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Request a Custom Quote</CardTitle>
-                  <CardDescription>Tell us about your organization and training needs</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="company_name">Company Name *</Label>
-                        <Input id="company_name" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="contact_name">Contact Person *</Label>
-                        <Input id="contact_name" value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} required />
-                      </div>
+            {/* CTA Button */}
+            <div className="text-center">
+              {submitted ? (
+                <Card className="text-center py-12 max-w-lg mx-auto">
+                  <CardContent>
+                    <div className="inline-flex items-center justify-center p-3 rounded-full bg-green-100 text-green-600 mb-4">
+                      <Briefcase className="h-8 w-8" />
                     </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="contact_email">Email Address *</Label>
-                        <Input id="contact_email" type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} required />
+                    <h2 className="text-2xl font-bold mb-2">Thank You!</h2>
+                    <p className="text-muted-foreground">Your quote request has been submitted. Our team will review it and contact you within 48 hours.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Dialog open={quoteOpen} onOpenChange={setQuoteOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="lg">
+                      Request a Custom Quote <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-background">
+                    <DialogHeader>
+                      <DialogTitle>Request a Custom Quote</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="company_name">Company Name *</Label>
+                          <Input id="company_name" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} required />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="contact_name">Contact Person *</Label>
+                          <Input id="contact_name" value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} required />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="contact_phone">Phone Number</Label>
-                        <Input id="contact_phone" value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="contact_email">Email Address *</Label>
+                          <Input id="contact_email" type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} required />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="contact_phone">Phone Number</Label>
+                          <Input id="contact_phone" value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
+                        </div>
                       </div>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <Label htmlFor="num_employees">Number of Employees *</Label>
                         <Input id="num_employees" type="number" min={1} value={form.number_of_employees} onChange={(e) => setForm({ ...form, number_of_employees: parseInt(e.target.value) || 1 })} required />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <Label>Courses of Interest</Label>
                         <Popover>
                           <PopoverTrigger asChild>
@@ -241,19 +247,19 @@ const CorporateTraining = () => {
                           </div>
                         )}
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="message">Additional Details</Label>
-                      <Textarea id="message" rows={5} placeholder="Training goals, timeline, specific requirements..." value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={submitting}>
-                      {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Submit Quote Request
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            )}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="message">Additional Details</Label>
+                        <Textarea id="message" rows={3} placeholder="Training goals, timeline, specific requirements..." value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={submitting}>
+                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Submit Quote Request
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
         </main>
         <Footer />
