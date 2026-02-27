@@ -33,6 +33,8 @@ const contentTypes = [
   { value: "embed", label: "Embedded Video", icon: Video },
   { value: "pdf", label: "PDF Document", icon: FileText },
   { value: "image", label: "Image/Photo", icon: Image },
+  { value: "python", label: "Python Code", icon: FileText },
+  { value: "sql", label: "SQL Code", icon: FileText },
   { value: "quiz", label: "Quiz", icon: FileQuestion },
   { value: "assignment", label: "Assignment", icon: ClipboardList },
 ];

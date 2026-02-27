@@ -44,6 +44,7 @@ import { StudentQuizTaker } from "@/components/StudentQuizTaker";
 import { StudentAssignmentSubmission } from "@/components/StudentAssignmentSubmission";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import CodePlayground from "@/components/CodePlayground";
+import CodeLessonPlayer from "@/components/CodeLessonPlayer";
 import PdfPresentationViewer from "@/components/PdfPresentationViewer";
 
 interface CourseSection {
@@ -834,6 +835,15 @@ const CourseDetail = () => {
         {/* Image */}
         {lesson.content_type === "image" && lesson.content_url && (
           <img src={lesson.content_url} alt={lesson.title} className="w-full rounded-lg" />
+        )}
+
+        {/* Python / SQL Code Lesson */}
+        {(lesson.content_type === "python" || lesson.content_type === "sql") && (
+          <CodeLessonPlayer
+            language={lesson.content_type as "python" | "sql"}
+            initialCode={lesson.content_url || undefined}
+            lessonTitle={lesson.title}
+          />
         )}
 
         {/* Text/Notes - show for text type OR as supplemental content for any type */}

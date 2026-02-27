@@ -98,6 +98,10 @@ const getContentIcon = (type: string) => {
       return <FileText className="w-4 h-4" />;
     case "image":
       return <ImageIcon className="w-4 h-4" />;
+    case "python":
+      return <span className="w-4 h-4 text-xs flex items-center justify-center">🐍</span>;
+    case "sql":
+      return <span className="w-4 h-4 text-xs flex items-center justify-center">🗄️</span>;
     default:
       return <FileText className="w-4 h-4" />;
   }
