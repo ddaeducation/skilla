@@ -162,7 +162,7 @@ const SortableSection = ({
               </span>
             </div>
             {section.description && (
-              <p className="text-xs text-muted-foreground line-clamp-1">{section.description}</p>
+              <p className="text-xs text-muted-foreground line-clamp-1">{section.description.replace(/<[^>]*>/g, '')}</p>
             )}
           </div>
 

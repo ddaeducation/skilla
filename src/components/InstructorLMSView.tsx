@@ -95,7 +95,7 @@ const InstructorLMSView = ({ instructorId }: InstructorLMSViewProps) => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                  {course.description}
+                  {course.description?.replace(/<[^>]*>/g, '') || ''}
                 </p>
                 <div className="flex gap-2">
                   <Button

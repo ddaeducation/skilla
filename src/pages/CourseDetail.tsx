@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { stripHtml } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 import { useLessonTimeTracking } from "@/hooks/useLessonTimeTracking";
 import { supabase } from "@/integrations/supabase/client";
@@ -717,7 +718,7 @@ const CourseDetail = () => {
           </div>
         </div>
 
-        {lesson.description && <p className="text-muted-foreground">{lesson.description}</p>}
+        {lesson.description && <p className="text-muted-foreground">{stripHtml(lesson.description)}</p>}
 
         {/* YouTube Video */}
         {embedUrl && (
@@ -898,7 +899,7 @@ const CourseDetail = () => {
             <HelpCircle className="w-10 h-10 text-primary" />
           </div>
           <h3 className="text-2xl font-bold mb-2">{quiz.title}</h3>
-          {quiz.description && <p className="text-muted-foreground">{quiz.description}</p>}
+          {quiz.description && <p className="text-muted-foreground">{stripHtml(quiz.description)}</p>}
         </div>
 
         <div className="flex justify-center gap-4 flex-wrap">
@@ -971,7 +972,7 @@ const CourseDetail = () => {
             <ClipboardList className="w-10 h-10 text-primary" />
           </div>
           <h3 className="text-2xl font-bold mb-2">{assignment.title}</h3>
-          {assignment.description && <p className="text-muted-foreground">{assignment.description}</p>}
+          {assignment.description && <p className="text-muted-foreground">{stripHtml(assignment.description)}</p>}
         </div>
 
         <div className="flex justify-center gap-4 flex-wrap">
@@ -1182,7 +1183,7 @@ const CourseDetail = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Course Overview</CardTitle>
-                <CardDescription>{course.description}</CardDescription>
+                <CardDescription>{stripHtml(course.description)}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-3 gap-4 text-center">

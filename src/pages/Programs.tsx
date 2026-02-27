@@ -239,7 +239,7 @@ const Programs = () => {
                         )}
                       </div>
                       <CardDescription className="text-sm leading-relaxed line-clamp-2">
-                        {course.description}
+                        {course.description?.replace(/<[^>]*>/g, '') || ''}
                       </CardDescription>
                       {/* Rating as number */}
                       <div className="flex items-center gap-1.5 mt-2">

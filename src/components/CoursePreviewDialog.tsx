@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { stripHtml } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -216,7 +217,7 @@ export function CoursePreviewDialog({ courseId, courseTitle, open, onOpenChange 
                             </div>
                             {lesson.description && (
                               <p className="text-sm text-muted-foreground line-clamp-2">
-                                {lesson.description}
+                                {stripHtml(lesson.description)}
                               </p>
                             )}
                             <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
@@ -261,7 +262,7 @@ export function CoursePreviewDialog({ courseId, courseTitle, open, onOpenChange 
                             </div>
                             {quiz.description && (
                               <p className="text-sm text-muted-foreground line-clamp-2">
-                                {quiz.description}
+                                {stripHtml(quiz.description)}
                               </p>
                             )}
                             <div className="mt-2 text-xs text-muted-foreground">
@@ -299,14 +300,14 @@ export function CoursePreviewDialog({ courseId, courseTitle, open, onOpenChange 
                             </div>
                             {assignment.description && (
                               <p className="text-sm text-muted-foreground line-clamp-2">
-                                {assignment.description}
+                                {stripHtml(assignment.description)}
                               </p>
                             )}
                             {assignment.instructions && (
                               <div className="mt-2 p-2 bg-muted rounded-md">
                                 <p className="text-xs font-medium mb-1">Instructions:</p>
                                 <p className="text-xs text-muted-foreground line-clamp-3">
-                                  {assignment.instructions}
+                                  {stripHtml(assignment.instructions)}
                                 </p>
                               </div>
                             )}

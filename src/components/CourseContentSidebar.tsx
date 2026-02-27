@@ -322,7 +322,7 @@ export function CourseContentSidebar({
             <div className="space-y-1 mt-1" style={{ paddingLeft: `${paddingLeft + 24}px` }}>
               {section.description && (
                 <p className="text-xs text-muted-foreground px-2 pb-1">
-                  {section.description}
+                  {section.description.replace(/<[^>]*>/g, '')}
                 </p>
               )}
               {children.length > 0 ? (

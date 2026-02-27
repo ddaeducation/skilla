@@ -1111,7 +1111,7 @@ const Instructor = () => {
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{course.description?.replace(/<[^>]*>/g, '') || ''}</p>
                         <div className="flex flex-wrap gap-2">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

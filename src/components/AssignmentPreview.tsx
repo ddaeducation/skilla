@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { stripHtml } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,7 +55,7 @@ export const AssignmentPreview = ({ assignment, open, onOpenChange }: Assignment
                 <div>
                   <CardTitle className="text-xl">{assignment.title}</CardTitle>
                   {assignment.description && (
-                    <p className="text-muted-foreground mt-2">{assignment.description}</p>
+                    <p className="text-muted-foreground mt-2">{stripHtml(assignment.description)}</p>
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-2">

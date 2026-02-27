@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { stripHtml } from "@/lib/utils";
 import { FileText, Video, Youtube, Image, FileQuestion, ClipboardList, GripVertical, Pencil, Trash2, Eye, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -204,7 +205,7 @@ const SortableRow = ({ item, lessons, quizzes, assignments, onEdit, onDelete, on
             <div className="font-medium">{item.title}</div>
             {item.description && (
               <div className="text-sm text-muted-foreground line-clamp-1">
-                {item.description}
+                {stripHtml(item.description)}
               </div>
             )}
           </div>

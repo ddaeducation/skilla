@@ -2562,7 +2562,7 @@ const Admin = () => {
                             </div>
                             <h4 className="font-medium line-clamp-2">{course.title}</h4>
                             {course.description && (
-                              <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
+                              <p className="text-sm text-muted-foreground line-clamp-2">{course.description.replace(/<[^>]*>/g, '')}</p>
                             )}
                           </CardContent>
                         </Card>

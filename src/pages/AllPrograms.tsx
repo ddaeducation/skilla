@@ -97,7 +97,7 @@ const CourseCard = ({ course, instructor, ratingData }: {
             )}
           </div>
         </div>
-        <CardDescription className="text-sm leading-relaxed line-clamp-2">{course.description}</CardDescription>
+        <CardDescription className="text-sm leading-relaxed line-clamp-2">{course.description?.replace(/<[^>]*>/g, '') || ''}</CardDescription>
         <div className="flex items-center gap-1.5 mt-2">
           <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
           <span className="text-sm font-semibold text-foreground">{rating.toFixed(1)}</span>
