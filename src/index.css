@@ -513,6 +513,80 @@ All colors MUST be HSL.
   .dark .note-reader-active {
     background-color: hsl(var(--primary) / 0.2);
   }
+  /* Code Cell Syntax Highlighting - Colab/Jupyter style */
+  .code-cell-editor {
+    background-color: hsl(0 0% 97%);
+  }
+  .dark .code-cell-editor {
+    background-color: hsl(220 13% 14%);
+  }
+
+  .code-highlight-layer .hljs-keyword,
+  .code-highlight-layer .hljs-built_in,
+  .code-highlight-layer .hljs-type {
+    color: hsl(350 70% 45%);
+    font-weight: 500;
+  }
+  .code-highlight-layer .hljs-string,
+  .code-highlight-layer .hljs-addition {
+    color: hsl(140 50% 30%);
+  }
+  .code-highlight-layer .hljs-number,
+  .code-highlight-layer .hljs-variable,
+  .code-highlight-layer .hljs-literal {
+    color: hsl(215 80% 38%);
+  }
+  .code-highlight-layer .hljs-comment,
+  .code-highlight-layer .hljs-deletion {
+    color: hsl(220 10% 50%);
+    font-style: italic;
+  }
+  .code-highlight-layer .hljs-title,
+  .code-highlight-layer .hljs-section {
+    color: hsl(270 50% 45%);
+    font-weight: 500;
+  }
+  .code-highlight-layer .hljs-attr,
+  .code-highlight-layer .hljs-attribute {
+    color: hsl(35 80% 42%);
+  }
+  .code-highlight-layer .hljs-selector-class,
+  .code-highlight-layer .hljs-selector-id {
+    color: hsl(190 60% 35%);
+  }
+  .code-highlight-layer .hljs-params {
+    color: hsl(220 15% 40%);
+  }
+  .code-highlight-layer .hljs-meta {
+    color: hsl(200 50% 45%);
+  }
+
+  .dark .code-highlight-layer .hljs-keyword,
+  .dark .code-highlight-layer .hljs-built_in,
+  .dark .code-highlight-layer .hljs-type {
+    color: hsl(350 90% 68%);
+  }
+  .dark .code-highlight-layer .hljs-string,
+  .dark .code-highlight-layer .hljs-addition {
+    color: hsl(140 60% 55%);
+  }
+  .dark .code-highlight-layer .hljs-number,
+  .dark .code-highlight-layer .hljs-variable,
+  .dark .code-highlight-layer .hljs-literal {
+    color: hsl(215 90% 65%);
+  }
+  .dark .code-highlight-layer .hljs-comment,
+  .dark .code-highlight-layer .hljs-deletion {
+    color: hsl(220 15% 55%);
+  }
+  .dark .code-highlight-layer .hljs-title,
+  .dark .code-highlight-layer .hljs-section {
+    color: hsl(270 70% 70%);
+  }
+  .dark .code-highlight-layer .hljs-attr,
+  .dark .code-highlight-layer .hljs-attribute {
+    color: hsl(35 90% 60%);
+  }
 }
 
 @layer utilities {
