@@ -1,4 +1,5 @@
 import { Facebook, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
+import { Link } from "react-router-dom";
 import gniLogo from "@/assets/gni-logo.png";
 const Footer = () => {
   const schoolsCol1 = ["Data Engineering", "Product & Innovation", "Data & Analytics"];
@@ -85,6 +86,9 @@ const Footer = () => {
                   <a href="#" className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors">{link}</a>
                 </li>
               ))}
+              <li>
+                <Link to="/collaborate" className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors">Collaborate with us</Link>
+              </li>
             </ul>
           </div>
 
@@ -102,9 +106,8 @@ const Footer = () => {
         </div>
 
         <div className="mt-12 pt-8 border-t border-primary-foreground/20">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-primary-foreground/80">© 2026 Global Nexus Institute. All rights reserved.</p>
-            <p className="text-sm text-primary-foreground/80">info@globalnexus.africa</p>
+          <div className="text-center">
+            <p className="text-sm text-primary-foreground/80">© 2026 Global Nexus Institute. All rights reserved. / info@globalnexus.africa</p>
           </div>
         </div>
       </div>

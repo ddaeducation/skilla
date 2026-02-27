@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Users, BookOpen, FileText, Plus, Pencil, Trash2, X, Mail, Shield, Clock, RefreshCw, UserX, GraduationCap, Video, Image, Youtube, ClipboardList, FileQuestion, Eye, CheckCircle, XCircle, CalendarIcon, Search, MoreVertical, Ban, UserCheck, DollarSign, TrendingUp, Download, Building2 } from "lucide-react";
 import AdminCorporateManagement from "@/components/AdminCorporateManagement";
+import AdminCollaborationManagement from "@/components/AdminCollaborationManagement";
 import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -3613,6 +3614,21 @@ const Admin = () => {
                 </div>
               </div>
               <AdminCorporateManagement />
+            </TabsContent>
+
+            {/* Collaborations Tab */}
+            <TabsContent value="collaborations" className="space-y-4">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-semibold flex items-center gap-2">
+                    Collaborations
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Manage collaboration and partnership requests
+                  </p>
+                </div>
+              </div>
+              <AdminCollaborationManagement />
             </TabsContent>
           </Tabs>
         </div>
