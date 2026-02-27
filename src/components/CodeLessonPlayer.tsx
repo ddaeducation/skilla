@@ -1,10 +1,18 @@
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Play, Loader2, Trash2, Copy, Check, Terminal, Code2, Sparkles, Send } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Play, Loader2, Trash2, Copy, Check, Terminal, Code2, Sparkles, Send,
+  Plus, X, Database, Table2, ChevronDown, ChevronRight, GripVertical
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Textarea } from "@/components/ui/textarea";
+import DataSourcesPanel, { type DataSource } from "./DataSourcesPanel";
+import ColabImporter from "./ColabImporter";
 
 interface CodeLessonPlayerProps {
   language: "python" | "sql";
@@ -12,84 +20,128 @@ interface CodeLessonPlayerProps {
   lessonTitle?: string;
 }
 
-const BOILERPLATE: Record<string, string> = {
-  python: '# Write your Python code here\nprint("Hello, World!")',
-  sql: '-- Write your SQL query here\nSELECT 1 AS result;',
-};
+interface CodeCell {
+  id: string;
+  code: string;
+  output: string;
+  isRunning: boolean;
+  variableName: string;
+  dataType: "DataFrame" | "Series" | "Variable" | "Table";
+  showDataSource: boolean;
+  dataSource?: DataSource;
+  executionCount: number | null;
+}
+
+const DEFAULT_PYTHON_CODE = 'import pandas as pd\n\n# Write your Python code here\nprint("Hello, World!")';
+const DEFAULT_SQL_CODE = 'SELECT * FROM';
+
+let cellCounter = 0;
+const createCell = (language: string, code?: string): CodeCell => ({
+  id: `cell-${++cellCounter}-${Date.now()}`,
+  code: code || (language === "python" ? DEFAULT_PYTHON_CODE : DEFAULT_SQL_CODE),
+  output: "",
+  isRunning: false,
+  variableName: `df${cellCounter > 1 ? cellCounter : ""}`,
+  dataType: language === "sql" ? "DataFrame" : "Variable",
+  showDataSource: false,
+  executionCount: null,
+});
 
 const CodeLessonPlayer = ({ language, initialCode, lessonTitle }: CodeLessonPlayerProps) => {
-  const [code, setCode] = useState(initialCode || BOILERPLATE[language] || "");
-  const [output, setOutput] = useState("");
-  const [isRunning, setIsRunning] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [cells, setCells] = useState<CodeCell[]>([
+    createCell(language, initialCode),
+  ]);
+  const [dataSources, setDataSources] = useState<DataSource[]>([]);
+  const [showAi, setShowAi] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiResponse, setAiResponse] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [showAi, setShowAi] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [copied, setCopied] = useState<string | null>(null);
   const { toast } = useToast();
 
   const langLabel = language === "python" ? "🐍 Python" : "🗄️ SQL";
 
-  const handleRun = async () => {
-    if (!code.trim()) {
+  const updateCell = (id: string, updates: Partial<CodeCell>) => {
+    setCells(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const addCell = () => {
+    setCells(prev => [...prev, createCell(language)]);
+  };
+
+  const removeCell = (id: string) => {
+    if (cells.length <= 1) {
+      toast({ title: "Cannot remove", description: "At least one code cell is required.", variant: "destructive" });
+      return;
+    }
+    setCells(prev => prev.filter(c => c.id !== id));
+  };
+
+  const handleRunCell = async (id: string) => {
+    const cell = cells.find(c => c.id === id);
+    if (!cell || !cell.code.trim()) {
       toast({ title: "Empty code", description: "Please write some code to run.", variant: "destructive" });
       return;
     }
-    setIsRunning(true);
-    setOutput("Running...");
+    updateCell(id, { isRunning: true, output: "Running..." });
     try {
       const { data, error } = await supabase.functions.invoke("run-code", {
-        body: { language, code },
+        body: {
+          language,
+          code: cell.code,
+          dataSources: dataSources.length > 0 ? dataSources : undefined,
+        },
       });
-      if (error) { setOutput(`Error: ${error.message}`); return; }
-      if (data.error) { setOutput(`Error: ${data.error}`); return; }
-      setOutput(data.output || "No output");
+      if (error) { updateCell(id, { output: `Error: ${error.message}`, isRunning: false }); return; }
+      if (data.error) { updateCell(id, { output: `Error: ${data.error}`, isRunning: false }); return; }
+      updateCell(id, {
+        output: data.output || "No output",
+        isRunning: false,
+        executionCount: (cell.executionCount || 0) + 1,
+      });
     } catch (err) {
-      setOutput(`Error: ${err instanceof Error ? err.message : "Failed to run code"}`);
-    } finally {
-      setIsRunning(false);
-    }
-  };
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleClear = () => {
-    setCode("");
-    setOutput("");
-    textareaRef.current?.focus();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Tab") {
-      e.preventDefault();
-      const target = e.currentTarget;
-      const start = target.selectionStart;
-      const end = target.selectionEnd;
-      const newValue = code.substring(0, start) + "    " + code.substring(end);
-      setCode(newValue);
-      requestAnimationFrame(() => {
-        target.selectionStart = target.selectionEnd = start + 4;
+      updateCell(id, {
+        output: `Error: ${err instanceof Error ? err.message : "Failed to run code"}`,
+        isRunning: false,
       });
     }
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-      e.preventDefault();
-      handleRun();
+  };
+
+  const handleRunAll = async () => {
+    for (const cell of cells) {
+      await handleRunCell(cell.id);
+    }
+  };
+
+  const handleCopy = async (id: string, code: string) => {
+    await navigator.clipboard.writeText(code);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const handleColabImport = (importedCode: string) => {
+    // Split imported code into cells by "# %%", "# In[" markers, or double newlines
+    const cellBlocks = importedCode
+      .split(/\n(?=# %%|# In\[)/)
+      .filter(block => block.trim());
+
+    if (cellBlocks.length > 1) {
+      setCells(cellBlocks.map(block => createCell("python", block.trim())));
+    } else {
+      setCells([createCell("python", importedCode)]);
     }
   };
 
   const handleAiHelp = useCallback(async () => {
-    if (!aiPrompt.trim() && !code.trim()) return;
+    const allCode = cells.map(c => c.code).join("\n\n");
+    if (!aiPrompt.trim() && !allCode.trim()) return;
     setAiLoading(true);
     setAiResponse("");
     try {
+      const allOutputs = cells.filter(c => c.output).map(c => c.output).join("\n---\n");
       const prompt = aiPrompt.trim()
-        ? `The student is writing ${language} code and asks: "${aiPrompt}"\n\nTheir current code:\n\`\`\`${language}\n${code}\n\`\`\`\n\n${output ? `Current output:\n${output}` : ""}`
-        : `Review and suggest improvements for this ${language} code:\n\`\`\`${language}\n${code}\n\`\`\`\n\n${output ? `Current output:\n${output}` : ""}`;
+        ? `The student is writing ${language} code and asks: "${aiPrompt}"\n\nTheir current code:\n\`\`\`${language}\n${allCode}\n\`\`\`\n\n${allOutputs ? `Current output:\n${allOutputs}` : ""}`
+        : `Review and suggest improvements for this ${language} code:\n\`\`\`${language}\n${allCode}\n\`\`\`\n\n${allOutputs ? `Current output:\n${allOutputs}` : ""}`;
 
       const { data, error } = await supabase.functions.invoke("code-ai-assist", {
         body: { prompt, language },
@@ -102,40 +154,41 @@ const CodeLessonPlayer = ({ language, initialCode, lessonTitle }: CodeLessonPlay
       setAiLoading(false);
       setAiPrompt("");
     }
-  }, [aiPrompt, code, output, language]);
-
-  const lineCount = code.split("\n").length;
-  const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1);
+  }, [aiPrompt, cells, language]);
 
   return (
-    <div className="space-y-3">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">{langLabel} Editor</span>
+    <div className="space-y-4">
+      {/* Top Toolbar */}
+      <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b">
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="text-sm gap-1.5 py-1 px-3">
+            <Code2 className="w-3.5 h-3.5" />
+            {langLabel} Notebook
+          </Badge>
+          {lessonTitle && (
+            <span className="text-sm text-muted-foreground hidden sm:inline">{lessonTitle}</span>
+          )}
         </div>
         <div className="flex items-center gap-2">
+          <ColabImporter onImport={handleColabImport} />
+          <Button variant="outline" size="sm" onClick={handleRunAll} className="gap-1.5">
+            <Play className="w-3.5 h-3.5" />
+            Run All
+          </Button>
           <Button
             variant={showAi ? "default" : "outline"}
             size="sm"
             onClick={() => setShowAi(!showAi)}
-            className="gap-1"
+            className="gap-1.5"
           >
-            <Sparkles className="w-4 h-4" />
-            AI Help
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleCopy}>
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleClear}>
-            <Trash2 className="w-4 h-4" />
-          </Button>
-          <Button onClick={handleRun} disabled={isRunning} size="sm" className="gap-2">
-            {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            {isRunning ? "Running..." : "Run"}
+            <Sparkles className="w-3.5 h-3.5" />
+            AI
           </Button>
         </div>
       </div>
+
+      {/* Data Sources */}
+      <DataSourcesPanel dataSources={dataSources} onChange={setDataSources} language={language} />
 
       {/* AI Assistant Panel */}
       {showAi && (
@@ -157,12 +210,7 @@ const CodeLessonPlayer = ({ language, initialCode, lessonTitle }: CodeLessonPlay
                 }
               }}
             />
-            <Button
-              onClick={handleAiHelp}
-              disabled={aiLoading}
-              size="sm"
-              className="self-end"
-            >
+            <Button onClick={handleAiHelp} disabled={aiLoading} size="sm" className="self-end">
               {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </Button>
           </div>
@@ -174,47 +222,216 @@ const CodeLessonPlayer = ({ language, initialCode, lessonTitle }: CodeLessonPlay
         </Card>
       )}
 
-      {/* Editor + Output */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 border-b">
-            <Code2 className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">{langLabel}</span>
-          </div>
-          <div className="relative flex">
-            <div className="select-none bg-muted/30 text-muted-foreground text-right py-3 px-2 font-mono text-sm leading-6 border-r min-w-[3rem]">
-              {lineNumbers.map((num) => (
-                <div key={num}>{num}</div>
-              ))}
-            </div>
-            <textarea
-              ref={textareaRef}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              onKeyDown={handleKeyDown}
-              spellCheck={false}
-              className="flex-1 resize-none bg-background p-3 font-mono text-sm leading-6 outline-none min-h-[300px] w-full"
-              placeholder={`Write your ${language} code here...`}
-            />
-          </div>
-          <div className="px-4 py-1.5 bg-muted/30 border-t text-xs text-muted-foreground">
-            Press Ctrl+Enter to run • Tab inserts spaces
-          </div>
-        </Card>
+      {/* Code Cells */}
+      <div className="space-y-3">
+        {cells.map((cell, index) => (
+          <CellBlock
+            key={cell.id}
+            cell={cell}
+            index={index}
+            language={language}
+            onUpdate={(updates) => updateCell(cell.id, updates)}
+            onRun={() => handleRunCell(cell.id)}
+            onRemove={() => removeCell(cell.id)}
+            onCopy={() => handleCopy(cell.id, cell.code)}
+            isCopied={copied === cell.id}
+          />
+        ))}
+      </div>
 
-        <Card className="overflow-hidden flex flex-col">
-          <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 border-b">
-            <Terminal className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Output</span>
-          </div>
-          <div className="flex-1 min-h-[300px] bg-card p-4">
-            <pre className="font-mono text-sm text-foreground whitespace-pre-wrap break-words">
-              {output || <span className="text-muted-foreground italic">Run your code to see output here...</span>}
-            </pre>
-          </div>
-        </Card>
+      {/* Add Cell Button */}
+      <div className="flex justify-center">
+        <Button variant="outline" size="sm" onClick={addCell} className="gap-2 text-muted-foreground">
+          <Plus className="w-4 h-4" />
+          Add Code Cell
+        </Button>
       </div>
     </div>
+  );
+};
+
+// ─── Individual Cell Component ───────────────────────────────────
+
+interface CellBlockProps {
+  cell: CodeCell;
+  index: number;
+  language: string;
+  onUpdate: (updates: Partial<CodeCell>) => void;
+  onRun: () => void;
+  onRemove: () => void;
+  onCopy: () => void;
+  isCopied: boolean;
+}
+
+const CellBlock = ({ cell, index, language, onUpdate, onRun, onRemove, onCopy, isCopied }: CellBlockProps) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showOutput, setShowOutput] = useState(true);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const target = e.currentTarget;
+      const start = target.selectionStart;
+      const end = target.selectionEnd;
+      const newValue = cell.code.substring(0, start) + "    " + cell.code.substring(end);
+      onUpdate({ code: newValue });
+      requestAnimationFrame(() => {
+        target.selectionStart = target.selectionEnd = start + 4;
+      });
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      onRun();
+    }
+  };
+
+  const lineCount = cell.code.split("\n").length;
+  const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1);
+
+  return (
+    <Card className="overflow-hidden border group">
+      {/* Cell Header - like reference image */}
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/40 border-b text-xs">
+        <GripVertical className="w-3 h-3 text-muted-foreground/40" />
+
+        {/* Data Source selector */}
+        {language === "sql" && (
+          <>
+            <div className="flex items-center gap-1.5 bg-background rounded-md border px-2 py-1">
+              <Database className="w-3 h-3 text-primary" />
+              <span className="font-medium text-foreground">Database</span>
+              <ChevronDown className="w-3 h-3 text-muted-foreground" />
+            </div>
+            <span className="text-muted-foreground">|</span>
+          </>
+        )}
+
+        <div className="flex items-center gap-1.5 bg-background rounded-md border px-2 py-1">
+          <Table2 className="w-3 h-3 text-primary" />
+          <Select
+            value={cell.dataType}
+            onValueChange={(v) => onUpdate({ dataType: v as CodeCell["dataType"] })}
+          >
+            <SelectTrigger className="h-auto p-0 border-0 shadow-none text-xs font-medium min-w-[80px] bg-transparent">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="DataFrame">DataFrame</SelectItem>
+              <SelectItem value="Series">Series</SelectItem>
+              <SelectItem value="Variable">Variable</SelectItem>
+              <SelectItem value="Table">Table</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <span className="text-muted-foreground">available as</span>
+        <Input
+          value={cell.variableName}
+          onChange={(e) => onUpdate({ variableName: e.target.value })}
+          className="h-6 w-16 text-xs font-mono border bg-background px-1.5 py-0"
+        />
+
+        <div className="ml-auto flex items-center gap-1.5">
+          {language === "sql" && (
+            <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 text-muted-foreground px-2">
+              <Table2 className="w-3 h-3" />
+              Show Tables
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={onCopy}>
+            {isCopied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Code Editor Area */}
+      <div className="relative flex">
+        <div className="select-none bg-muted/20 text-muted-foreground text-right py-3 px-2 font-mono text-xs leading-6 border-r min-w-[2.5rem]">
+          {lineNumbers.map((num) => (
+            <div key={num}>{num}</div>
+          ))}
+        </div>
+        <textarea
+          ref={textareaRef}
+          value={cell.code}
+          onChange={(e) => onUpdate({ code: e.target.value })}
+          onKeyDown={handleKeyDown}
+          spellCheck={false}
+          className="flex-1 resize-none bg-background p-3 font-mono text-sm leading-6 outline-none min-h-[80px] w-full"
+          placeholder={`Write your ${language} code here...`}
+        />
+      </div>
+
+      {/* Cell Footer with Run + AI */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30 border-t">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {cell.executionCount !== null && (
+            <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+              [{cell.executionCount}]
+            </Badge>
+          )}
+          {cell.isRunning && (
+            <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+              <span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+            </span>
+          )}
+          {cell.isRunning && (
+            <span className="flex items-center gap-1 text-primary">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Running...
+            </span>
+          )}
+          {!cell.isRunning && cell.output && (
+            <button
+              onClick={() => setShowOutput(!showOutput)}
+              className="flex items-center gap-1 hover:text-foreground"
+            >
+              {showOutput ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              Output
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRemove}
+            className="h-6 px-1.5 text-destructive hover:text-destructive"
+          >
+            <Trash2 className="w-3 h-3" />
+          </Button>
+          <span className="text-muted-foreground/30">|</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRun}
+            disabled={cell.isRunning}
+            className="h-7 gap-1.5 text-xs font-medium"
+          >
+            {cell.isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+            Run
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-xs font-medium text-primary"
+            onClick={() => {/* AI handled at parent level */}}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            AI
+          </Button>
+        </div>
+      </div>
+
+      {/* Output Area */}
+      {cell.output && showOutput && (
+        <div className="border-t bg-muted/10 p-3">
+          <pre className="font-mono text-xs text-foreground whitespace-pre-wrap break-words max-h-[200px] overflow-y-auto">
+            {cell.output}
+          </pre>
+        </div>
+      )}
+    </Card>
   );
 };
 
