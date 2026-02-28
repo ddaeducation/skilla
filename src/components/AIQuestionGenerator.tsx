@@ -33,6 +33,7 @@ const questionTypeOptions = [
   { value: "true_false", label: "True / False" },
   { value: "fill_in", label: "Fill in the Blanks" },
   { value: "short_answer", label: "Short Answer" },
+  { value: "matching", label: "Matching" },
 ];
 
 export const AIQuestionGenerator = ({ quizId, quizTitle, onQuestionsGenerated }: AIQuestionGeneratorProps) => {
