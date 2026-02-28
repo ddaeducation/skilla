@@ -1891,6 +1891,67 @@ export type Database = {
           },
         ]
       }
+      peer_reviews: {
+        Row: {
+          assignment_id: string
+          course_id: string
+          created_at: string
+          feedback: string | null
+          id: string
+          reviewed_at: string | null
+          reviewer_id: string
+          score: number | null
+          submission_id: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_id: string
+          course_id: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewer_id: string
+          score?: number | null
+          submission_id: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          course_id?: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string
+          score?: number | null
+          submission_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peer_reviews_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_reviews_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "assignment_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

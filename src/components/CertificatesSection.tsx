@@ -119,6 +119,7 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
         { data: quizAttempts },
         { data: assignments },
         { data: submissions },
+        { data: peerReviews },
       ] = await Promise.all([
         supabase.from("lesson_content").select("id, course_id").in("course_id", courseIds.length > 0 ? courseIds : fallback),
         supabase.from("student_progress").select("lesson_id, course_id, completed").eq("user_id", user.id).in("course_id", courseIds.length > 0 ? courseIds : fallback),
@@ -126,10 +127,16 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
         supabase.from("quiz_attempts").select("quiz_id, passed").eq("user_id", user.id),
         supabase.from("assignments").select("id, course_id").in("course_id", courseIds.length > 0 ? courseIds : fallback),
         supabase.from("assignment_submissions").select("assignment_id").eq("user_id", user.id),
+        supabase.from("peer_reviews").select("assignment_id, reviewed_at").eq("reviewer_id", user.id).not("reviewed_at", "is", null),
       ]);
 
       const certificateIds = new Set(certs?.map(c => c.course?.id) || []);
       const submittedAssignmentIds = new Set(submissions?.map(s => s.assignment_id) || []);
+      // Count peer reviews per assignment (need 2+ for completion)
+      const peerReviewCounts: Record<string, number> = {};
+      (peerReviews || []).forEach(r => {
+        peerReviewCounts[r.assignment_id] = (peerReviewCounts[r.assignment_id] || 0) + 1;
+      });
       const passedQuizIds = new Set((quizAttempts || []).filter(a => a.passed).map(a => a.quiz_id));
 
       const progressData: CourseProgress[] = (enrollments || []).map(enrollment => {
@@ -139,7 +146,7 @@ const CertificatesSection = ({ user }: CertificatesSectionProps) => {
         const courseQuizzes = quizzes?.filter(q => q.course_id === enrollment.course_id) || [];
         const passedQuizzes = courseQuizzes.filter(q => passedQuizIds.has(q.id)).length;
         const courseAssignments = assignments?.filter(a => a.course_id === enrollment.course_id) || [];
-        const submittedAssignments = courseAssignments.filter(a => submittedAssignmentIds.has(a.id)).length;
+        const submittedAssignments = courseAssignments.filter(a => submittedAssignmentIds.has(a.id) && (peerReviewCounts[a.id] || 0) >= 2).length;
         const totalItems = courseLessons.length + courseQuizzes.length + courseAssignments.length;
         const completedItems = completedLessons + passedQuizzes + submittedAssignments;
         const percentage = totalItems > 0 ? Math.min(100, Math.round((completedItems / totalItems) * 100)) : 0;
