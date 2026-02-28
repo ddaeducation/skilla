@@ -48,6 +48,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import CodePlayground from "@/components/CodePlayground";
 import CodeLessonPlayer from "@/components/CodeLessonPlayer";
 import PdfPresentationViewer from "@/components/PdfPresentationViewer";
+import { PeerReviewPanel } from "@/components/PeerReviewPanel";
 
 interface CourseSection {
   id: string;
@@ -130,6 +131,7 @@ const CourseDetail = () => {
   const [progress, setProgress] = useState<StudentProgress[]>([]);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
   const [assignmentSubmissions, setAssignmentSubmissions] = useState<AssignmentSubmission[]>([]);
+  const [peerReviewStatus, setPeerReviewStatus] = useState<Record<string, boolean>>({});
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isInstructor, setIsInstructor] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -376,6 +378,34 @@ const CourseDetail = () => {
       .eq("user_id", userId);
 
     if (submissionsData) setAssignmentSubmissions(submissionsData);
+
+    // Fetch peer review completion status for each assignment
+    await fetchPeerReviewStatus(userId);
+  };
+
+  const fetchPeerReviewStatus = async (userId: string) => {
+    if (!courseId) return;
+    const { data: reviews } = await supabase
+      .from("peer_reviews")
+      .select("assignment_id, reviewed_at")
+      .eq("reviewer_id", userId)
+      .eq("course_id", courseId);
+
+    if (reviews) {
+      const status: Record<string, boolean> = {};
+      // Group by assignment_id and check if at least 2 are reviewed
+      const grouped: Record<string, number> = {};
+      reviews.forEach(r => {
+        if (r.reviewed_at) {
+          grouped[r.assignment_id] = (grouped[r.assignment_id] || 0) + 1;
+        }
+      });
+      // Mark complete if 2+ reviews done OR no reviews assigned yet (will be handled by panel)
+      Object.entries(grouped).forEach(([aid, count]) => {
+        status[aid] = count >= 2;
+      });
+      setPeerReviewStatus(status);
+    }
   };
 
 
@@ -1020,6 +1050,19 @@ const CourseDetail = () => {
           </Card>
         )}
 
+        {/* Peer Review Section - shown after submission */}
+        {submission && user && courseId && (
+          <PeerReviewPanel
+            assignmentId={assignment.id}
+            courseId={courseId}
+            maxScore={assignment.max_score}
+            userId={user.id}
+            onReviewsComplete={() => {
+              setPeerReviewStatus(prev => ({ ...prev, [assignment.id]: true }));
+            }}
+          />
+        )}
+
         <div className="flex justify-between items-center gap-2">
           <div>
             {hasPreviousContent() && (
@@ -1077,7 +1120,12 @@ const CourseDetail = () => {
       return attempt?.passed || false;
     } else {
       const submission = getAssignmentSubmission(item.data.id);
-      return submission != null;
+      if (!submission) return false;
+      // Also require peer reviews to be completed
+      const reviewsDone = peerReviewStatus[item.data.id];
+      // If reviews haven't been assigned yet (no entry), consider incomplete
+      // unless there are not enough peers (handled gracefully in UI)
+      return reviewsDone === true;
     }
   };
 
