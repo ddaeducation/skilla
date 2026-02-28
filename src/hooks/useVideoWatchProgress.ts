@@ -108,6 +108,7 @@ export const useVideoWatchProgress = (requiredPercentage: number | null) => {
     watchedPercentage,
     hasMetRequirement,
     requiredPercentage,
+    maxWatchedRef,
     reset,
     updateProgress,
     videoRefCallback,

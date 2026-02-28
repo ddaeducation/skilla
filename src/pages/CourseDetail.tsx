@@ -162,6 +162,7 @@ const CourseDetail = () => {
   const {
     watchedPercentage,
     hasMetRequirement: hasMetWatchRequirement,
+    maxWatchedRef,
     reset: resetWatchProgress,
     videoRefCallback,
     enableYouTubeJSApi,
@@ -769,62 +770,81 @@ const CourseDetail = () => {
         {lesson.description && <p className="text-muted-foreground">{stripHtml(lesson.description)}</p>}
 
         {/* YouTube Video */}
-        {embedUrl && (
-          <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
-            <iframe
-              ref={(el) => { if (el) enableYouTubeJSApi(el); }}
-              src={embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'enablejsapi=1'}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              title={lesson.title}
-            />
-          </div>
-        )}
+        {embedUrl && (() => {
+          const hasWatchReq = lesson.required_watch_percentage != null && lesson.required_watch_percentage > 0 && !hasMetWatchRequirement && !isLessonCompleted(lesson.id);
+          const finalSrc = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'enablejsapi=1' + (hasWatchReq ? '&disablekb=1' : '');
+          return (
+            <div className="aspect-video w-full rounded-lg overflow-hidden bg-black relative">
+              <iframe
+                ref={(el) => { if (el) enableYouTubeJSApi(el); }}
+                src={finalSrc}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen={!hasWatchReq}
+                title={lesson.title}
+              />
+              {hasWatchReq && (
+                <div className="absolute bottom-0 left-0 right-0 h-12 bg-transparent z-10 cursor-not-allowed" title="Watch the video to unlock seeking" />
+              )}
+            </div>
+          );
+        })()}
 
         {/* Vimeo Video */}
-        {vimeoEmbedUrl && (
-          <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
-            <iframe
-              src={vimeoEmbedUrl}
-              className="w-full h-full"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-              title={lesson.title}
-            />
-          </div>
-        )}
+        {vimeoEmbedUrl && (() => {
+          const hasWatchReq = lesson.required_watch_percentage != null && lesson.required_watch_percentage > 0 && !hasMetWatchRequirement && !isLessonCompleted(lesson.id);
+          return (
+            <div className="aspect-video w-full rounded-lg overflow-hidden bg-black relative">
+              <iframe
+                src={vimeoEmbedUrl}
+                className="w-full h-full"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen={!hasWatchReq}
+                title={lesson.title}
+              />
+              {hasWatchReq && (
+                <div className="absolute bottom-0 left-0 right-0 h-12 bg-transparent z-10 cursor-not-allowed" title="Watch the video to unlock seeking" />
+              )}
+            </div>
+          );
+        })()}
 
         {/* Embedded Video (Distraction-Free) */}
-        {lesson.content_type === "embed" && lesson.content_url && (
-          <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
-            <iframe
-              src={(() => {
-                const url = lesson.content_url!;
-                const ytEmbed = getYouTubeEmbedUrl(url);
-                if (ytEmbed) return ytEmbed;
-               const vimeoEmbed = getVimeoEmbedUrl(url);
-                if (vimeoEmbed) return vimeoEmbed;
-                // Add distraction-free params to generic embed URLs
-                try {
-                  const embedUrlObj = new URL(url);
-                  embedUrlObj.searchParams.set('rel', '0');
-                  embedUrlObj.searchParams.set('showinfo', '0');
-                  embedUrlObj.searchParams.set('modestbranding', '1');
-                  embedUrlObj.searchParams.set('title', '0');
-                  embedUrlObj.searchParams.set('controls', '1');
-                  return embedUrlObj.toString();
-                } catch {
-                  return url;
-                }
-              })()}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              title={lesson.title}
-            />
-          </div>
-        )}
+        {lesson.content_type === "embed" && lesson.content_url && (() => {
+          const hasWatchReq = lesson.required_watch_percentage != null && lesson.required_watch_percentage > 0 && !hasMetWatchRequirement && !isLessonCompleted(lesson.id);
+          return (
+            <div className="aspect-video w-full rounded-lg overflow-hidden bg-black relative">
+              <iframe
+                src={(() => {
+                  const url = lesson.content_url!;
+                  const ytEmbed = getYouTubeEmbedUrl(url);
+                  if (ytEmbed) return ytEmbed;
+                  const vimeoEmbed = getVimeoEmbedUrl(url);
+                  if (vimeoEmbed) return vimeoEmbed;
+                  try {
+                    const embedUrlObj = new URL(url);
+                    embedUrlObj.searchParams.set('rel', '0');
+                    embedUrlObj.searchParams.set('showinfo', '0');
+                    embedUrlObj.searchParams.set('modestbranding', '1');
+                    embedUrlObj.searchParams.set('title', '0');
+                    embedUrlObj.searchParams.set('controls', '1');
+                    if (hasWatchReq) embedUrlObj.searchParams.set('disablekb', '1');
+                    return embedUrlObj.toString();
+                  } catch {
+                    return url;
+                  }
+                })()}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen={!hasWatchReq}
+                title={lesson.title}
+              />
+              {hasWatchReq && (
+                <div className="absolute bottom-0 left-0 right-0 h-12 bg-transparent z-10 cursor-not-allowed" title="Watch the video to unlock seeking" />
+              )}
+            </div>
+          );
+        })()}
 
         {/* Video URL - check if it's an embed URL or a direct video file */}
         {lesson.content_type === "video" && lesson.content_url && !embedUrl && (
@@ -832,6 +852,7 @@ const CourseDetail = () => {
             const videoUrl = lesson.content_url!;
             const isEmbedUrl = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.includes('vimeo.com') || videoUrl.includes('/embed/');
             if (isEmbedUrl) {
+              const hasWatchReq = lesson.required_watch_percentage != null && lesson.required_watch_percentage > 0 && !hasMetWatchRequirement && !isLessonCompleted(lesson.id);
               const ytEmbed = getYouTubeEmbedUrl(videoUrl);
               const vimeoEmbed = getVimeoEmbedUrl(videoUrl);
               let src = ytEmbed || vimeoEmbed || null;
@@ -843,25 +864,42 @@ const CourseDetail = () => {
                   embedUrlObj.searchParams.set('modestbranding', '1');
                   embedUrlObj.searchParams.set('title', '0');
                   embedUrlObj.searchParams.set('controls', '1');
+                  if (hasWatchReq) embedUrlObj.searchParams.set('disablekb', '1');
                   src = embedUrlObj.toString();
                 } catch {
                   src = videoUrl;
                 }
               }
               return (
-                <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
+                <div className="aspect-video w-full rounded-lg overflow-hidden bg-black relative">
                   <iframe
                     src={src}
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                    allowFullScreen={!hasWatchReq}
                     title={lesson.title}
                   />
+                  {hasWatchReq && (
+                    <div className="absolute bottom-0 left-0 right-0 h-12 bg-transparent z-10 cursor-not-allowed" title="Watch the video to unlock seeking" />
+                  )}
                 </div>
               );
             }
+            const hasWatchReq = lesson.required_watch_percentage != null && lesson.required_watch_percentage > 0 && !hasMetWatchRequirement && !isLessonCompleted(lesson.id);
             return (
-              <video controls className="w-full rounded-lg" ref={videoRefCallback}>
+              <video
+                controls
+                controlsList={hasWatchReq ? "nofullscreen nodownload noplaybackrate" : undefined}
+                className="w-full rounded-lg"
+                ref={videoRefCallback}
+                onSeeking={hasWatchReq ? (e) => {
+                  const video = e.currentTarget;
+                  const maxAllowed = (maxWatchedRef.current / 100) * video.duration;
+                  if (video.currentTime > maxAllowed + 2) {
+                    video.currentTime = maxAllowed;
+                  }
+                } : undefined}
+              >
                 <source src={videoUrl} />
                 Your browser does not support the video tag.
               </video>
