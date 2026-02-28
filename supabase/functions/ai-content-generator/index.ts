@@ -101,11 +101,13 @@ ${questionTypes?.length ? `Include these question types: ${questionTypes.join(",
 
 For each question, provide:
 1. Question text
-2. Question type (single_choice, multiple_choice, true_false, fill_in, short_answer)
+2. Question type (single_choice, multiple_choice, true_false, fill_in, short_answer, matching)
 3. Options (for choice questions)
 4. Correct answer(s)
 5. Explanation
 6. Points (1-5 based on difficulty)
+
+IMPORTANT: For "matching" type questions, each option must combine the left item and right item using the delimiter "|||". Example: { "text": "France|||Paris", "is_correct": true }. All matching options must have is_correct set to true.
 
 Return as JSON:
 {
@@ -127,10 +129,14 @@ Return as JSON:
 }`;
     } else if (type === "single_question") {
       const questionType = questionTypes?.[0] || "single_choice";
+      const matchingInstruction = questionType === "matching"
+        ? `\nIMPORTANT: For matching questions, each option must combine the left item and right item using "|||" as delimiter. Example: { "text": "France|||Paris", "is_correct": true }. All options must have is_correct: true. Provide 4-6 pairs.`
+        : "";
       systemPrompt = `You are an expert assessment designer. Create a single quiz question that effectively tests understanding at the ${difficulty} level. Make it fresh and different from any previous version.`;
       userPrompt = `Create ONE ${questionType} question about "${topic}"${courseName ? ` for the course: ${courseName}` : ""}.
 ${additionalContext ? `Additional context: ${additionalContext}` : ""}
 ${existingContent ? `The previous question was: "${existingContent}". Please generate a different question while staying on topic.` : ""}
+${matchingInstruction}
 
 Provide:
 1. Question text
@@ -186,6 +192,8 @@ Return as JSON:
 ${additionalContext ? `Additional context: ${additionalContext}` : ""}
 ${questionTypes?.length ? `Question types to include: ${questionTypes.join(", ")}` : "Use a variety of question types."}
 
+IMPORTANT: For "matching" type questions, each option must combine the left item and right item using the delimiter "|||". For example, if matching capitals to countries, an option would be: { "text": "France|||Paris", "is_correct": true }. All matching options must have is_correct set to true. Provide 4-6 pairs per matching question.
+
 Return as JSON array:
 [
   {
@@ -196,6 +204,16 @@ Return as JSON array:
     "options": [
       { "text": "Option A", "is_correct": false },
       { "text": "Option B", "is_correct": true }
+    ]
+  },
+  {
+    "question_text": "Match the following items:",
+    "question_type": "matching",
+    "points": 3,
+    "explanation": "Explanation of correct matches",
+    "options": [
+      { "text": "Left Item 1|||Right Item 1", "is_correct": true },
+      { "text": "Left Item 2|||Right Item 2", "is_correct": true }
     ]
   }
 ]`;
