@@ -217,8 +217,8 @@ export const QuizPreview = ({ quiz, questions, options, open, onOpenChange }: Qu
             {pairs.map((pair, idx) => {
               const selectedRight = matchAnswer[idx] || "";
               return (
-                <div key={pair.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-                  <span className="flex-1 font-medium">{pair.left}</span>
+                <div key={pair.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg border bg-muted/30">
+                  <span className="flex-1 font-medium break-words whitespace-normal">{pair.left}</span>
                   <ArrowRightLeft className="h-4 w-4 text-muted-foreground shrink-0" />
                   <select
                     className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
