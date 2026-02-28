@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { stripHtml } from "@/lib/utils";
+import { sanitizeYouTubeIframes } from "@/lib/youtubeUtils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,7 +87,7 @@ export const AssignmentPreview = ({ assignment, open, onOpenChange }: Assignment
               <CardContent>
                 <div 
                   className="prose prose-sm max-w-none [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-medium [&>h3]:mb-2 [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:mb-4 [&>ol]:mb-4 [&>a]:text-primary [&>a]:underline"
-                  dangerouslySetInnerHTML={{ __html: assignment.instructions }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeYouTubeIframes(assignment.instructions) }}
                 />
               </CardContent>
             </Card>
@@ -111,7 +112,7 @@ export const AssignmentPreview = ({ assignment, open, onOpenChange }: Assignment
                   <CardContent>
                     <div 
                       className="prose prose-sm max-w-none [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-medium [&>h3]:mb-2 [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:mb-4 [&>ol]:mb-4 [&>a]:text-primary [&>a]:underline"
-                      dangerouslySetInnerHTML={{ __html: assignment.rubrics }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeYouTubeIframes(assignment.rubrics) }}
                     />
                   </CardContent>
                 </CollapsibleContent>

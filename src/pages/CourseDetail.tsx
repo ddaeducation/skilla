@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { stripHtml } from "@/lib/utils";
+import { enforceYouTubeParams, sanitizeYouTubeIframes } from "@/lib/youtubeUtils";
 import { useParams, useNavigate } from "react-router-dom";
 import { useLessonTimeTracking } from "@/hooks/useLessonTimeTracking";
 import { supabase } from "@/integrations/supabase/client";
@@ -659,9 +660,8 @@ const CourseDetail = () => {
   const getYouTubeEmbedUrl = (url: string) => {
     if (!url) return null;
     const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/);
-    return videoIdMatch 
-      ? `https://www.youtube-nocookie.com/embed/${videoIdMatch[1]}?modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=1&disablekb=0&controls=1&cc_load_policy=0&playsinline=1&title=0&autoplay=0&origin=${window.location.origin}`
-      : null;
+    if (!videoIdMatch) return null;
+    return enforceYouTubeParams(`https://www.youtube-nocookie.com/embed/${videoIdMatch[1]}`);
   };
 
   const getVimeoEmbedUrl = (url: string) => {
@@ -851,7 +851,7 @@ const CourseDetail = () => {
         {lesson.content_text && (
           <div 
             className="prose prose-sm max-w-none p-6 bg-muted/50 rounded-lg break-words overflow-wrap-anywhere [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-medium [&>h3]:mb-2 [&>p]:mb-4 [&>p]:leading-relaxed [&>p]:break-words [&>ul]:mb-4 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:mb-4 [&>ol]:list-decimal [&>ol]:pl-5 [&>li]:mb-1 [&>li]:break-words [&>a]:text-primary [&>a]:underline [&>a]:break-all [&>pre]:bg-muted [&>pre]:p-4 [&>pre]:rounded-md [&>pre]:overflow-x-auto [&>pre]:whitespace-pre-wrap [&>pre]:break-words [&>code]:break-words [&>blockquote]:border-l-4 [&>blockquote]:border-primary/30 [&>blockquote]:pl-4 [&>blockquote]:italic [&_*]:max-w-full"
-            dangerouslySetInnerHTML={{ __html: lesson.content_text }}
+            dangerouslySetInnerHTML={{ __html: sanitizeYouTubeIframes(lesson.content_text) }}
           />
         )}
 
@@ -996,7 +996,7 @@ const CourseDetail = () => {
             <CardContent>
               <div 
                 className="prose prose-sm max-w-none [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-medium [&>h3]:mb-2 [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:mb-4 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:mb-4 [&>ol]:list-decimal [&>ol]:pl-5 [&>li]:mb-1 [&>a]:text-primary [&>a]:underline [&>pre]:bg-muted [&>pre]:p-4 [&>pre]:rounded-md [&>pre]:overflow-x-auto [&>blockquote]:border-l-4 [&>blockquote]:border-primary/30 [&>blockquote]:pl-4 [&>blockquote]:italic"
-                dangerouslySetInnerHTML={{ __html: assignment.instructions }}
+                dangerouslySetInnerHTML={{ __html: sanitizeYouTubeIframes(assignment.instructions) }}
               />
             </CardContent>
           </Card>
