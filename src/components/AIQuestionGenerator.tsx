@@ -133,7 +133,7 @@ export const AIQuestionGenerator = ({ quizId, quizTitle, onQuestionsGenerated }:
           const optionsToInsert = q.options.map((opt, idx) => ({
             question_id: question.id,
             option_text: opt.text,
-            is_correct: opt.is_correct,
+            is_correct: q.question_type === "matching" ? true : (opt.is_correct ?? false),
             order_index: idx,
           }));
 
