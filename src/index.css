@@ -181,6 +181,13 @@ All colors MUST be HSL.
     border: none;
   }
 
+  /* Hide YouTube end-screen recommendations overlay */
+  .youtube-video .ytp-ce-element,
+  .youtube-video .ytp-endscreen-content,
+  .youtube-video .ytp-show-tiles .ytp-videowall-still {
+    display: none !important;
+  }
+
   /* HTML5 video wrapper */
   .video-wrapper {
     @apply relative w-full my-4 flex justify-center;
