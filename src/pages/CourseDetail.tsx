@@ -131,7 +131,7 @@ const CourseDetail = () => {
   const [progress, setProgress] = useState<StudentProgress[]>([]);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
   const [assignmentSubmissions, setAssignmentSubmissions] = useState<AssignmentSubmission[]>([]);
-  const [peerReviewStatus, setPeerReviewStatus] = useState<Record<string, boolean>>({});
+  const [peerReviewStatus, setPeerReviewStatus] = useState<Record<string, { assigned: number; completed: number }>>({});
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isInstructor, setIsInstructor] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -392,17 +392,15 @@ const CourseDetail = () => {
       .eq("course_id", courseId);
 
     if (reviews) {
-      const status: Record<string, boolean> = {};
-      // Group by assignment_id and check if at least 2 are reviewed
-      const grouped: Record<string, number> = {};
+      const status: Record<string, { assigned: number; completed: number }> = {};
       reviews.forEach(r => {
-        if (r.reviewed_at) {
-          grouped[r.assignment_id] = (grouped[r.assignment_id] || 0) + 1;
+        if (!status[r.assignment_id]) {
+          status[r.assignment_id] = { assigned: 0, completed: 0 };
         }
-      });
-      // Mark complete if 2+ reviews done OR no reviews assigned yet (will be handled by panel)
-      Object.entries(grouped).forEach(([aid, count]) => {
-        status[aid] = count >= 2;
+        status[r.assignment_id].assigned += 1;
+        if (r.reviewed_at) {
+          status[r.assignment_id].completed += 1;
+        }
       });
       setPeerReviewStatus(status);
     }
@@ -1058,7 +1056,8 @@ const CourseDetail = () => {
             maxScore={assignment.max_score}
             userId={user.id}
             onReviewsComplete={() => {
-              setPeerReviewStatus(prev => ({ ...prev, [assignment.id]: true }));
+              const existing = peerReviewStatus[assignment.id];
+              setPeerReviewStatus(prev => ({ ...prev, [assignment.id]: { assigned: existing?.assigned || 2, completed: existing?.assigned || 2 } }));
             }}
           />
         )}
@@ -1121,11 +1120,11 @@ const CourseDetail = () => {
     } else {
       const submission = getAssignmentSubmission(item.data.id);
       if (!submission) return false;
-      // Also require peer reviews to be completed
-      const reviewsDone = peerReviewStatus[item.data.id];
-      // If reviews haven't been assigned yet (no entry), consider incomplete
-      // unless there are not enough peers (handled gracefully in UI)
-      return reviewsDone === true;
+      // Check peer review status - only block if reviews are assigned
+      const reviewInfo = peerReviewStatus[item.data.id];
+      if (!reviewInfo) return true; // No reviews assigned yet → allow progression
+      // If reviews are assigned, all must be completed
+      return reviewInfo.completed >= reviewInfo.assigned;
     }
   };
 
