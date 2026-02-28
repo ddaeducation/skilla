@@ -268,7 +268,20 @@ export const AIQuestionGenerator = ({ quizId, quizTitle, onQuestionsGenerated }:
                           <Badge variant="outline" className="text-xs">{question.question_type}</Badge>
                           <Badge variant="secondary" className="text-xs">{question.points} pts</Badge>
                         </div>
-                        {question.options && (
+                        {question.options && question.question_type === "matching" ? (
+                          <div className="mt-2 space-y-1">
+                            {question.options.map((opt, optIdx) => {
+                              const [left, right] = (opt.text || "").split("|||");
+                              return (
+                                <div key={optIdx} className="text-sm flex items-center gap-2">
+                                  <span className="text-muted-foreground">{left}</span>
+                                  <span className="text-muted-foreground">→</span>
+                                  <span className="text-green-600 font-medium">{right}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : question.options ? (
                           <div className="mt-2 space-y-1">
                             {question.options.map((opt, optIdx) => (
                               <div key={optIdx} className={`text-sm ${opt.is_correct ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
@@ -276,7 +289,7 @@ export const AIQuestionGenerator = ({ quizId, quizTitle, onQuestionsGenerated }:
                               </div>
                             ))}
                           </div>
-                        )}
+                        ) : null}
                         {question.explanation && (
                           <p className="text-xs text-muted-foreground mt-2 italic">💡 {question.explanation}</p>
                         )}
