@@ -52,6 +52,7 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
     content_text: "",
     duration_minutes: 0,
     is_free_preview: false,
+    required_watch_percentage: "",
     // Quiz-specific
     passing_score: 70,
     time_limit_minutes: 0,
@@ -71,6 +72,7 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
       content_text: "",
       duration_minutes: 0,
       is_free_preview: false,
+      required_watch_percentage: "",
       passing_score: 70,
       time_limit_minutes: 0,
       instructions: "",
@@ -158,6 +160,7 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
           content_text: form.content_text || null,
           duration_minutes: form.duration_minutes || null,
           is_free_preview: form.is_free_preview,
+          required_watch_percentage: form.required_watch_percentage ? parseInt(form.required_watch_percentage as string) : null,
           order_index: orderIndex,
         });
 
@@ -335,6 +338,23 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
                   <Label>Free Preview</Label>
                 </div>
               </div>
+
+              {['video', 'youtube', 'vimeo', 'embed'].includes(form.content_type) && (
+                <div className="space-y-2">
+                  <Label>Required Watch Percentage (%)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={form.required_watch_percentage}
+                    onChange={(e) => setForm({ ...form, required_watch_percentage: e.target.value })}
+                    placeholder="e.g. 80 (leave empty for no requirement)"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Students must watch this percentage of the video before they can mark the lesson complete. Leave empty to allow immediate completion.
+                  </p>
+                </div>
+              )}
             </>
           )}
 
