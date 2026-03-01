@@ -136,7 +136,7 @@ const LMS = () => {
   const fetchEnrollments = async (userId: string) => {
     const { data, error } = await supabase
       .from("enrollments")
-      .select("course_id, payment_status")
+      .select("course_id, payment_status, subscription_expires_at, months_paid")
       .eq("user_id", userId);
 
     if (!error && data) {
@@ -204,9 +204,33 @@ const LMS = () => {
   };
 
   const isEnrolled = (courseId: string) => {
-    return enrollments.some(
+    const enrollment = enrollments.find(
       (e) => e.course_id === courseId && e.payment_status === "completed"
     );
+    if (!enrollment) return false;
+    // Check if subscription is expired
+    if (enrollment.subscription_expires_at && new Date(enrollment.subscription_expires_at) < new Date()) {
+      return false;
+    }
+    return true;
+  };
+
+  const isSubscriptionExpired = (courseId: string) => {
+    const enrollment = enrollments.find(
+      (e) => e.course_id === courseId && e.payment_status === "completed"
+    );
+    if (!enrollment) return false;
+    if (enrollment.subscription_expires_at && new Date(enrollment.subscription_expires_at) < new Date()) {
+      return true;
+    }
+    return false;
+  };
+
+  const getSubscriptionExpiresAt = (courseId: string) => {
+    const enrollment = enrollments.find(
+      (e) => e.course_id === courseId && e.payment_status === "completed"
+    );
+    return enrollment?.subscription_expires_at || null;
   };
 
   const handleEnroll = (courseId: string) => {
@@ -242,6 +266,7 @@ const LMS = () => {
 
   const isEmailVerified = user?.email_confirmed_at != null;
   const enrolledCourses = courses.filter((course) => isEnrolled(course.id));
+  const expiredCourses = courses.filter((course) => isSubscriptionExpired(course.id));
   const enrolledCourseIds = enrolledCourses.map((c) => c.id);
   const completedLessons = progress.filter(p => p.completed).length;
   
@@ -383,23 +408,69 @@ const LMS = () => {
               <div>
                 <h2 className="text-xl font-semibold mb-4">Continue Learning</h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {enrolledCourses.slice(0, 3).map((course) => (
-                    <Card key={course.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <CardTitle className="text-lg">{course.title}</CardTitle>
-                        <CardDescription>{course.school}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <Button
-                          className="w-full"
-                          onClick={() => navigate(`/course/${course.id}`)}
-                        >
-                          <Play className="w-4 h-4 mr-2" />
-                          Continue
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  {enrolledCourses.slice(0, 3).map((course) => {
+                    const expiresAt = getSubscriptionExpiresAt(course.id);
+                    const daysLeft = expiresAt ? Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                    return (
+                      <Card key={course.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <CardTitle className="text-lg">{course.title}</CardTitle>
+                          <CardDescription>{course.school}</CardDescription>
+                          {daysLeft !== null && daysLeft <= 7 && (
+                            <p className="text-xs text-destructive font-medium mt-1">
+                              ⚠️ Expires in {daysLeft} day{daysLeft !== 1 ? 's' : ''}
+                            </p>
+                          )}
+                          {daysLeft !== null && daysLeft > 7 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Active until {new Date(expiresAt!).toLocaleDateString()}
+                            </p>
+                          )}
+                        </CardHeader>
+                        <CardContent>
+                          <Button
+                            className="w-full"
+                            onClick={() => navigate(`/course/${course.id}`)}
+                          >
+                            <Play className="w-4 h-4 mr-2" />
+                            Continue
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Expired Subscriptions Section */}
+            {expiredCourses.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4 text-destructive">Subscription Expired</h2>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {expiredCourses.map((course) => {
+                    const expiresAt = getSubscriptionExpiresAt(course.id);
+                    return (
+                      <Card key={course.id} className="border-destructive/30 hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <CardTitle className="text-lg">{course.title}</CardTitle>
+                          <CardDescription>
+                            Expired {expiresAt ? new Date(expiresAt).toLocaleDateString() : ""} — Your progress is saved
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <Button
+                            className="w-full"
+                            variant="destructive"
+                            onClick={() => navigate(`/apply?courseId=${course.id}`)}
+                          >
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Renew Subscription
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             )}

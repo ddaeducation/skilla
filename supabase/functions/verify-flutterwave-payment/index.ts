@@ -25,7 +25,7 @@ serve(async (req) => {
   }
 
   try {
-    const { transaction_id, tx_ref, enrollment_id, coupon_id, discount_applied } = await req.json();
+    const { transaction_id, tx_ref, enrollment_id, coupon_id, discount_applied, months_paid } = await req.json();
     
     console.log("Verifying Flutterwave payment:", { transaction_id, tx_ref, enrollment_id, coupon_id });
 
@@ -137,14 +137,21 @@ serve(async (req) => {
       instructorShareUSD 
     });
 
-    // Update enrollment status to completed with currency info
-    console.log("Updating enrollment status for:", enrollment_id);
+    // Calculate subscription expiry based on months paid
+    const monthsPaid = months_paid || 1;
+    const subscriptionExpiresAt = new Date();
+    subscriptionExpiresAt.setMonth(subscriptionExpiresAt.getMonth() + monthsPaid);
+
+    // Update enrollment status to completed with currency info and subscription dates
+    console.log("Updating enrollment status for:", enrollment_id, "months:", monthsPaid);
     const { error: updateError } = await supabaseAdmin
       .from("enrollments")
       .update({
         payment_status: "completed",
         amount_paid: totalAmountOriginal,
         payment_currency: paymentCurrency,
+        months_paid: monthsPaid,
+        subscription_expires_at: subscriptionExpiresAt.toISOString(),
       })
       .eq("id", enrollment_id);
 

@@ -1359,8 +1359,10 @@ export type Database = {
           course_id: string
           enrolled_at: string | null
           id: string
+          months_paid: number | null
           payment_currency: string | null
           payment_status: string | null
+          subscription_expires_at: string | null
           user_id: string
         }
         Insert: {
@@ -1368,8 +1370,10 @@ export type Database = {
           course_id: string
           enrolled_at?: string | null
           id?: string
+          months_paid?: number | null
           payment_currency?: string | null
           payment_status?: string | null
+          subscription_expires_at?: string | null
           user_id: string
         }
         Update: {
@@ -1377,8 +1381,10 @@ export type Database = {
           course_id?: string
           enrolled_at?: string | null
           id?: string
+          months_paid?: number | null
           payment_currency?: string | null
           payment_status?: string | null
+          subscription_expires_at?: string | null
           user_id?: string
         }
         Relationships: [

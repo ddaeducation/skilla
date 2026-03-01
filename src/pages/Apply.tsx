@@ -243,18 +243,25 @@ const Apply = () => {
     if (formData.courseId && user) {
       const { data: existingEnrollment } = await supabase
         .from("enrollments")
-        .select("id, payment_status")
+        .select("id, payment_status, subscription_expires_at")
         .eq("user_id", user.id)
         .eq("course_id", formData.courseId)
         .maybeSingle();
 
       if (existingEnrollment?.payment_status === "completed") {
-        toast({
-          title: "Already Enrolled",
-          description: "You are already enrolled in this course.",
-        });
-        navigate(`/course/${formData.courseId}`);
-        return;
+        // Check if subscription is still active
+        const isExpired = existingEnrollment.subscription_expires_at && 
+          new Date(existingEnrollment.subscription_expires_at) < new Date();
+        
+        if (!isExpired) {
+          toast({
+            title: "Already Enrolled",
+            description: "You are already enrolled in this course.",
+          });
+          navigate(`/course/${formData.courseId}`);
+          return;
+        }
+        // If expired, allow renewal — continue to payment step
       }
     }
 
@@ -393,6 +400,7 @@ const Apply = () => {
           enrollment_id: enrollId,
           coupon_id: appliedCoupon?.id || null,
           discount_applied: appliedCoupon ? totalDiscountUSD : 0,
+          months_paid: numberOfMonths,
         },
       });
 
@@ -433,19 +441,24 @@ const Apply = () => {
         // Check for existing enrollment
         const { data: existingEnrollment } = await supabase
           .from("enrollments")
-          .select("id, payment_status")
+          .select("id, payment_status, subscription_expires_at")
           .eq("user_id", user.id)
           .eq("course_id", selectedCourse.id)
           .maybeSingle();
 
         if (existingEnrollment?.payment_status === "completed") {
-          toast({
-            title: "Already Enrolled",
-            description: "You are already enrolled in this course.",
-          });
-          navigate(`/course/${selectedCourse.id}`);
-          setProcessing(false);
-          return;
+          const isExpired = existingEnrollment.subscription_expires_at && 
+            new Date(existingEnrollment.subscription_expires_at) < new Date();
+          if (!isExpired) {
+            toast({
+              title: "Already Enrolled",
+              description: "You are already enrolled in this course.",
+            });
+            navigate(`/course/${selectedCourse.id}`);
+            setProcessing(false);
+            return;
+          }
+          // Expired subscription — treat as existing enrollment for renewal
         }
 
         // For free courses (original price = 0 OR 100% coupon discount)
@@ -454,11 +467,15 @@ const Apply = () => {
           
           if (existingEnrollment) {
             // Update existing pending enrollment to completed
+            const freeExpiresAt = new Date();
+            freeExpiresAt.setMonth(freeExpiresAt.getMonth() + numberOfMonths);
             const { error: updateError } = await supabase
               .from("enrollments")
               .update({
                 payment_status: "completed",
                 amount_paid: 0,
+                months_paid: numberOfMonths,
+                subscription_expires_at: freeExpiresAt.toISOString(),
               })
               .eq("id", existingEnrollment.id);
 
@@ -475,6 +492,8 @@ const Apply = () => {
             enrollmentIdForCoupon = existingEnrollment.id;
           } else {
             // Create new completed enrollment for free course
+            const freeExpiresAt2 = new Date();
+            freeExpiresAt2.setMonth(freeExpiresAt2.getMonth() + numberOfMonths);
             const { data: newEnrollment, error: enrollError } = await supabase
               .from("enrollments")
               .insert({
@@ -482,6 +501,8 @@ const Apply = () => {
                 course_id: selectedCourse.id,
                 payment_status: "completed",
                 amount_paid: 0,
+                months_paid: numberOfMonths,
+                subscription_expires_at: freeExpiresAt2.toISOString(),
               })
               .select("id")
               .single();

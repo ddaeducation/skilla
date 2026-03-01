@@ -135,6 +135,8 @@ const CourseDetail = () => {
   const [assignmentSubmissions, setAssignmentSubmissions] = useState<AssignmentSubmission[]>([]);
   const [peerReviewStatus, setPeerReviewStatus] = useState<Record<string, { assigned: number; completed: number }>>({});
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isSubscriptionExpired, setIsSubscriptionExpired] = useState(false);
+  const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
   const [isInstructor, setIsInstructor] = useState(false);
   const [loading, setLoading] = useState(true);
   const [contentCounts, setContentCounts] = useState<{ lesson_count: number; quiz_count: number } | null>(null);
@@ -327,9 +329,32 @@ const CourseDetail = () => {
       .maybeSingle();
 
     if (data) {
-      setIsEnrolled(true);
-      await fetchCourseContent(userId);
+      // Check if subscription has expired
+      if (data.subscription_expires_at && new Date(data.subscription_expires_at) < new Date()) {
+        setIsSubscriptionExpired(true);
+        setSubscriptionExpiresAt(data.subscription_expires_at);
+        setIsEnrolled(false);
+        // Still fetch content structure but don't allow access
+        await fetchPublicCourseContent();
+      } else {
+        setIsEnrolled(true);
+        setSubscriptionExpiresAt(data.subscription_expires_at);
+        await fetchCourseContent(userId);
+      }
     } else {
+      // Check for expired enrollment (payment_status might have been changed to suspended)
+      const { data: expiredEnrollment } = await supabase
+        .from("enrollments")
+        .select("subscription_expires_at")
+        .eq("user_id", userId)
+        .eq("course_id", courseId)
+        .in("payment_status", ["suspended", "expired"])
+        .maybeSingle();
+      
+      if (expiredEnrollment) {
+        setIsSubscriptionExpired(true);
+        setSubscriptionExpiresAt(expiredEnrollment.subscription_expires_at);
+      }
       // User is authenticated but not enrolled — show sections and free preview lessons
       await fetchPublicCourseContent();
     }
@@ -1311,6 +1336,30 @@ const CourseDetail = () => {
             )}
           </div>
         </div>
+
+        {isSubscriptionExpired && (
+          <div className="max-w-6xl mx-auto mb-6">
+            <Card className="border-destructive bg-destructive/5">
+              <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-destructive">Subscription Expired</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Your subscription expired on {subscriptionExpiresAt ? new Date(subscriptionExpiresAt).toLocaleDateString() : "N/A"}. 
+                      Renew to continue accessing course content. Your progress has been saved.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => navigate(`/apply?courseId=${courseId}`)}
+                    className="shrink-0"
+                  >
+                    Renew Subscription
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {!isEnrolled ? (
           /* Not Enrolled View */
