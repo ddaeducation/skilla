@@ -121,9 +121,9 @@ const CourseCard = ({ course, instructor, ratingData }: {
             </ul>
           </>
         )}
-        <div className="mt-auto flex items-center justify-between gap-2">
-          <span className="text-sm font-semibold text-primary">{formatCoursePrice(course.monthly_price, course.price)}</span>
-          <div className="flex items-center gap-2">
+        <div className="mt-auto space-y-3">
+          <span className="text-sm font-semibold text-primary block">{formatCoursePrice(course.monthly_price, course.price)}</span>
+          <div className="flex flex-wrap items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button size="sm" variant="outline" className="gap-1.5"><User className="h-3.5 w-3.5" />Bio</Button>
