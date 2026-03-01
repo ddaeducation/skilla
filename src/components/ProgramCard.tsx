@@ -95,12 +95,21 @@ const ProgramCard = ({
             </>
           )}
         </div>
-        <Button
-          asChild
-          className="w-full group-hover:shadow-lg transition-shadow bg-primary hover:bg-primary/90"
-        >
-          <Link to={enrollLink}>{enrollButtonText}</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            asChild
+            variant="outline"
+            className="flex-1"
+          >
+            <Link to={enrollLink}>View Details</Link>
+          </Button>
+          <Button
+            asChild
+            className="flex-1 group-hover:shadow-lg transition-shadow bg-primary hover:bg-primary/90"
+          >
+            <Link to={enrollLink}>{enrollButtonText}</Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

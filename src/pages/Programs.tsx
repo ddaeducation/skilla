@@ -87,7 +87,8 @@ const Programs = () => {
         .from("courses")
         .select("id, title, description, price, monthly_price, duration, image_url, learning_outcomes, category, publish_status, instructor_id, instructor_name")
         .eq("category", dbCategory)
-        .eq("approval_status", "approved");
+        .eq("approval_status", "approved")
+        .in("publish_status", ["live", "upcoming"]);
 
       if (!error && data) {
         setCourses(data);
@@ -297,6 +298,9 @@ const Programs = () => {
                               </div>
                             </PopoverContent>
                           </Popover>
+                          <Button size="sm" variant="outline" asChild>
+                            <Link to={`/course/${course.id}`}>View Details</Link>
+                          </Button>
                           {isUpcoming ? (
                             <Button size="sm" disabled variant="outline">
                               Coming Soon
