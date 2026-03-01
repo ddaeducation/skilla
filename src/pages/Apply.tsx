@@ -49,6 +49,9 @@ const Apply = () => {
   const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState<"USD" | "RWF">("USD");
   
+  // Number of months to pay for
+  const [numberOfMonths, setNumberOfMonths] = useState(1);
+  
   // Coupon states
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -83,7 +86,7 @@ const Apply = () => {
   const courseMonthlyPrice = selectedCourse?.monthly_price ?? 0;
   
 
-  // Calculate discounted price
+  // Calculate discounted price per month
   const calculateDiscountedPrice = (originalPrice: number) => {
     if (!appliedCoupon) return originalPrice;
     
@@ -94,15 +97,17 @@ const Apply = () => {
     }
   };
 
-  const discountedPriceUSD = calculateDiscountedPrice(courseMonthlyPrice);
-  const discountAmount = courseMonthlyPrice - discountedPriceUSD;
+  const discountedMonthlyPriceUSD = calculateDiscountedPrice(courseMonthlyPrice);
+  const discountAmountPerMonth = courseMonthlyPrice - discountedMonthlyPriceUSD;
+  const totalPriceUSD = discountedMonthlyPriceUSD * numberOfMonths;
+  const totalDiscountUSD = discountAmountPerMonth * numberOfMonths;
   
   // Convert price to selected currency
   const convertPrice = (priceUSD: number) => {
     return Math.round(priceUSD * CURRENCY_CONFIG[selectedCurrency].rate);
   };
   
-  const displayPrice = convertPrice(discountedPriceUSD);
+  const displayPrice = convertPrice(totalPriceUSD);
   const currencySymbol = CURRENCY_CONFIG[selectedCurrency].symbol;
 
   // Flutterwave configuration - use selected currency
@@ -119,7 +124,7 @@ const Apply = () => {
     },
     customizations: {
       title: "Global Nexus Institute",
-      description: `Monthly subscription for ${programFromUrl || selectedCourse?.title || "Course Access"}`,
+      description: `${numberOfMonths} month${numberOfMonths > 1 ? 's' : ''} subscription for ${programFromUrl || selectedCourse?.title || "Course Access"}`,
       logo: "https://hapixvzfcnawjlttkjtr.supabase.co/storage/v1/object/public/avatars/gni-logo.png",
     },
   };
@@ -387,7 +392,7 @@ const Apply = () => {
           tx_ref: txRef,
           enrollment_id: enrollId,
           coupon_id: appliedCoupon?.id || null,
-          discount_applied: appliedCoupon ? discountAmount : 0,
+          discount_applied: appliedCoupon ? totalDiscountUSD : 0,
         },
       });
 
@@ -406,7 +411,7 @@ const Apply = () => {
       console.error("Error verifying payment:", error);
       throw error;
     }
-  }, [txRef, appliedCoupon, discountAmount]);
+  }, [txRef, appliedCoupon, totalDiscountUSD]);
 
   const handlePayment = async () => {
     if (!user) return;
@@ -444,7 +449,7 @@ const Apply = () => {
         }
 
         // For free courses (original price = 0 OR 100% coupon discount)
-        if (discountedPriceUSD === 0) {
+        if (totalPriceUSD === 0) {
           let enrollmentIdForCoupon: string | null = null;
           
           if (existingEnrollment) {
@@ -501,7 +506,7 @@ const Apply = () => {
               coupon_id: appliedCoupon.id,
               user_id: user.id,
               enrollment_id: enrollmentIdForCoupon,
-              discount_applied: discountAmount,
+              discount_applied: totalDiscountUSD,
             });
 
             // Get current usage count and increment
@@ -866,7 +871,7 @@ const Apply = () => {
                 <CardDescription>
                   {courseMonthlyPrice === 0 
                     ? "Complete your free enrollment" 
-                    : "Complete your monthly subscription payment via Flutterwave"
+                    : `Complete your payment for ${numberOfMonths} month${numberOfMonths > 1 ? 's' : ''} via Flutterwave`
                   }
                 </CardDescription>
               </CardHeader>
@@ -875,7 +880,7 @@ const Apply = () => {
                   <p className="text-sm text-muted-foreground">
                     {courseMonthlyPrice === 0 
                       ? "No payment required - enjoy free access to this course" 
-                      : "Complete your monthly subscription payment to access this course"
+                      : `Pay for ${numberOfMonths} month${numberOfMonths > 1 ? 's' : ''} of access to this course`
                     }
                   </p>
                   <div className="mt-3 pt-3 border-t border-border">
@@ -950,6 +955,33 @@ const Apply = () => {
                   </div>
                 )}
 
+                {/* Number of Months Selector - only show for paid courses */}
+                {courseMonthlyPrice > 0 && (
+                  <div className="mb-6 p-4 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="font-medium">Number of Months</Label>
+                        <p className="text-xs text-muted-foreground">Pay for multiple months at once</p>
+                      </div>
+                      <Select
+                        value={String(numberOfMonths)}
+                        onValueChange={(value) => setNumberOfMonths(Number(value))}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                            <SelectItem key={m} value={String(m)}>
+                              {m} month{m > 1 ? "s" : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
                 {/* Currency Selector - only show for paid courses */}
                 {courseMonthlyPrice > 0 && (
                   <div className="mb-6 p-4 border rounded-lg">
@@ -985,13 +1017,23 @@ const Apply = () => {
                     <h4 className="font-medium mb-3">Order Summary</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span>Monthly Subscription</span>
-                        <span>{currencySymbol}{convertPrice(courseMonthlyPrice).toLocaleString()}</span>
+                        <span>Monthly Price</span>
+                        <span>{currencySymbol}{convertPrice(courseMonthlyPrice).toLocaleString()}/mo</span>
                       </div>
+                      <div className="flex justify-between">
+                        <span>Duration</span>
+                        <span>{numberOfMonths} month{numberOfMonths > 1 ? "s" : ""}</span>
+                      </div>
+                      {numberOfMonths > 1 && (
+                        <div className="flex justify-between">
+                          <span>Subtotal ({numberOfMonths} × {currencySymbol}{convertPrice(courseMonthlyPrice).toLocaleString()})</span>
+                          <span>{currencySymbol}{convertPrice(courseMonthlyPrice * numberOfMonths).toLocaleString()}</span>
+                        </div>
+                      )}
                       {appliedCoupon && (
                         <div className="flex justify-between text-green-600">
                           <span>Discount ({appliedCoupon.code})</span>
-                          <span>-{currencySymbol}{convertPrice(discountAmount).toLocaleString()}</span>
+                          <span>-{currencySymbol}{convertPrice(totalDiscountUSD).toLocaleString()}</span>
                         </div>
                       )}
                       <div className="flex justify-between font-bold text-lg pt-2 border-t">
@@ -1040,7 +1082,7 @@ const Apply = () => {
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Processing...
                         </>
-                      ) : discountedPriceUSD === 0 ? (
+                      ) : totalPriceUSD === 0 ? (
                         "Complete Free Enrollment"
                       ) : (
                         `Pay ${currencySymbol}${displayPrice.toLocaleString()}`
