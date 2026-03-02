@@ -35,6 +35,7 @@ const questionTypeOptions = [
   { value: "short_answer", label: "Short Answer" },
   { value: "matching", label: "Matching" },
   { value: "ordering", label: "Ordering / Sequencing" },
+  { value: "drag_drop", label: "Drag into Buckets" },
 ];
 
 export const AIQuestionGenerator = ({ quizId, quizTitle, onQuestionsGenerated }: AIQuestionGeneratorProps) => {
@@ -134,7 +135,7 @@ export const AIQuestionGenerator = ({ quizId, quizTitle, onQuestionsGenerated }:
           const optionsToInsert = q.options.map((opt, idx) => ({
             question_id: question.id,
             option_text: opt.text,
-            is_correct: (q.question_type === "matching" || q.question_type === "ordering") ? true : (opt.is_correct ?? false),
+            is_correct: (q.question_type === "matching" || q.question_type === "ordering" || q.question_type === "drag_drop") ? true : (opt.is_correct ?? false),
             order_index: idx,
           }));
 

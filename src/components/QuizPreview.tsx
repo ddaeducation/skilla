@@ -116,7 +116,20 @@ export const QuizPreview = ({ quiz, questions, options, open, onOpenChange }: Qu
           if (studentMatches[idx] === right) correctCount++;
         });
         correct += Math.round((correctCount / Math.max(pairs.length, 1)) * question.points);
-      } else if (question.question_type === "ordering" || question.question_type === "drag_drop") {
+      } else if (question.question_type === "drag_drop") {
+        const correctBuckets: Record<string, string> = {};
+        questionOptions.forEach(o => {
+          const [item, bucket] = o.option_text.split("|||");
+          correctBuckets[item] = bucket;
+        });
+        const studentBuckets = typeof answer === "string" ? (() => { try { return JSON.parse(answer); } catch { return {}; } })() : {};
+        let correctCount = 0;
+        const totalItems = Object.keys(correctBuckets).length;
+        Object.entries(correctBuckets).forEach(([item, bucket]) => {
+          if (studentBuckets[item] === bucket) correctCount++;
+        });
+        correct += totalItems > 0 ? Math.round((correctCount / totalItems) * question.points) : 0;
+      } else if (question.question_type === "ordering") {
         const correctOrder = questionOptions.map(o => o.id);
         const studentOrder = Array.isArray(answer) ? answer : [];
         if (JSON.stringify(correctOrder) === JSON.stringify(studentOrder)) {
@@ -248,14 +261,74 @@ export const QuizPreview = ({ quiz, questions, options, open, onOpenChange }: Qu
         );
       }
 
-      case "ordering":
       case "drag_drop": {
+        const ddItems = currentOptions.map(o => {
+          const [item, bucket] = o.option_text.split("|||");
+          return { id: o.id, item, correctBucket: bucket };
+        });
+        const ddBuckets = [...new Set(ddItems.map(i => i.correctBucket))];
+        let ddAssignments: Record<string, string> = {};
+        if (typeof questionAnswer === "string") {
+          try { ddAssignments = JSON.parse(questionAnswer); } catch {}
+        }
+        const ddUnassigned = ddItems.filter(i => !ddAssignments[i.item]);
+
+        const ddAssign = (itemText: string, bucketName: string) => {
+          const newA = { ...ddAssignments, [itemText]: bucketName };
+          setAnswers({ ...answers, [currentQuestion.id]: JSON.stringify(newA) });
+        };
+        const ddRemove = (itemText: string) => {
+          const newA = { ...ddAssignments };
+          delete newA[itemText];
+          setAnswers({ ...answers, [currentQuestion.id]: JSON.stringify(newA) });
+        };
+
+        return (
+          <div className="space-y-4">
+            {ddUnassigned.length > 0 && (
+              <div className="bg-primary/10 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium text-center">Click an item, then click a bucket to place it</p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {ddUnassigned.map(item => (
+                    <span key={item.id} className="px-3 py-2 bg-background border rounded-md text-sm shadow-sm">
+                      {item.item}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground text-center">{ddUnassigned.length} item{ddUnassigned.length !== 1 ? "s" : ""} left</p>
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {ddBuckets.map(bucket => {
+                const bucketItems = ddItems.filter(i => ddAssignments[i.item] === bucket);
+                return (
+                  <div key={bucket} className="border-2 border-dashed rounded-lg p-4 min-h-[100px] space-y-2">
+                    <h4 className="font-semibold text-center">{bucket}</h4>
+                    {bucketItems.map(item => (
+                      <div key={item.id} className="flex items-center justify-between px-3 py-1.5 bg-muted rounded text-sm">
+                        <span>{item.item}</span>
+                        <button className="text-muted-foreground hover:text-foreground" onClick={() => ddRemove(item.item)}>✕</button>
+                      </div>
+                    ))}
+                    {ddUnassigned.length > 0 && ddUnassigned.map(item => (
+                      <Button key={item.id} variant="outline" size="sm" className="w-full text-xs opacity-0 hover:opacity-100 transition-opacity" onClick={() => ddAssign(item.item, bucket)}>
+                        + {item.item}
+                      </Button>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+      case "ordering": {
         const orderAnswer = (Array.isArray(questionAnswer) ? questionAnswer : []) as string[];
         const orderItems = orderAnswer.length > 0
           ? orderAnswer.map(id => currentOptions.find(o => o.id === id)).filter(Boolean) as typeof currentOptions
           : currentOptions;
 
-        // Initialize with shuffled order if not set
         if (orderAnswer.length === 0 && currentOptions.length > 0) {
           const shuffled = [...currentOptions].sort(() => Math.random() - 0.5).map(o => o.id);
           setTimeout(() => setAnswers(prev => {
