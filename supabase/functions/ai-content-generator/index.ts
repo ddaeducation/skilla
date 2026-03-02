@@ -101,7 +101,7 @@ ${questionTypes?.length ? `Include these question types: ${questionTypes.join(",
 
 For each question, provide:
 1. Question text
-2. Question type (single_choice, multiple_choice, true_false, fill_in, short_answer, matching, ordering)
+2. Question type (single_choice, multiple_choice, true_false, fill_in, short_answer, matching, ordering, drag_drop)
 3. Options (for choice questions)
 4. Correct answer(s)
 5. Explanation
@@ -110,6 +110,8 @@ For each question, provide:
 IMPORTANT: For "matching" type questions, each option must combine the left item and right item using the delimiter "|||". Example: { "text": "France|||Paris", "is_correct": true }. All matching options must have is_correct set to true.
 
 IMPORTANT: For "ordering" type questions, provide the options in the CORRECT order. Each option must have is_correct set to true. The order represents the correct sequence. Example: [{ "text": "Step 1", "is_correct": true }, { "text": "Step 2", "is_correct": true }].
+
+IMPORTANT: For "drag_drop" type questions (bucket categorization), each option must combine the item text and its correct bucket using "|||" as delimiter, similar to matching. Example: [{ "text": "Optimize seating|||Nice to have", "is_correct": true }, { "text": "Increase revenue|||Business value", "is_correct": true }]. All options must have is_correct set to true.
 
 Return as JSON:
 {
@@ -197,6 +199,8 @@ ${questionTypes?.length ? `Question types to include: ${questionTypes.join(", ")
 IMPORTANT: For "matching" type questions, each option must combine the left item and right item using the delimiter "|||". For example, if matching capitals to countries, an option would be: { "text": "France|||Paris", "is_correct": true }. All matching options must have is_correct set to true. Provide 4-6 pairs per matching question.
 
 IMPORTANT: For "ordering" type questions, provide the options in the CORRECT order. Each option must have is_correct set to true. The order represents the correct sequence students must arrange. Example: [{ "text": "Step 1", "is_correct": true }, { "text": "Step 2", "is_correct": true }].
+
+IMPORTANT: For "drag_drop" type questions (bucket categorization), each option combines item and correct bucket using "|||". Example: [{ "text": "Optimize seating|||Nice to have", "is_correct": true }, { "text": "Increase revenue|||Business value", "is_correct": true }]. All options must have is_correct set to true.
 
 Return as JSON array:
 [

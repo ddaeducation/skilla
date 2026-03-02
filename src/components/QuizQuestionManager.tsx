@@ -55,7 +55,7 @@ const questionTypes = [
   // Interactive Question Types
   { value: "matching", label: "Matching", category: "Interactive", icon: "↔" },
   { value: "ordering", label: "Ordering / Sequencing", category: "Interactive", icon: "123" },
-  { value: "drag_drop", label: "Drag and Drop", category: "Interactive", icon: "⇄" },
+  { value: "drag_drop", label: "Drag into Buckets", category: "Interactive", icon: "⇄" },
   // Advanced Question Types
   { value: "numerical", label: "Numerical / Calculation", category: "Advanced", icon: "#" },
   { value: "scenario", label: "Scenario-based Questions", category: "Advanced", icon: "📋" },
@@ -73,6 +73,9 @@ const categories = ["Basic", "Interactive", "Advanced", "Media", "Special"];
 // Helper to check if question type needs options
 const needsOptions = (type: string) => 
   ["single_choice", "multiple_choice", "true_false", "matching", "ordering", "drag_drop"].includes(type);
+
+// Helper to check if question type uses matching-style pairs
+const usesPairs = (type: string) => ["matching", "drag_drop"].includes(type);
 
 // Helper to check if question type needs a single correct answer
 const needsSingleAnswer = (type: string) => 
@@ -175,6 +178,7 @@ export const QuizQuestionManager = ({ quizId, quizTitle, passingScore = 70, time
     { left: "", right: "" },
     { left: "", right: "" },
   ]);
+  const [bucketNames, setBucketNames] = useState<string[]>(["", ""]);
 
   useEffect(() => {
     fetchQuestions();
@@ -236,6 +240,7 @@ export const QuizQuestionManager = ({ quizId, quizTitle, passingScore = 70, time
     ]);
     setFillInAnswer("");
     setMatchingPairs([{ left: "", right: "" }, { left: "", right: "" }]);
+    setBucketNames(["", ""]);
     setEditingQuestion(null);
   };
 
@@ -253,6 +258,7 @@ export const QuizQuestionManager = ({ quizId, quizTitle, passingScore = 70, time
     }
     setFillInAnswer("");
     setMatchingPairs([{ left: "", right: "" }, { left: "", right: "" }]);
+    setBucketNames(["", ""]);
   };
 
   const handleAddOption = () => {
@@ -307,7 +313,18 @@ export const QuizQuestionManager = ({ quizId, quizTitle, passingScore = 70, time
           toast({ title: "Error", description: "At least 2 matching pairs are required", variant: "destructive" });
           return;
         }
-      } else if (questionForm.question_type === "ordering" || questionForm.question_type === "drag_drop") {
+      } else if (questionForm.question_type === "drag_drop") {
+        const validPairs = matchingPairs.filter(p => p.left.trim() && p.right.trim());
+        if (validPairs.length < 2) {
+          toast({ title: "Error", description: "At least 2 items with buckets are required", variant: "destructive" });
+          return;
+        }
+        const validBuckets = bucketNames.filter(b => b.trim());
+        if (validBuckets.length < 2) {
+          toast({ title: "Error", description: "At least 2 bucket names are required", variant: "destructive" });
+          return;
+        }
+      } else if (questionForm.question_type === "ordering") {
         const validOptions = tempOptions.filter(o => o.text.trim());
         if (validOptions.length < 2) {
           toast({ title: "Error", description: "At least 2 items are required", variant: "destructive" });
@@ -391,13 +408,25 @@ export const QuizQuestionManager = ({ quizId, quizTitle, passingScore = 70, time
 
         const { error: optionsError } = await supabase.from("quiz_options").insert(optionsToInsert);
         if (optionsError) throw optionsError;
-      } else if (questionForm.question_type === "ordering" || questionForm.question_type === "drag_drop") {
+      } else if (questionForm.question_type === "drag_drop") {
+        // Store as item|||bucket pairs (like matching)
+        const validPairs = matchingPairs.filter(p => p.left.trim() && p.right.trim());
+        const optionsToInsert = validPairs.map((pair, index) => ({
+          question_id: questionId,
+          option_text: `${pair.left}|||${pair.right}`,
+          is_correct: true,
+          order_index: index,
+        }));
+
+        const { error: optionsError } = await supabase.from("quiz_options").insert(optionsToInsert);
+        if (optionsError) throw optionsError;
+      } else if (questionForm.question_type === "ordering") {
         const validOptions = tempOptions.filter(o => o.text.trim());
         const optionsToInsert = validOptions.map((opt, index) => ({
           question_id: questionId,
           option_text: opt.text,
           is_correct: true,
-          order_index: index, // The correct order is stored by order_index
+          order_index: index,
         }));
 
         const { error: optionsError } = await supabase.from("quiz_options").insert(optionsToInsert);
@@ -443,6 +472,15 @@ export const QuizQuestionManager = ({ quizId, quizTitle, passingScore = 70, time
         return { left: left || "", right: right || "" };
       });
       setMatchingPairs(pairs.length >= 2 ? pairs : [{ left: "", right: "" }, { left: "", right: "" }]);
+    } else if (question.question_type === "drag_drop") {
+      const pairs = questionOptions.map(o => {
+        const [left, right] = o.option_text.split("|||");
+        return { left: left || "", right: right || "" };
+      });
+      setMatchingPairs(pairs.length >= 2 ? pairs : [{ left: "", right: "" }, { left: "", right: "" }]);
+      // Extract unique bucket names
+      const uniqueBuckets = [...new Set(pairs.map(p => p.right).filter(Boolean))];
+      setBucketNames(uniqueBuckets.length >= 2 ? uniqueBuckets : ["", ""]);
     } else if (needsOptions(question.question_type)) {
       if (questionOptions.length > 0) {
         setTempOptions(questionOptions.map(o => ({ text: o.option_text, is_correct: o.is_correct })));
@@ -543,7 +581,27 @@ export const QuizQuestionManager = ({ quizId, quizTitle, passingScore = 70, time
       );
     }
 
-    if (question.question_type === "ordering" || question.question_type === "drag_drop") {
+    if (question.question_type === "drag_drop") {
+      // Group items by bucket
+      const buckets: Record<string, string[]> = {};
+      questionOptions.forEach((opt) => {
+        const [item, bucket] = opt.option_text.split("|||");
+        if (!buckets[bucket]) buckets[bucket] = [];
+        buckets[bucket].push(item);
+      });
+      return (
+        <div className="pl-4 space-y-2 border-l-2 border-muted">
+          {Object.entries(buckets).map(([bucket, items]) => (
+            <div key={bucket}>
+              <span className="text-xs font-medium text-primary">{bucket}:</span>
+              <span className="text-sm text-muted-foreground ml-1">{items.join(", ")}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (question.question_type === "ordering") {
       return (
         <div className="pl-4 space-y-1 border-l-2 border-muted">
           {questionOptions.map((opt, idx) => (
@@ -890,7 +948,7 @@ export const QuizQuestionManager = ({ quizId, quizTitle, passingScore = 70, time
                 )}
 
                 {/* Ordering/Sequencing items */}
-                {(questionForm.question_type === "ordering" || questionForm.question_type === "drag_drop") && (
+                {questionForm.question_type === "ordering" && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label>Items (in correct order)</Label>
@@ -924,6 +982,85 @@ export const QuizQuestionManager = ({ quizId, quizTitle, passingScore = 70, time
                           )}
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Drag into Buckets */}
+                {questionForm.question_type === "drag_drop" && (
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>Bucket Names</Label>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setBucketNames([...bucketNames, ""])}>
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Bucket
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Define the categories/buckets students will sort items into.
+                      </p>
+                      <div className="space-y-2">
+                        {bucketNames.map((bucket, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              value={bucket}
+                              onChange={(e) => {
+                                const newBuckets = [...bucketNames];
+                                newBuckets[index] = e.target.value;
+                                setBucketNames(newBuckets);
+                              }}
+                              placeholder={`Bucket ${index + 1} (e.g., "Business value")`}
+                              className="flex-1"
+                            />
+                            {bucketNames.length > 2 && (
+                              <Button type="button" variant="ghost" size="icon" onClick={() => setBucketNames(bucketNames.filter((_, i) => i !== index))}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>Items & Correct Bucket</Label>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setMatchingPairs([...matchingPairs, { left: "", right: "" }])}>
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Item
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Enter each item and select which bucket it belongs to.
+                      </p>
+                      <div className="space-y-2">
+                        {matchingPairs.map((pair, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              value={pair.left}
+                              onChange={(e) => handleMatchingPairChange(index, "left", e.target.value)}
+                              placeholder="Item text"
+                              className="flex-1"
+                            />
+                            <select
+                              className="rounded-md border border-input bg-background px-3 py-2 text-sm min-w-[140px]"
+                              value={pair.right}
+                              onChange={(e) => handleMatchingPairChange(index, "right", e.target.value)}
+                            >
+                              <option value="">Select bucket</option>
+                              {bucketNames.filter(b => b.trim()).map((b, i) => (
+                                <option key={i} value={b}>{b}</option>
+                              ))}
+                            </select>
+                            {matchingPairs.length > 2 && (
+                              <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveMatchingPair(index)}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

@@ -328,7 +328,25 @@ export const StudentQuizTaker = ({
           feedback = isCorrect
             ? "All matches correct! " + (question.explanation || "")
             : "Some matches were incorrect. " + (question.explanation || "");
-        } else if (question.question_type === "ordering" || question.question_type === "drag_drop") {
+        } else if (question.question_type === "drag_drop") {
+          // Bucket categorization: answer is Record<item, bucket> serialized as JSON string
+          const correctBuckets: Record<string, string> = {};
+          questionOptions.forEach(o => {
+            const [item, bucket] = o.option_text.split("|||");
+            correctBuckets[item] = bucket;
+          });
+          const studentBuckets = typeof answer === "string" ? (() => { try { return JSON.parse(answer); } catch { return {}; } })() : {};
+          let correctCount = 0;
+          const totalItems = Object.keys(correctBuckets).length;
+          Object.entries(correctBuckets).forEach(([item, bucket]) => {
+            if (studentBuckets[item] === bucket) correctCount++;
+          });
+          isCorrect = correctCount === totalItems;
+          pointsEarned = totalItems > 0 ? Math.round((correctCount / totalItems) * question.points) : 0;
+          feedback = isCorrect
+            ? "All items correctly categorized! " + (question.explanation || "")
+            : `${correctCount}/${totalItems} items correct. ` + (question.explanation || "");
+        } else if (question.question_type === "ordering") {
           const correctOrder = questionOptions.map(o => o.id);
           const selectedOrder = Array.isArray(answer) ? answer : [];
           isCorrect = JSON.stringify(correctOrder) === JSON.stringify(selectedOrder);
@@ -536,8 +554,89 @@ export const StudentQuizTaker = ({
         );
       }
 
-      case "ordering":
       case "drag_drop": {
+        // Bucket categorization UI
+        const items = currentOptions.map(o => {
+          const [item, bucket] = o.option_text.split("|||");
+          return { id: o.id, item, correctBucket: bucket };
+        });
+        const bucketNamesSet = [...new Set(items.map(i => i.correctBucket))];
+        
+        // Answer stored as JSON string: { "itemText": "bucketName", ... }
+        let assignments: Record<string, string> = {};
+        if (typeof answer === "string") {
+          try { assignments = JSON.parse(answer); } catch {}
+        }
+
+        const unassigned = items.filter(i => !assignments[i.item]);
+        
+        const assignToBucket = (itemText: string, bucketName: string) => {
+          const newAssignments = { ...assignments, [itemText]: bucketName };
+          setAnswers(prev => ({ ...prev, [currentQuestion.id]: JSON.stringify(newAssignments) }));
+        };
+
+        const removeFromBucket = (itemText: string) => {
+          const newAssignments = { ...assignments };
+          delete newAssignments[itemText];
+          setAnswers(prev => ({ ...prev, [currentQuestion.id]: JSON.stringify(newAssignments) }));
+        };
+
+        return (
+          <div className="space-y-4">
+            {/* Unassigned items */}
+            {unassigned.length > 0 && (
+              <div className="bg-primary/10 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium text-center">Click an item, then click a bucket to place it</p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {unassigned.map(item => (
+                    <span key={item.id} className="px-3 py-2 bg-background border rounded-md text-sm cursor-default shadow-sm">
+                      {item.item}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground text-center">{unassigned.length} item{unassigned.length !== 1 ? "s" : ""} left</p>
+              </div>
+            )}
+
+            {/* Buckets */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {bucketNamesSet.map(bucket => {
+                const bucketItems = items.filter(i => assignments[i.item] === bucket);
+                return (
+                  <div key={bucket} className="border-2 border-dashed rounded-lg p-4 min-h-[120px] space-y-2">
+                    <h4 className="font-semibold text-center">{bucket}</h4>
+                    <div className="space-y-1">
+                      {bucketItems.map(item => (
+                        <div key={item.id} className="flex items-center justify-between px-3 py-1.5 bg-muted rounded text-sm">
+                          <span>{item.item}</span>
+                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeFromBucket(item.item)}>
+                            <XCircle className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Drop button for unassigned items */}
+                    {unassigned.length > 0 && (
+                      <div className="space-y-1">
+                        {unassigned.map(item => (
+                          <Button key={item.id} variant="outline" size="sm" className="w-full text-xs opacity-0 hover:opacity-100 transition-opacity" onClick={() => assignToBucket(item.item, bucket)}>
+                            + {item.item}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                    {bucketItems.length === 0 && unassigned.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center">No items</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+      case "ordering": {
         // Initialize answer with shuffled option IDs if not yet set
         const orderAnswer = Array.isArray(answer) ? (answer as string[]) : [];
         const orderItems = orderAnswer.length > 0
@@ -547,7 +646,6 @@ export const StudentQuizTaker = ({
         // Set initial shuffled order if not yet answered
         if (orderAnswer.length === 0 && currentOptions.length > 0) {
           const shuffled = [...currentOptions].sort(() => Math.random() - 0.5).map(o => o.id);
-          // Use setTimeout to avoid state update during render
           setTimeout(() => setAnswers(prev => {
             if (!prev[currentQuestion.id]) {
               return { ...prev, [currentQuestion.id]: shuffled };
