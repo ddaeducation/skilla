@@ -609,7 +609,7 @@ export const StudentQuizTaker = ({
                     <h4 className="font-semibold text-center">{bucket}</h4>
                     <div className="space-y-1">
                       {bucketItems.map(item => (
-                        <div key={item.id} className="flex items-center justify-between px-3 py-1.5 bg-muted rounded text-sm">
+                        <div key={item.id} className="flex items-center justify-between px-3 py-1.5 bg-muted text-foreground rounded text-sm font-medium">
                           <span>{item.item}</span>
                           <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeFromBucket(item.item)}>
                             <XCircle className="h-3 w-3" />
