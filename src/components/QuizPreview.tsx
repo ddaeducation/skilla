@@ -15,10 +15,10 @@ import {
   ChevronRight, 
   Eye, 
   ArrowRightLeft,
-  GripVertical,
   CheckCircle,
   AlertCircle
 } from "lucide-react";
+import { SortableOrderingList } from "@/components/quiz/SortableOrderingList";
 
 interface QuizQuestion {
   id: string;
@@ -339,35 +339,11 @@ export const QuizPreview = ({ quiz, questions, options, open, onOpenChange }: Qu
           }), 0);
         }
 
-        const moveItem = (idx: number, direction: "up" | "down") => {
-          const newIdx = direction === "up" ? idx - 1 : idx + 1;
-          if (newIdx < 0 || newIdx >= orderItems.length) return;
-          const currentIds = orderItems.map(o => o.id);
-          const temp = currentIds[idx];
-          currentIds[idx] = currentIds[newIdx];
-          currentIds[newIdx] = temp;
-          setAnswers({ ...answers, [currentQuestion.id]: currentIds });
-        };
-
         return (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Arrange the items in the correct order using the arrows.</p>
-            {orderItems.map((option, idx) => (
-              <div key={option.id} className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30 group">
-                <GripVertical className="h-5 w-5 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground w-6 text-center font-medium">{idx + 1}.</span>
-                <span className="flex-1">{option.option_text}</span>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" disabled={idx === 0} onClick={() => moveItem(idx, "up")}>
-                    <ChevronLeft className="h-4 w-4 rotate-90" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" disabled={idx === orderItems.length - 1} onClick={() => moveItem(idx, "down")}>
-                    <ChevronRight className="h-4 w-4 rotate-90" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <SortableOrderingList
+            items={orderItems.map(o => ({ id: o.id, text: o.option_text }))}
+            onReorder={(newIds) => setAnswers({ ...answers, [currentQuestion.id]: newIds })}
+          />
         );
       }
 
