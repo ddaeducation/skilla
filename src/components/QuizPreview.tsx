@@ -305,7 +305,7 @@ export const QuizPreview = ({ quiz, questions, options, open, onOpenChange }: Qu
                   <div key={bucket} className="border-2 border-dashed rounded-lg p-4 min-h-[100px] space-y-2">
                     <h4 className="font-semibold text-center">{bucket}</h4>
                     {bucketItems.map(item => (
-                      <div key={item.id} className="flex items-center justify-between px-3 py-1.5 bg-muted rounded text-sm">
+                      <div key={item.id} className="flex items-center justify-between px-3 py-1.5 bg-muted text-foreground rounded text-sm font-medium">
                         <span>{item.item}</span>
                         <button className="text-muted-foreground hover:text-foreground" onClick={() => ddRemove(item.item)}>✕</button>
                       </div>
