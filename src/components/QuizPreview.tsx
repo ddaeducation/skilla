@@ -290,7 +290,7 @@ export const QuizPreview = ({ quiz, questions, options, open, onOpenChange }: Qu
                 <p className="text-sm font-medium text-center">Click an item, then click a bucket to place it</p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {ddUnassigned.map(item => (
-                    <span key={item.id} className="px-3 py-2 bg-background text-foreground border rounded-md text-sm shadow-sm font-medium">
+                    <span key={item.id} className="px-4 py-2 bg-card text-card-foreground border-2 border-border rounded-md text-sm shadow font-semibold">
                       {item.item}
                     </span>
                   ))}
