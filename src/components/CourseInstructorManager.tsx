@@ -29,8 +29,8 @@ import {
   Loader2,
   Mail,
   Clock,
-  CheckCircle2,
   X,
+  GraduationCap,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -52,6 +52,12 @@ interface PendingInvitation {
   status: string;
   created_at: string;
   expires_at: string;
+}
+
+interface EnrolledStudent {
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
 }
 
 interface CourseInstructorManagerProps {
@@ -82,6 +88,12 @@ export const CourseInstructorManager = ({
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [transferEmail, setTransferEmail] = useState("");
   const [sendingTransfer, setSendingTransfer] = useState(false);
+
+  // Enrolled students assignment
+  const [enrolledStudents, setEnrolledStudents] = useState<EnrolledStudent[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [selectedRole, setSelectedRole] = useState<"co_instructor" | "primary">("co_instructor");
+  const [assigningStudent, setAssigningStudent] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -133,6 +145,35 @@ export const CourseInstructorManager = ({
         .order("created_at", { ascending: false });
 
       setPendingInvitations((invitations as PendingInvitation[]) || []);
+
+      // Fetch enrolled students for this course
+      const { data: enrollments } = await supabase
+        .from("enrollments")
+        .select("user_id")
+        .eq("course_id", courseId)
+        .eq("payment_status", "completed");
+
+      if (enrollments && enrollments.length > 0) {
+        const studentIds = enrollments.map((e) => e.user_id);
+        const { data: studentProfiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", studentIds);
+
+        // Filter out users who are already instructors
+        const existingInstructorIds = new Set([
+          currentInstructorId,
+          ...(instructorsData?.map((i) => i.instructor_id) || []),
+        ]);
+
+        setEnrolledStudents(
+          (studentProfiles || [])
+            .filter((s) => !existingInstructorIds.has(s.id))
+            .map((s) => ({ user_id: s.id, full_name: s.full_name, email: s.email }))
+        );
+      } else {
+        setEnrolledStudents([]);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -212,6 +253,40 @@ export const CourseInstructorManager = ({
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setSendingTransfer(false);
+    }
+  };
+
+  const handleAssignStudentRole = async () => {
+    if (!selectedStudentId) {
+      toast({ title: "Select a student", description: "Please select a student to assign.", variant: "destructive" });
+      return;
+    }
+
+    const student = enrolledStudents.find((s) => s.user_id === selectedStudentId);
+    if (!student?.email) {
+      toast({ title: "Error", description: "Student email not found.", variant: "destructive" });
+      return;
+    }
+
+    setAssigningStudent(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("send-course-instructor-invitation", {
+        body: { email: student.email, courseId, role: selectedRole },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+
+      const roleLabel = selectedRole === "primary" ? "Ownership Transfer" : "Co-Instructor";
+      handleInvitationResponse(res, student.email, roleLabel, () => {
+        setSelectedStudentId("");
+        setSelectedRole("co_instructor");
+        fetchData();
+        onUpdate?.();
+      });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setAssigningStudent(false);
     }
   };
 
@@ -449,7 +524,69 @@ export const CourseInstructorManager = ({
           </div>
         )}
 
-        {coInstructors.length === 0 && pendingInvitations.length === 0 && (
+        {/* Assign from Enrolled Students */}
+        {enrolledStudents.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              Assign from Enrolled Students
+            </p>
+            <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <GraduationCap className="h-4 w-4" />
+                <span>Promote an enrolled student to instructor</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Select Student</Label>
+                  <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a student..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {enrolledStudents.map((student) => (
+                        <SelectItem key={student.user_id} value={student.user_id}>
+                          {student.full_name || student.email || "Unknown"}
+                          {student.full_name && student.email ? ` (${student.email})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Assign Role</Label>
+                  <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as "co_instructor" | "primary")}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="co_instructor">Co-Instructor</SelectItem>
+                      <SelectItem value="primary">Owner (Primary Instructor)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <Button
+                onClick={handleAssignStudentRole}
+                disabled={assigningStudent || !selectedStudentId}
+                size="sm"
+                className="w-full sm:w-auto"
+              >
+                {assigningStudent ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending Invitation...</>
+                ) : (
+                  <><UserPlus className="mr-2 h-4 w-4" />Send Invitation</>
+                )}
+              </Button>
+              {selectedRole === "primary" && selectedStudentId && (
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-2 text-xs text-amber-800">
+                  ⚠️ This will transfer full ownership of the course once the student accepts.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {coInstructors.length === 0 && pendingInvitations.length === 0 && enrolledStudents.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-4">
             No co-instructors yet. Invite someone via email above.
           </p>
