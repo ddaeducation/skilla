@@ -1539,6 +1539,72 @@ const Instructor = () => {
                               <TableCell>{enrollment.profiles?.phone || "-"}</TableCell>
                               <TableCell>{enrollment.courses?.title || "-"}</TableCell>
                               <TableCell>
+                                <Select
+                                  value={
+                                    courseInstructors.some(ci => ci.instructor_id === enrollment.user_id && ci.course_id === enrollment.course_id && ci.role === "primary")
+                                      ? "owner"
+                                      : courseInstructors.some(ci => ci.instructor_id === enrollment.user_id && ci.course_id === enrollment.course_id && ci.role === "co_instructor")
+                                      ? "co_instructor"
+                                      : "student"
+                                  }
+                                  onValueChange={async (value) => {
+                                    try {
+                                      const existingEntry = courseInstructors.find(
+                                        ci => ci.instructor_id === enrollment.user_id && ci.course_id === enrollment.course_id
+                                      );
+
+                                      if (value === "student") {
+                                        if (existingEntry) {
+                                          await supabase.from("course_instructors").delete().eq("id", existingEntry.id);
+                                        }
+                                      } else {
+                                        const role = value === "owner" ? "primary" : "co_instructor";
+                                        // Ensure user has moderator role
+                                        const { data: existingRole } = await supabase
+                                          .from("user_roles")
+                                          .select("id")
+                                          .eq("user_id", enrollment.user_id)
+                                          .eq("role", "moderator")
+                                          .maybeSingle();
+                                        if (!existingRole) {
+                                          await supabase.from("user_roles").insert({ user_id: enrollment.user_id, role: "moderator" });
+                                        }
+
+                                        if (existingEntry) {
+                                          await supabase.from("course_instructors").update({ role }).eq("id", existingEntry.id);
+                                        } else {
+                                          await supabase.from("course_instructors").insert({
+                                            course_id: enrollment.course_id,
+                                            instructor_id: enrollment.user_id,
+                                            role,
+                                            added_by: currentUserId,
+                                          });
+                                        }
+
+                                        if (value === "owner") {
+                                          await supabase.from("courses").update({ instructor_id: enrollment.user_id }).eq("id", enrollment.course_id);
+                                        }
+                                      }
+
+                                      toast({ title: "Role updated", description: `Student role updated to ${value === "owner" ? "Owner" : value === "co_instructor" ? "Co-Instructor" : "Student"}` });
+                                      fetchCourseInstructors();
+                                    } catch (error) {
+                                      console.error("Error updating role:", error);
+                                      toast({ title: "Error", description: "Failed to update role", variant: "destructive" });
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="w-[140px] h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="student">Student</SelectItem>
+                                    <SelectItem value="co_instructor">Co-Instructor</SelectItem>
+                                    <SelectItem value="owner">Owner</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
                                 <Badge
                                   variant={enrollment.payment_status === "completed" ? "default" : "secondary"}
                                   className={
