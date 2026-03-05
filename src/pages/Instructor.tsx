@@ -277,8 +277,8 @@ const Instructor = () => {
   };
 
   const fetchCourseInstructors = async () => {
-    if (!courses.length) return;
     const courseIds = courses.map(c => c.id);
+    if (!courseIds.length) return;
     const { data } = await supabase
       .from("course_instructors")
       .select("id, course_id, instructor_id, role")
