@@ -276,6 +276,16 @@ const Instructor = () => {
     }
   };
 
+  const fetchCourseInstructors = async () => {
+    if (!courses.length) return;
+    const courseIds = courses.map(c => c.id);
+    const { data } = await supabase
+      .from("course_instructors")
+      .select("id, course_id, instructor_id, role")
+      .in("course_id", courseIds);
+    if (data) setCourseInstructors(data);
+  };
+
   const fetchData = async (userId: string) => {
     try {
       // Fetch instructor's courses
