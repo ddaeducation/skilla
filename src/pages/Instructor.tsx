@@ -148,6 +148,7 @@ const Instructor = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [sections, setSections] = useState<{ id: string; course_id: string; title: string; description: string | null; order_index: number; parent_id: string | null; section_level: number | null }[]>([]);
+  const [courseInstructors, setCourseInstructors] = useState<{ id: string; course_id: string; instructor_id: string; role: string }[]>([]);
 
   // Dialog states
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
