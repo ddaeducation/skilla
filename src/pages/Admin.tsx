@@ -2118,20 +2118,53 @@ const Admin = () => {
                             </TableCell>
                             <TableCell>{profile.hear_about || "-"}</TableCell>
                             <TableCell>
-                              {profile.roles.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {profile.roles.map((role) => (
-                                    <Badge
-                                      key={role}
-                                      variant={role === "admin" ? "destructive" : role === "moderator" ? "default" : "secondary"}
-                                    >
-                                      {role === "moderator" ? "Instructor" : role}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              ) : (
-                                <Badge variant="outline">User</Badge>
-                              )}
+                              <Select
+                                value={
+                                  profile.roles.includes("admin")
+                                    ? "admin"
+                                    : profile.roles.includes("moderator")
+                                    ? "moderator"
+                                    : "user"
+                                }
+                                onValueChange={async (value) => {
+                                  try {
+                                    if (profile.id === currentUserId) return;
+                                    
+                                    if (value === "moderator") {
+                                      if (!profile.roles.includes("moderator")) {
+                                        const { error } = await supabase
+                                          .from("user_roles")
+                                          .insert({ user_id: profile.id, role: "moderator" });
+                                        if (error) throw error;
+                                      }
+                                      toast({ title: "Role updated", description: `${profile.full_name || profile.email} is now an Instructor` });
+                                    } else if (value === "user") {
+                                      await supabase
+                                        .from("user_roles")
+                                        .delete()
+                                        .eq("user_id", profile.id)
+                                        .eq("role", "moderator");
+                                      toast({ title: "Role updated", description: `${profile.full_name || profile.email} is now a regular User` });
+                                    }
+                                    fetchData();
+                                  } catch (error) {
+                                    console.error("Error updating role:", error);
+                                    toast({ title: "Error", description: "Failed to update role", variant: "destructive" });
+                                  }
+                                }}
+                                disabled={profile.id === currentUserId || profile.roles.includes("admin")}
+                              >
+                                <SelectTrigger className="w-[130px] h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="user">User</SelectItem>
+                                  <SelectItem value="moderator">Instructor</SelectItem>
+                                  {profile.roles.includes("admin") && (
+                                    <SelectItem value="admin">Admin</SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
                             </TableCell>
                             <TableCell>
                               <Badge

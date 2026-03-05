@@ -1523,6 +1523,7 @@ const Instructor = () => {
                             <TableHead>Email</TableHead>
                             <TableHead>Phone</TableHead>
                             <TableHead>Course</TableHead>
+                            <TableHead>Role</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Enrolled</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
