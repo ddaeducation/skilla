@@ -62,7 +62,7 @@ export default function PaginatedTextContent({ htmlContent, className, onPageInf
         <div
           ref={containerRef}
           className="overflow-hidden relative"
-          style={{ height: "calc(100vh - 180px)", minHeight: 400 }}
+          style={{ height: "calc(100vh - 140px)", minHeight: 400 }}
         >
           <div
             ref={contentRef}

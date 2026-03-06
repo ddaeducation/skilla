@@ -773,7 +773,7 @@ const CourseDetail = () => {
       lesson.content_type === "vimeo" && lesson.content_url ? getVimeoEmbedUrl(lesson.content_url) : null;
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-1">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-xl font-semibold">{lesson.title}</h3>
           <div className="flex items-center gap-2">
