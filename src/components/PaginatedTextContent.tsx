@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface PaginatedTextContentProps {
   htmlContent: string;
   className?: string;
+  onPageInfo?: (currentPage: number, totalPages: number, setPage: (page: number) => void) => void;
 }
 
 export default function PaginatedTextContent({ htmlContent, className }: PaginatedTextContentProps) {
