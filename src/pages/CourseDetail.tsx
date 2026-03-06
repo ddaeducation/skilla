@@ -991,7 +991,7 @@ const CourseDetail = () => {
         )}
 
         {/* Mark Complete and Next Buttons */}
-        <div className="flex justify-between items-center gap-2 pt-4">
+        <div className="flex justify-between items-center gap-2 pt-2">
           <div>
             {hasPreviousContent() && (
               <Button variant="outline" onClick={goToPreviousContent}>
@@ -1000,6 +1000,11 @@ const CourseDetail = () => {
               </Button>
             )}
           </div>
+          {lesson.content_text && textPageInfo.total > 1 && (
+            <span className="text-sm font-medium text-muted-foreground">
+              Page {textPageInfo.current} of {textPageInfo.total}
+            </span>
+          )}
           <div className="flex items-center gap-2">
           {isLessonCompleted(lesson.id) ? (
             <Badge className="bg-green-500">
