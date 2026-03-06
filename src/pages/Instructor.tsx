@@ -1639,7 +1639,6 @@ const Instructor = () => {
                                     <SelectItem value="student">Student</SelectItem>
                                     <SelectItem value="co_instructor">Co-Instructor</SelectItem>
                                     <SelectItem value="owner">Owner</SelectItem>
-                                    <SelectItem value="admin">Admin</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </TableCell>
