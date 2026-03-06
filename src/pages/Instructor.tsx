@@ -1575,22 +1575,6 @@ const Instructor = () => {
                                         ci => ci.instructor_id === enrollment.user_id && ci.course_id === enrollment.course_id
                                       );
 
-                                      if (value === "admin") {
-                                        // Assign admin role
-                                        const { data: existingAdmin } = await supabase
-                                          .from("user_roles")
-                                          .select("id")
-                                          .eq("user_id", enrollment.user_id)
-                                          .eq("role", "admin")
-                                          .maybeSingle();
-                                        if (!existingAdmin) {
-                                          await supabase.from("user_roles").insert({ user_id: enrollment.user_id, role: "admin" });
-                                        }
-                                        toast({ title: "Role updated", description: `Student is now an Admin` });
-                                        fetchCourseInstructors();
-                                        return;
-                                      }
-
                                       if (value === "student") {
                                         if (existingEntry) {
                                           await supabase.from("course_instructors").delete().eq("id", existingEntry.id);
