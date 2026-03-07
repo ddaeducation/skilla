@@ -166,15 +166,19 @@ const CertificateVerify = () => {
           </Card>
         ) : info ? (
           <Card className="border-primary/30 overflow-hidden">
-            {/* School branding banner */}
-            {info.school && (
-              <div className="bg-primary px-6 py-3 flex items-center gap-3">
-                <GraduationCap className="w-5 h-5 text-primary-foreground" />
-                <span className="text-sm font-semibold text-primary-foreground">
-                  School of {info.school}
-                </span>
-              </div>
-            )}
+            {/* School branding banner with key details */}
+            <div className="bg-primary px-6 py-4 space-y-2">
+              {info.school && (
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-primary-foreground/70" />
+                  <span className="text-xs font-medium text-primary-foreground/80">
+                    School of {info.school}
+                  </span>
+                </div>
+              )}
+              <p className="text-lg font-bold text-primary-foreground">{info.student_name}</p>
+              <p className="text-sm text-primary-foreground/80">{info.course_title}</p>
+            </div>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-8 h-8 text-green-500 shrink-0" />
