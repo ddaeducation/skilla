@@ -276,10 +276,18 @@ ET
     imageData = await fetchImageAsBase64(template.background_url);
   }
 
-  // Handle QR code
+  // Handle QR code - encode full certificate info
   let qrData: { pdfObjText: string; imageBytes: Uint8Array; drawCommand: string } | null = null;
   if (hasQRPlaceholder && qrPlaceholder) {
-    qrData = await buildQRXObject(verificationUrl, qrPlaceholder, height);
+    const qrText = [
+      `Name: ${studentName}`,
+      `Course: ${courseName}`,
+      `School: ${schoolName}`,
+      `Date: ${issueDate}`,
+      `Certificate: ${certificateNumber}`,
+      `Verify: ${verificationUrl}`,
+    ].join('\n');
+    qrData = await buildQRXObject(qrText, qrPlaceholder, height);
   }
 
   // Build PDF with or without background image, with or without QR
