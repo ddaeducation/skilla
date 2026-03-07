@@ -3,8 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, Award, User, BookOpen, Calendar, BarChart2, ClipboardList } from "lucide-react";
-import { Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Award, User, BookOpen, Calendar, BarChart2, ClipboardList, Clock, GraduationCap, Loader2 } from "lucide-react";
 
 interface CertificateInfo {
   certificate_number: string;
