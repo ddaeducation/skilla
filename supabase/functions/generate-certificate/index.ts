@@ -279,14 +279,7 @@ ET
   // Handle QR code - encode full certificate info
   let qrData: { pdfObjText: string; imageBytes: Uint8Array; drawCommand: string } | null = null;
   if (hasQRPlaceholder && qrPlaceholder) {
-    const qrText = [
-      `Name: ${studentName}`,
-      `Course: ${courseName}`,
-      `School: ${schoolName}`,
-      `Date: ${issueDate}`,
-      `Certificate: ${certificateNumber}`,
-      `Verify: ${verificationUrl}`,
-    ].join('\n');
+    const qrText = verificationUrl;
     qrData = await buildQRXObject(qrText, qrPlaceholder, height);
   }
 
