@@ -48,12 +48,13 @@ const CertificateVerify = () => {
         // Fetch profile, course in parallel
         const [profileRes, courseRes] = await Promise.all([
           supabase.from("profiles").select("full_name").eq("id", cert.user_id).single(),
-          supabase.from("courses").select("title, school").eq("id", cert.course_id).single(),
+          supabase.from("courses").select("title, school, duration").eq("id", cert.course_id).single(),
         ]);
 
         const studentName = profileRes.data?.full_name || "Student";
         const courseTitle = courseRes.data?.title || "Course";
         const school = courseRes.data?.school || "";
+        const duration = courseRes.data?.duration || null;
 
         // Fetch quiz attempts for average
         const { data: attempts } = await supabase
