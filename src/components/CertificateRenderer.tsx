@@ -207,10 +207,18 @@ const CertificateRenderer = React.forwardRef<HTMLDivElement, CertificateRenderer
 
           if (isQR) {
             const size = Math.round(ph.width || 150);
+            const qrText = [
+              `Name: ${data.studentName}`,
+              `Course: ${data.courseName}`,
+              `School: ${data.schoolName}`,
+              `Date: ${data.issueDate}`,
+              `Certificate: ${data.certificateNumber}`,
+              `Verify: ${data.verificationUrl}`,
+            ].join('\n');
             return (
               <div key={ph.id} style={wrapStyle}>
                 <QRCanvas
-                  text={data.verificationUrl}
+                  text={qrText}
                   size={size}
                   onReady={handleQRReady}
                 />
