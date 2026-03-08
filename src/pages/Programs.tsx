@@ -272,9 +272,7 @@ const Programs = () => {
                         </div>
                       )}
                       <div className="mt-auto flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-primary">
-                          {formatCoursePrice(course.monthly_price, course.price)}
-                        </span>
+                        <CoursePriceDisplay monthlyPrice={course.monthly_price} price={course.price} defaultCurrency={course.price_display_currency || "USD"} />
                         <div className="flex items-center gap-2">
                           <Popover>
                             <PopoverTrigger asChild>

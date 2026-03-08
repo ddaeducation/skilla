@@ -1230,6 +1230,7 @@ const Instructor = () => {
                                 monthly_price: (course as any).monthly_price || 0,
                                 learning_outcomes: ((course as any).learning_outcomes || []).join(", "),
                                 image_url: course.image_url || "",
+                                price_display_currency: (course as any).price_display_currency || "USD",
                               });
                               setCourseDialogOpen(true);
                             }}

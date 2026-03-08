@@ -174,7 +174,7 @@ const AllPrograms = () => {
     const fetchCourses = async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title, description, school, category, price, monthly_price, duration, image_url, instructor_id, instructor_name, learning_outcomes, publish_status")
+        .select("id, title, description, school, category, price, monthly_price, duration, image_url, instructor_id, instructor_name, learning_outcomes, publish_status, price_display_currency")
         .eq("approval_status", "approved")
         .in("publish_status", ["live", "upcoming"]);
 
