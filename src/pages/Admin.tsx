@@ -12,6 +12,7 @@ import { Loader2, Users, BookOpen, FileText, Plus, Pencil, Trash2, X, Mail, Shie
 import AdminCorporateManagement from "@/components/AdminCorporateManagement";
 import AdminCollaborationManagement from "@/components/AdminCollaborationManagement";
 import AdminPromotionalManagement from "@/components/AdminPromotionalManagement";
+import AdminDonationManagement from "@/components/AdminDonationManagement";
 import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -3701,6 +3702,21 @@ const Admin = () => {
                 </div>
               </div>
               <AdminPromotionalManagement />
+            </TabsContent>
+
+            {/* Donations Tab */}
+            <TabsContent value="donations" className="space-y-4">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-semibold flex items-center gap-2">
+                    Donations
+                  </h2>
+                  <p className="text-muted-foreground">
+                    View and manage all donations received
+                  </p>
+                </div>
+              </div>
+              <AdminDonationManagement />
             </TabsContent>
           </Tabs>
         </div>

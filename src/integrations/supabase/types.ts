@@ -1365,6 +1365,45 @@ export type Database = {
           },
         ]
       }
+      donations: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          email: string | null
+          id: string
+          message: string | null
+          name: string | null
+          phone: string | null
+          status: string
+          transaction_ref: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string | null
+          phone?: string | null
+          status?: string
+          transaction_ref?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string | null
+          phone?: string | null
+          status?: string
+          transaction_ref?: string | null
+        }
+        Relationships: []
+      }
       enrollments: {
         Row: {
           amount_paid: number | null

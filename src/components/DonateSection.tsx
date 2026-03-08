@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Heart, GraduationCap, Wifi, BookOpen, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -109,10 +110,21 @@ const DonateSection = () => {
     setIsSubmitting(true);
 
     handleFlutterPayment({
-      callback: (response) => {
+      callback: async (response) => {
         console.log("Donation payment response:", response);
         closePaymentModal();
         if (response.status === "successful" || response.status === "completed") {
+          // Save donation to database
+          await supabase.from("donations").insert({
+            name: formData.name || null,
+            email: formData.email || null,
+            phone: formData.phone || null,
+            amount: donationAmount,
+            currency: currency,
+            message: formData.message || null,
+            transaction_ref: response.tx_ref || response.transaction_id?.toString() || null,
+            status: "completed",
+          });
           toast({
             title: "Thank you for your donation! 🎉",
             description: `Your generous contribution of ${displayAmount} will make a real difference.`,
