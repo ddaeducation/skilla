@@ -554,7 +554,7 @@ const Instructor = () => {
 
       setCourseDialogOpen(false);
       setEditingCourse(null);
-      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "" });
+      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", price_display_currency: "USD" });
       fetchData(currentUserId!);
     } catch (error) {
       console.error("Error saving course:", error);
