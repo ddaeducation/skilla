@@ -175,6 +175,7 @@ const Instructor = () => {
     monthly_price: 0,
     learning_outcomes: "",
     image_url: "",
+    price_display_currency: "USD",
   });
 
   const [lessonForm, setLessonForm] = useState({
