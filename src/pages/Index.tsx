@@ -11,6 +11,7 @@ import DonateSection from "@/components/DonateSection";
 import Footer from "@/components/Footer";
 import CourseAssistant from "@/components/CourseAssistant";
 import SkipNavigation from "@/components/SkipNavigation";
+import WelcomePopup from "@/components/WelcomePopup";
 
 export type NavTab = "home" | "why" | "career" | "faqs" | "donate";
 
