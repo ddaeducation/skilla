@@ -1161,7 +1161,7 @@ const Instructor = () => {
                             <CardDescription>{course.school}</CardDescription>
                           </div>
                           <div className="flex flex-col items-end gap-1">
-                            <Badge variant="secondary">${(course as any).monthly_price ?? course.price}/mo</Badge>
+                            <Badge variant="secondary">{(course as any).pricing_type === "full" ? `$${(course as any).full_price || course.price}` : `$${(course as any).monthly_price ?? course.price}/mo`}</Badge>
                             {(course as any).publish_status === "draft" && (
                               <Badge variant="outline" className="text-muted-foreground border-muted-foreground">
                                 Draft
