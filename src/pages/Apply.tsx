@@ -939,7 +939,7 @@ const Apply = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  {courseMonthlyPrice === 0 ? (
+                  {courseDisplayPrice === 0 ? (
                     <>
                       <CheckCircle className="w-6 h-6 text-green-500" />
                       Confirm Free Enrollment
@@ -952,9 +952,11 @@ const Apply = () => {
                   )}
                 </CardTitle>
                 <CardDescription>
-                  {courseMonthlyPrice === 0 
+                  {courseDisplayPrice === 0 
                     ? "Complete your free enrollment" 
-                    : `Complete your payment for ${numberOfMonths} month${numberOfMonths > 1 ? 's' : ''} via Flutterwave`
+                    : isFullPrice
+                      ? "Complete your one-time payment via Flutterwave for lifetime access"
+                      : `Complete your payment for ${numberOfMonths} month${numberOfMonths > 1 ? 's' : ''} via Flutterwave`
                   }
                 </CardDescription>
               </CardHeader>
