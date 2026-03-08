@@ -988,7 +988,7 @@ const Apply = () => {
                 </div>
 
                 {/* Coupon Section - only show for paid courses */}
-                {courseMonthlyPrice > 0 && (
+                {courseDisplayPrice > 0 && (
                   <div className="mb-6 p-4 border rounded-lg">
                     <div className="flex items-center gap-2 mb-3">
                       <Tag className="w-5 h-5 text-primary" />
