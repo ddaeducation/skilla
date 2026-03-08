@@ -1145,11 +1145,11 @@ const Apply = () => {
                   <div className="flex items-center gap-2 mb-2">
                     <Shield className="w-5 h-5 text-primary" />
                     <span className="font-medium text-primary">
-                      {courseMonthlyPrice === 0 ? "Instant Access" : "Secure Payment"}
+                      {courseDisplayPrice === 0 ? "Instant Access" : "Secure Payment"}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {courseMonthlyPrice === 0 
+                    {courseDisplayPrice === 0 
                       ? "Click below to get instant access to your course. No credit card required."
                       : "Your payment is processed securely through Flutterwave. We never store your card details."
                     }
