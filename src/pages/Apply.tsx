@@ -1099,23 +1099,32 @@ const Apply = () => {
                 )}
 
                 {/* Price Summary */}
-                {courseMonthlyPrice > 0 && (
+                {courseDisplayPrice > 0 && (
                   <div className="mb-6 p-4 bg-muted rounded-lg">
                     <h4 className="font-medium mb-3">Order Summary</h4>
                     <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Monthly Price</span>
-                        <span>{currencySymbol}{convertPrice(courseMonthlyPrice).toLocaleString()}/mo</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Duration</span>
-                        <span>{numberOfMonths} month{numberOfMonths > 1 ? "s" : ""}</span>
-                      </div>
-                      {numberOfMonths > 1 && (
+                      {isFullPrice ? (
                         <div className="flex justify-between">
-                          <span>Subtotal ({numberOfMonths} × {currencySymbol}{convertPrice(courseMonthlyPrice).toLocaleString()})</span>
-                          <span>{currencySymbol}{convertPrice(courseMonthlyPrice * numberOfMonths).toLocaleString()}</span>
+                          <span>Full Price (Lifetime Access)</span>
+                          <span>{currencySymbol}{convertPrice(courseFullPrice).toLocaleString()}</span>
                         </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between">
+                            <span>Monthly Price</span>
+                            <span>{currencySymbol}{convertPrice(courseMonthlyPrice).toLocaleString()}/mo</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Duration</span>
+                            <span>{numberOfMonths} month{numberOfMonths > 1 ? "s" : ""}</span>
+                          </div>
+                          {numberOfMonths > 1 && (
+                            <div className="flex justify-between">
+                              <span>Subtotal ({numberOfMonths} × {currencySymbol}{convertPrice(courseMonthlyPrice).toLocaleString()})</span>
+                              <span>{currencySymbol}{convertPrice(courseMonthlyPrice * numberOfMonths).toLocaleString()}</span>
+                            </div>
+                          )}
+                        </>
                       )}
                       {appliedCoupon && (
                         <div className="flex justify-between text-green-600">
