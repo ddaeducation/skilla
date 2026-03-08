@@ -91,10 +91,12 @@ interface Assignment {
   title: string;
   description: string | null;
   instructions: string | null;
+  rubrics: string | null;
   max_score: number;
   due_date: string | null;
   order_index: number;
   section_id: string | null;
+  ai_grading_enabled: boolean;
 }
 
 interface StudentProgress {
