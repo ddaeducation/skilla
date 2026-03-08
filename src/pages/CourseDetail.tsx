@@ -1670,6 +1670,11 @@ const CourseDetail = () => {
                                     <Button size="lg" className="w-full" disabled variant="outline">
                                       Coming Soon
                                     </Button>
+                                  ) : isEnrolled ? (
+                                    <Button onClick={() => setShowCourseOverview(false)} size="lg" className="w-full">
+                                      <Play className="w-4 h-4 mr-2" />
+                                      Continue Where You Left
+                                    </Button>
                                   ) : (
                                     <Button onClick={handleEnrollClick} size="lg" className="w-full">
                                       <Play className="w-4 h-4 mr-2" />
