@@ -142,12 +142,37 @@ serve(async (req) => {
     const monthsPaid = isFullPriceCourse ? null : (months_paid || 1);
     let subscriptionExpiresAt: string | null = null;
     
-    if (!isFullPriceCourse && monthsPaid) {
+    if (isFullPriceCourse) {
+      // For full-price courses: course duration + 3 weeks
+      // Fetch course duration
+      const { data: courseData } = await supabaseAdmin
+        .from("courses")
+        .select("duration")
+        .eq("id", enrollment.course_id)
+        .single();
+      
+      const expiryDate = new Date();
+      const duration = courseData?.duration?.toLowerCase()?.trim() || "";
+      const numMatch = duration.match(/(\d+)/);
+      const num = numMatch ? parseInt(numMatch[1], 10) : 6;
+      
+      if (duration.includes("week")) {
+        expiryDate.setDate(expiryDate.getDate() + num * 7 + 21);
+      } else if (duration.includes("year")) {
+        expiryDate.setFullYear(expiryDate.getFullYear() + num);
+        expiryDate.setDate(expiryDate.getDate() + 21);
+      } else {
+        // Default: treat as months
+        expiryDate.setMonth(expiryDate.getMonth() + num);
+        expiryDate.setDate(expiryDate.getDate() + 21);
+      }
+      subscriptionExpiresAt = expiryDate.toISOString();
+    } else if (monthsPaid) {
       const expiryDate = new Date();
       expiryDate.setMonth(expiryDate.getMonth() + monthsPaid);
       subscriptionExpiresAt = expiryDate.toISOString();
     }
-    // For full-price courses, subscription_expires_at stays null = lifetime access
+    // Full-price gets duration + 3 weeks; monthly gets months_paid
 
     // Update enrollment status to completed with currency info and subscription dates
     console.log("Updating enrollment status for:", enrollment_id, "full_price:", isFullPriceCourse, "months:", monthsPaid);

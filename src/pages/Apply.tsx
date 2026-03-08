@@ -91,7 +91,32 @@ const Apply = () => {
   const courseMonthlyPrice = isFullPrice ? 0 : (selectedCourse?.monthly_price ?? 0);
   const courseFullPrice = isFullPrice ? (selectedCourse?.full_price ?? 0) : 0;
   const courseDisplayPrice = isFullPrice ? courseFullPrice : courseMonthlyPrice;
-  
+
+/**
+ * Parse course duration string (e.g. "12 weeks", "3 months") and add 3 weeks buffer.
+ */
+const calculateFullPriceExpiry = (duration: string | null): Date => {
+  const now = new Date();
+  if (!duration) {
+    now.setMonth(now.getMonth() + 6);
+    now.setDate(now.getDate() + 21);
+    return now;
+  }
+  const lower = duration.toLowerCase().trim();
+  const numMatch = lower.match(/(\d+)/);
+  const num = numMatch ? parseInt(numMatch[1], 10) : 6;
+  if (lower.includes("week")) {
+    now.setDate(now.getDate() + num * 7 + 21);
+  } else if (lower.includes("year")) {
+    now.setFullYear(now.getFullYear() + num);
+    now.setDate(now.getDate() + 21);
+  } else {
+    now.setMonth(now.getMonth() + num);
+    now.setDate(now.getDate() + 21);
+  }
+  return now;
+};
+
 
   // Calculate discounted price per month
   const calculateDiscountedPrice = (originalPrice: number) => {
@@ -527,8 +552,13 @@ const Apply = () => {
           
           if (existingEnrollment) {
             // Update existing pending enrollment to completed
-            const freeExpiresAt = isFullPrice ? null : new Date();
-            if (freeExpiresAt) freeExpiresAt.setMonth(freeExpiresAt.getMonth() + numberOfMonths);
+            let freeExpiresAt: Date | null = null;
+            if (isFullPrice) {
+              freeExpiresAt = calculateFullPriceExpiry(selectedCourse.duration);
+            } else {
+              freeExpiresAt = new Date();
+              freeExpiresAt.setMonth(freeExpiresAt.getMonth() + numberOfMonths);
+            }
             const { error: updateError } = await supabase
               .from("enrollments")
               .update({
@@ -552,8 +582,13 @@ const Apply = () => {
             enrollmentIdForCoupon = existingEnrollment.id;
           } else {
             // Create new completed enrollment for free course
-            const freeExpiresAt2 = isFullPrice ? null : new Date();
-            if (freeExpiresAt2) freeExpiresAt2.setMonth(freeExpiresAt2.getMonth() + numberOfMonths);
+            let freeExpiresAt2: Date | null = null;
+            if (isFullPrice) {
+              freeExpiresAt2 = calculateFullPriceExpiry(selectedCourse.duration);
+            } else {
+              freeExpiresAt2 = new Date();
+              freeExpiresAt2.setMonth(freeExpiresAt2.getMonth() + numberOfMonths);
+            }
             const { data: newEnrollment, error: enrollError } = await supabase
               .from("enrollments")
               .insert({
