@@ -59,6 +59,7 @@ const AdminPromotionalManagement = () => {
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [step, setStep] = useState(1);
   const { toast } = useToast();
 
   // Form state
@@ -121,6 +122,7 @@ const AdminPromotionalManagement = () => {
     setSelectedSchool("");
     setSelectedCategory("");
     setSelectedCourseId("");
+    setStep(1);
   };
 
   const openEdit = (p: Popup) => {
@@ -235,109 +237,142 @@ const AdminPromotionalManagement = () => {
               <DialogTitle>{editingId ? "Edit Popup" : "Create New Popup"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
-              <div>
-                <Label>Type</Label>
-                <Select value={popupType} onValueChange={setPopupType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {typeOptions.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        <span className="flex items-center gap-2">
-                          <t.icon className="h-4 w-4" /> {t.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Step indicator */}
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold ${step === 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>1</div>
+                <div className="h-0.5 flex-1 bg-muted rounded"><div className={`h-full rounded transition-all ${step === 2 ? 'bg-primary w-full' : 'w-0'}`} /></div>
+                <div className={`flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold ${step === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
               </div>
-              <div>
-                <Label>Title *</Label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Exciting announcement!" />
-              </div>
-              <div>
-                <Label>Message *</Label>
-                <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tell visitors what's happening..." rows={4} />
-              </div>
-              <div>
-                <Label>Image URL (optional)</Label>
-                <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
-              </div>
-              <div>
-                <Label>CTA Button Text</Label>
-                <Input value={ctaText} onChange={(e) => setCtaText(e.target.value)} placeholder="Learn More" />
-              </div>
-              <div>
-                <Label>CTA Link Type</Label>
-                <Select value={ctaMode} onValueChange={(v) => { setCtaMode(v as "manual" | "course"); if (v === "manual") { setSelectedSchool(""); setSelectedCategory(""); setSelectedCourseId(""); } else { setCtaLink(""); } }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">Custom URL</SelectItem>
-                    <SelectItem value="course">Link to Course</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {ctaMode === "manual" ? (
-                <div>
-                  <Label>CTA Link</Label>
-                  <Input value={ctaLink} onChange={(e) => setCtaLink(e.target.value)} placeholder="/programs or https://..." />
-                </div>
-              ) : (
-                <div className="space-y-3 rounded-md border border-border p-3 bg-muted/30">
+
+              {step === 1 && (
+                <>
                   <div>
-                    <Label>School</Label>
-                    <Select value={selectedSchool} onValueChange={(v) => { setSelectedSchool(v); setSelectedCategory(""); setSelectedCourseId(""); setCtaLink(""); }}>
-                      <SelectTrigger><SelectValue placeholder="Select a school..." /></SelectTrigger>
+                    <Label>Type</Label>
+                    <Select value={popupType} onValueChange={setPopupType}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {schoolOptions.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        {typeOptions.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>
+                            <span className="flex items-center gap-2">
+                              <t.icon className="h-4 w-4" /> {t.label}
+                            </span>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  {selectedSchool && (
+                  <div>
+                    <Label>Title *</Label>
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Exciting announcement!" />
+                  </div>
+                  <div>
+                    <Label>Message *</Label>
+                    <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tell visitors what's happening..." rows={4} />
+                  </div>
+                  <div>
+                    <Label>Image URL (optional)</Label>
+                    <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
+                  </div>
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      if (!title.trim() || !message.trim()) {
+                        toast({ title: "Title and message are required", variant: "destructive" });
+                        return;
+                      }
+                      setStep(2);
+                    }}
+                  >
+                    Next Step →
+                  </Button>
+                </>
+              )}
+
+              {step === 2 && (
+                <>
+                  <div>
+                    <Label>CTA Button Text</Label>
+                    <Input value={ctaText} onChange={(e) => setCtaText(e.target.value)} placeholder="Learn More" />
+                  </div>
+                  <div>
+                    <Label>CTA Link Type</Label>
+                    <Select value={ctaMode} onValueChange={(v) => { setCtaMode(v as "manual" | "course"); if (v === "manual") { setSelectedSchool(""); setSelectedCategory(""); setSelectedCourseId(""); } else { setCtaLink(""); } }}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">Custom URL</SelectItem>
+                        <SelectItem value="course">Link to Course</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {ctaMode === "manual" ? (
                     <div>
-                      <Label>Program Type</Label>
-                      <Select value={selectedCategory} onValueChange={(v) => { setSelectedCategory(v); setSelectedCourseId(""); setCtaLink(""); }}>
-                        <SelectTrigger><SelectValue placeholder="Select category..." /></SelectTrigger>
-                        <SelectContent>
-                          {categoryOptions.map((c) => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label>CTA Link</Label>
+                      <Input value={ctaLink} onChange={(e) => setCtaLink(e.target.value)} placeholder="/programs or https://..." />
                     </div>
-                  )}
-                  {selectedSchool && selectedCategory && (
-                    <div>
-                      <Label>Course</Label>
-                      {filteredCourses.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-2">No courses found for this school & category.</p>
-                      ) : (
-                        <Select value={selectedCourseId} onValueChange={(v) => { setSelectedCourseId(v); setCtaLink(`/course/${v}`); }}>
-                          <SelectTrigger><SelectValue placeholder="Select a course..." /></SelectTrigger>
+                  ) : (
+                    <div className="space-y-3 rounded-md border border-border p-3 bg-muted/30">
+                      <div>
+                        <Label>School</Label>
+                        <Select value={selectedSchool} onValueChange={(v) => { setSelectedSchool(v); setSelectedCategory(""); setSelectedCourseId(""); setCtaLink(""); }}>
+                          <SelectTrigger><SelectValue placeholder="Select a school..." /></SelectTrigger>
                           <SelectContent>
-                            {filteredCourses.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                            {schoolOptions.map((s) => (
+                              <SelectItem key={s} value={s}>{s}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                      </div>
+                      {selectedSchool && (
+                        <div>
+                          <Label>Program Type</Label>
+                          <Select value={selectedCategory} onValueChange={(v) => { setSelectedCategory(v); setSelectedCourseId(""); setCtaLink(""); }}>
+                            <SelectTrigger><SelectValue placeholder="Select category..." /></SelectTrigger>
+                            <SelectContent>
+                              {categoryOptions.map((c) => (
+                                <SelectItem key={c} value={c}>{c}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      {selectedSchool && selectedCategory && (
+                        <div>
+                          <Label>Course</Label>
+                          {filteredCourses.length === 0 ? (
+                            <p className="text-sm text-muted-foreground py-2">No courses found for this school & category.</p>
+                          ) : (
+                            <Select value={selectedCourseId} onValueChange={(v) => { setSelectedCourseId(v); setCtaLink(`/course/${v}`); }}>
+                              <SelectTrigger><SelectValue placeholder="Select a course..." /></SelectTrigger>
+                              <SelectContent>
+                                {filteredCourses.map((c) => (
+                                  <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
-                </div>
+                  <div>
+                    <Label>End Date (optional)</Label>
+                    <Input type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={isActive} onCheckedChange={setIsActive} />
+                    <Label>Active</Label>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setStep(1)}>
+                      ← Back
+                    </Button>
+                    <Button onClick={handleSave} disabled={saving} className="flex-1">
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      {editingId ? "Update" : "Create"} Popup
+                    </Button>
+                  </div>
+                </>
               )}
-              <div>
-                <Label>End Date (optional)</Label>
-                <Input type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={isActive} onCheckedChange={setIsActive} />
-                <Label>Active</Label>
-              </div>
-              <Button onClick={handleSave} disabled={saving} className="w-full">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                {editingId ? "Update" : "Create"} Popup
-              </Button>
             </div>
           </DialogContent>
         </Dialog>
