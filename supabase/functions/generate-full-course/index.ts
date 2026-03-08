@@ -90,6 +90,20 @@ CONTENT QUALITY REQUIREMENTS:
 - For technical topics, include code snippets or formulas wrapped in <code> or <pre> tags.
 - Each lesson should have clearly defined learning objectives stated at the beginning.
 
+LINKS AND REFERENCES REQUIREMENTS (CRITICAL - MUST INCLUDE):
+- EVERY lesson content_text MUST include inline hyperlinks throughout the text using <a href="URL" target="_blank" rel="noopener noreferrer">Link Text</a> tags.
+- When mentioning a concept, tool, framework, or resource, link it to a relevant Wikipedia page, official documentation, or authoritative article.
+- Include at least 3-5 inline links PER LESSON within the body text (not just in the resources section).
+- EVERY lesson MUST end with a <h3>Further Reading & Resources</h3> section containing 3-5 curated links to:
+  * Official documentation (MDN, Python docs, W3Schools, etc.)
+  * YouTube tutorials or educational videos
+  * Wikipedia articles for foundational concepts
+  * Khan Academy, Coursera, or other MOOC references
+  * Authoritative blog posts or articles from reputable sources
+  * Relevant books with links to their publisher or Amazon pages
+- All URLs must be real, commonly known, and likely to be valid. Prefer well-known domains.
+- Example inline link: <p>The concept of <a href="https://en.wikipedia.org/wiki/Compound_interest" target="_blank" rel="noopener noreferrer">compound interest</a> is fundamental to understanding long-term wealth building.</p>
+
 QUIZ QUALITY REQUIREMENTS:
 - Questions must test understanding, not just memorization.
 - Include a mix of difficulty levels within each quiz.
@@ -101,6 +115,7 @@ ASSIGNMENT QUALITY REQUIREMENTS:
 - Assignments must be practical, hands-on exercises that apply lesson concepts.
 - Instructions should be detailed with clear deliverables, evaluation criteria, and expected outcomes.
 - Include context about why the assignment matters and what skills it develops.
+- Assignment instructions MUST include links to relevant tools, templates, or reference materials.
 
 CRITICAL: Return ONLY valid JSON, no markdown code fences. The response must be a JSON object.
 
@@ -110,7 +125,7 @@ CRITICAL FORMATTING RULES for all content_text and instructions fields:
 - Never output raw text without HTML tags.
 - Use <strong> for key terms and <em> for emphasis.
 - Use <blockquote> for important notes or quotes.
-- IMPORTANT: At the end of each lesson's content_text, include a <h3>Further Reading & Resources</h3> section with 2-4 real, relevant links to books, articles, documentation, or videos. Use <ul> with <li> items containing <a href="URL" target="_blank" rel="noopener noreferrer">Resource Title</a> tags. Include a mix of free resources (YouTube videos, official docs, Wikipedia, MDN, Khan Academy, etc.) and well-known books. Make sure URLs are real and commonly known.`;
+- Hyperlinks (<a> tags) MUST be used liberally throughout ALL content.`;
 
     const userPrompt = `Create a complete, high-quality course structure for:
 Title: "${courseTitle}"
