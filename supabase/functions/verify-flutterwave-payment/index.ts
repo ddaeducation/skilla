@@ -137,13 +137,20 @@ serve(async (req) => {
       instructorShareUSD 
     });
 
-    // Calculate subscription expiry based on months paid
-    const monthsPaid = months_paid || 1;
-    const subscriptionExpiresAt = new Date();
-    subscriptionExpiresAt.setMonth(subscriptionExpiresAt.getMonth() + monthsPaid);
+    // Calculate subscription expiry based on pricing type
+    const isFullPriceCourse = is_full_price === true;
+    const monthsPaid = isFullPriceCourse ? null : (months_paid || 1);
+    let subscriptionExpiresAt: string | null = null;
+    
+    if (!isFullPriceCourse && monthsPaid) {
+      const expiryDate = new Date();
+      expiryDate.setMonth(expiryDate.getMonth() + monthsPaid);
+      subscriptionExpiresAt = expiryDate.toISOString();
+    }
+    // For full-price courses, subscription_expires_at stays null = lifetime access
 
     // Update enrollment status to completed with currency info and subscription dates
-    console.log("Updating enrollment status for:", enrollment_id, "months:", monthsPaid);
+    console.log("Updating enrollment status for:", enrollment_id, "full_price:", isFullPriceCourse, "months:", monthsPaid);
     const { error: updateError } = await supabaseAdmin
       .from("enrollments")
       .update({
@@ -151,7 +158,7 @@ serve(async (req) => {
         amount_paid: totalAmountOriginal,
         payment_currency: paymentCurrency,
         months_paid: monthsPaid,
-        subscription_expires_at: subscriptionExpiresAt.toISOString(),
+        subscription_expires_at: subscriptionExpiresAt,
       })
       .eq("id", enrollment_id);
 
