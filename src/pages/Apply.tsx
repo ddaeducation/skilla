@@ -25,6 +25,8 @@ interface Course {
   school: string;
   price: number;
   monthly_price: number | null;
+  full_price: number | null;
+  pricing_type: string;
   description: string | null;
   duration: string | null;
 }
