@@ -71,9 +71,32 @@ const AdminPromotionalManagement = () => {
   const [isActive, setIsActive] = useState(true);
   const [endDate, setEndDate] = useState("");
 
+  // CTA course picker state
+  const [ctaMode, setCtaMode] = useState<"manual" | "course">("manual");
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
+  const [selectedSchool, setSelectedSchool] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCourseId, setSelectedCourseId] = useState("");
+
+  const filteredCourses = allCourses.filter((c) => {
+    if (selectedSchool && c.school !== selectedSchool) return false;
+    if (selectedCategory && c.category !== selectedCategory) return false;
+    return true;
+  });
+
   useEffect(() => {
     fetchPopups();
+    fetchCourses();
   }, []);
+
+  const fetchCourses = async () => {
+    const { data } = await supabase
+      .from("courses")
+      .select("id, title, school, category")
+      .in("publish_status", ["live", "upcoming"])
+      .order("title");
+    setAllCourses((data as Course[]) || []);
+  };
 
   const fetchPopups = async () => {
     const { data } = await supabase
