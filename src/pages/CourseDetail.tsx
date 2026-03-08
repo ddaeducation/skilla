@@ -1415,8 +1415,8 @@ const CourseDetail = () => {
           </div>
         )}
 
-        {!isEnrolled ? (
-          /* Not Enrolled View */
+        {(!isEnrolled || showCourseOverview) ? (
+          /* Course Overview View */
           <div className="max-w-6xl mx-auto">
             <Card>
               <CardHeader>
