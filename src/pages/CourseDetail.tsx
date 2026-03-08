@@ -586,9 +586,11 @@ const CourseDetail = () => {
     }
   }, [lessons, quizzes, assignments, progress, quizAttempts, assignmentSubmissions]);
 
+  const courseSlug = course?.slug || courseId;
+
   const handleEnrollClick = () => {
     if (!user) {
-      navigate(`/signin?redirect=/course/${courseId}`);
+      navigate(`/signin?redirect=/course/${courseSlug}`);
       return;
     }
     navigate(`/apply?courseId=${courseId}`);
@@ -596,7 +598,7 @@ const CourseDetail = () => {
 
   const handleFreePreviewClick = async (lesson: LessonContent) => {
     if (!user) {
-      navigate(`/signin?redirect=/course/${courseId}`);
+      navigate(`/signin?redirect=/course/${courseSlug}`);
       return;
     }
     setLoadingPreview(true);
