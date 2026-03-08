@@ -17,3 +17,15 @@ verify_jwt = false
 
 [functions.verify-corporate-invoice-payment]
 verify_jwt = false
+
+[functions.send-admin-invitation]
+verify_jwt = false
+
+[functions.accept-admin-invitation]
+verify_jwt = false
+
+[functions.send-instructor-invitation]
+verify_jwt = false
+
+[functions.accept-instructor-invitation]
+verify_jwt = false
