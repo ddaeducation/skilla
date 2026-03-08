@@ -28,6 +28,7 @@ import {
   DollarSign,
   Building2,
   Handshake,
+  Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -52,6 +53,7 @@ const navigationItems = [
   { id: "collaborations", title: "Collaborations", icon: Handshake },
   { id: "admins", title: "Admins", icon: Shield },
   { id: "certificates", title: "Templates", icon: Award },
+  { id: "promotions", title: "Promotions", icon: Megaphone },
 ];
 
 const accountItems = [

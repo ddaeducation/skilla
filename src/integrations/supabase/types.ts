@@ -2018,6 +2018,54 @@ export type Database = {
         }
         Relationships: []
       }
+      promotional_popups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cta_link: string | null
+          cta_text: string | null
+          end_date: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          message: string
+          popup_type: string
+          start_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          message: string
+          popup_type?: string
+          start_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          message?: string
+          popup_type?: string
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quiz_answers: {
         Row: {
           attempt_id: string
