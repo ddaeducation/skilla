@@ -23,8 +23,21 @@ const CourseAssistant = ({ courseName }: CourseAssistantProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [size, setSize] = useState<"default" | "large" | "full">("default");
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const sizeClasses = {
+    default: "w-96 h-[500px] bottom-6 right-6 rounded-xl",
+    large: "w-[560px] h-[680px] bottom-4 right-4 rounded-xl",
+    full: "w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] bottom-4 right-4 md:w-[720px] md:h-[85vh] rounded-xl",
+  };
+
+  const cycleSize = useCallback(() => {
+    setSize((prev) =>
+      prev === "default" ? "large" : prev === "large" ? "full" : "default"
+    );
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
