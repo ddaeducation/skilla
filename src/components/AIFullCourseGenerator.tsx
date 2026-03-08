@@ -52,7 +52,7 @@ export const AIFullCourseGenerator = ({
         setProgress(prev => Math.min(prev + 5, 85));
       }, 2000);
 
-      const { data, error } = await supabase.functions.invoke("generate-full-course", {
+      const res = await supabase.functions.invoke("generate-full-course", {
         body: {
           courseId,
           courseTitle,
@@ -67,8 +67,19 @@ export const AIFullCourseGenerator = ({
 
       clearInterval(progressInterval);
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      // Handle edge function errors with detailed messages
+      if (res.error) {
+        let errorMessage = "Failed to generate course content.";
+        try {
+          const errorData = await res.error?.context?.json?.();
+          if (errorData?.error) errorMessage = errorData.error;
+        } catch {
+          if (res.data?.error) errorMessage = res.data.error;
+        }
+        throw new Error(errorMessage);
+      }
+      if (res.data?.error) throw new Error(res.data.error);
+      const data = res.data;
 
       setProgress(100);
       setResult(data.summary);
