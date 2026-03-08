@@ -100,6 +100,18 @@ export const CourseInstructorManager = ({
     try {
       setLoading(true);
 
+      // Check if current user is admin
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: adminRole } = await supabase
+          .from("user_roles")
+          .select("id")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        setIsAdmin(!!adminRole);
+      }
+
       // Fetch co-instructors from course_instructors
       const { data: instructorsData } = await supabase
         .from("course_instructors")
