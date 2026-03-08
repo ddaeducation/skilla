@@ -71,9 +71,19 @@ serve(async (req) => {
       .eq("role", "admin")
       .maybeSingle();
 
-    if (course.instructor_id !== user.id && !adminRole) {
+    const isAdmin = !!adminRole;
+
+    if (course.instructor_id !== user.id && !isAdmin) {
       return new Response(
         JSON.stringify({ error: "Only the course owner or admin can send invitations" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Only admins can invite other admins
+    if (role === "admin" && !isAdmin) {
+      return new Response(
+        JSON.stringify({ error: "Only admins can invite other admins" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
