@@ -96,7 +96,7 @@ Return a JSON object with this exact structure:
             {
               "title": "Lesson Title",
               "description": "2-3 sentence plain text description without any HTML tags",
-              "content_text": "<h2>Title</h2><p>Detailed lesson content with multiple paragraphs...</p><h3>Section</h3><p>More content...</p><h3>Key Takeaways</h3><ul><li>Point 1</li><li>Point 2</li></ul>",
+              "content_text": "<h2>Title</h2><p>Detailed lesson content with multiple paragraphs...</p><h3>Section</h3><p>More content...</p><h3>Key Takeaways</h3><ul><li>Point 1</li><li>Point 2</li></ul><h3>Further Reading & Resources</h3><ul><li><a href=\"https://example.com/article\" target=\"_blank\" rel=\"noopener noreferrer\">Relevant Article Title</a> - Brief description</li><li><a href=\"https://youtube.com/watch?v=...\" target=\"_blank\" rel=\"noopener noreferrer\">Video Tutorial Title</a> - Brief description</li></ul>",
               "duration_minutes": 20
             }
           ],
