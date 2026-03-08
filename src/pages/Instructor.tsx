@@ -1234,6 +1234,8 @@ const Instructor = () => {
                                 duration: course.duration || "",
                                 price: course.price,
                                 monthly_price: (course as any).monthly_price || 0,
+                                full_price: (course as any).full_price || 0,
+                                pricing_type: (course as any).pricing_type || "monthly",
                                 learning_outcomes: ((course as any).learning_outcomes || []).join(", "),
                                 image_url: course.image_url || "",
                                 price_display_currency: (course as any).price_display_currency || "USD",
