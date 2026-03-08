@@ -117,6 +117,10 @@ const AdminPromotionalManagement = () => {
     setIsActive(true);
     setEndDate("");
     setEditingId(null);
+    setCtaMode("manual");
+    setSelectedSchool("");
+    setSelectedCategory("");
+    setSelectedCourseId("");
   };
 
   const openEdit = (p: Popup) => {
