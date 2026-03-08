@@ -55,7 +55,7 @@ const CoursePriceDisplay = ({ monthlyPrice, price, defaultCurrency = "USD", pric
           onClick={() => setCurrency("RWF")}
           className={currency === "RWF" ? "bg-accent" : ""}
         >
-          {`RWF ${(effectivePrice * USD_TO_RWF_RATE).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/mo`}
+          {`RWF ${(displayPrice * USD_TO_RWF_RATE).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}${isFullPrice ? '' : '/mo'}`}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
