@@ -1117,11 +1117,12 @@ const Admin = () => {
       description: course.description || "",
       school: course.school,
       category: course.category || "",
-      duration: course.duration || "",
+       duration: course.duration || "",
       price: course.price,
       monthly_price: (course as any).monthly_price || 0,
       learning_outcomes: ((course as any).learning_outcomes || []).join(", "),
       image_url: course.image_url || "",
+      price_display_currency: (course as any).price_display_currency || "USD",
       certificate_template_url: course.certificate_template_url || "",
       instructor_name: course.instructor_name || "",
     });
