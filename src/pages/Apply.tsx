@@ -805,7 +805,10 @@ const Apply = () => {
                           <p className="font-semibold text-lg">{programFromUrl}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-primary">${courseMonthlyPrice}/month</p>
+                          <p className="text-2xl font-bold text-primary">
+                            {isFullPrice ? `$${courseFullPrice}` : `$${courseMonthlyPrice}/month`}
+                          </p>
+                          {isFullPrice && <p className="text-xs text-muted-foreground">One-time payment • Lifetime access</p>}
                         </div>
                       </div>
                     </div>
