@@ -12,6 +12,7 @@ import { Loader2, Users, BookOpen, FileText, Plus, Pencil, Trash2, X, Mail, Shie
 import AdminCorporateManagement from "@/components/AdminCorporateManagement";
 import AdminCollaborationManagement from "@/components/AdminCollaborationManagement";
 import AdminPromotionalManagement from "@/components/AdminPromotionalManagement";
+import AdminDonationManagement from "@/components/AdminDonationManagement";
 import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
