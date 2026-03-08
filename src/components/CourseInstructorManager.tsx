@@ -323,87 +323,64 @@ export const CourseInstructorManager = ({
             <CardDescription>Manage instructors for {courseName}</CardDescription>
           </div>
           <div className="flex gap-2 flex-wrap">
-            {/* Transfer Ownership */}
-            <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <ArrowRightLeft className="h-4 w-4 mr-2" />
-                  Transfer Ownership
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Transfer Course Ownership</DialogTitle>
-                  <DialogDescription>
-                    Send an invitation to transfer full ownership of this course to another instructor. They must accept the invite via email.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="transfer-email">Recipient Email</Label>
-                    <Input
-                      id="transfer-email"
-                      type="email"
-                      placeholder="instructor@example.com"
-                      value={transferEmail}
-                      onChange={(e) => setTransferEmail(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleInviteOwner()}
-                    />
-                  </div>
-                  <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm text-amber-800">
-                    ⚠️ The recipient will become the primary owner once they accept. The invitation link expires in 7 days.
-                  </div>
-                  <Button
-                    onClick={handleInviteOwner}
-                    disabled={sendingTransfer || !transferEmail.trim()}
-                    className="w-full"
-                  >
-                    {sendingTransfer ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending...</>
-                    ) : (
-                      <><Mail className="mr-2 h-4 w-4" />Send Transfer Invitation</>
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Add Co-Instructor */}
-            <Dialog open={coDialogOpen} onOpenChange={setCoDialogOpen}>
+            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Invite Co-Instructor
+                  Invite Collaborator
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Invite Co-Instructor</DialogTitle>
+                  <DialogTitle>Invite Collaborator</DialogTitle>
                   <DialogDescription>
-                    Send an email invitation to add someone as a co-instructor on this course. The invitation expires in 7 days.
+                    Send an email invitation to add someone as a collaborator on this course. Choose the role and enter their email. The invitation expires in 7 days.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="co-email">Instructor Email</Label>
+                    <Label htmlFor="invite-role">Role</Label>
+                    <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "co_instructor" | "primary" | "admin")}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="co_instructor">Co-Instructor</SelectItem>
+                        <SelectItem value="primary">Owner (Primary Instructor)</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="invite-email">Email Address</Label>
                     <Input
-                      id="co-email"
+                      id="invite-email"
                       type="email"
-                      placeholder="instructor@example.com"
-                      value={coEmail}
-                      onChange={(e) => setCoEmail(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleInviteCoInstructor()}
+                      placeholder="person@example.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
                     />
                   </div>
+                  {inviteRole === "primary" && (
+                    <div className="bg-warning/10 border border-warning/30 rounded-md p-3 text-sm text-warning-foreground">
+                      ⚠️ The recipient will become the primary owner once they accept.
+                    </div>
+                  )}
+                  {inviteRole === "admin" && (
+                    <div className="bg-warning/10 border border-warning/30 rounded-md p-3 text-sm text-warning-foreground">
+                      ⚠️ The recipient will be granted platform-wide Admin access once they accept.
+                    </div>
+                  )}
                   <Button
-                    onClick={handleInviteCoInstructor}
-                    disabled={sendingCo || !coEmail.trim()}
+                    onClick={handleSendInvitation}
+                    disabled={sendingInvite || !inviteEmail.trim()}
                     className="w-full"
                   >
-                    {sendingCo ? (
+                    {sendingInvite ? (
                       <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending...</>
                     ) : (
-                      <><Mail className="mr-2 h-4 w-4" />Send Invitation</>
+                      <><Mail className="mr-2 h-4 w-4" />Send {getRoleLabel(inviteRole)} Invitation</>
                     )}
                   </Button>
                 </div>
