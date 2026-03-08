@@ -57,7 +57,7 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
       setIsSearching(true);
       const { data } = await supabase
         .from("courses")
-        .select("id, title, school")
+        .select("id, title, school, slug")
         .ilike("title", `%${searchQuery}%`)
         .in("publish_status", ["live", "upcoming"])
         .limit(8);
