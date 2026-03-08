@@ -557,8 +557,13 @@ const Apply = () => {
             enrollmentIdForCoupon = existingEnrollment.id;
           } else {
             // Create new completed enrollment for free course
-            const freeExpiresAt2 = isFullPrice ? null : new Date();
-            if (freeExpiresAt2) freeExpiresAt2.setMonth(freeExpiresAt2.getMonth() + numberOfMonths);
+            let freeExpiresAt2: Date | null = null;
+            if (isFullPrice) {
+              freeExpiresAt2 = calculateFullPriceExpiry(selectedCourse.duration);
+            } else {
+              freeExpiresAt2 = new Date();
+              freeExpiresAt2.setMonth(freeExpiresAt2.getMonth() + numberOfMonths);
+            }
             const { data: newEnrollment, error: enrollError } = await supabase
               .from("enrollments")
               .insert({
