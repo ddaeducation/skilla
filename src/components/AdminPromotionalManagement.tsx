@@ -59,6 +59,7 @@ const AdminPromotionalManagement = () => {
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [step, setStep] = useState(1);
   const { toast } = useToast();
 
   // Form state
