@@ -255,7 +255,7 @@ export const CourseInstructorManager = ({
         headers: { Authorization: `Bearer ${session?.access_token}` },
       });
 
-      const roleLabel = selectedRole === "primary" ? "Ownership Transfer" : "Co-Instructor";
+      const roleLabel = getRoleLabel(selectedRole);
       handleInvitationResponse(res, student.email, roleLabel, () => {
         setSelectedStudentId("");
         setSelectedRole("co_instructor");
