@@ -3687,6 +3687,21 @@ const Admin = () => {
               </div>
               <AdminCollaborationManagement />
             </TabsContent>
+
+            {/* Promotions Tab */}
+            <TabsContent value="promotions" className="space-y-4">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-semibold flex items-center gap-2">
+                    Promotional Popups
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Create announcements, promotions, live session alerts, and upcoming activities shown to visitors
+                  </p>
+                </div>
+              </div>
+              <AdminPromotionalManagement />
+            </TabsContent>
           </Tabs>
         </div>
       </main>
