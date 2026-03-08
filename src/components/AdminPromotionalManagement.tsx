@@ -93,7 +93,7 @@ const AdminPromotionalManagement = () => {
   const fetchCourses = async () => {
     const { data } = await supabase
       .from("courses")
-      .select("id, title, school, category")
+      .select("id, title, school, category, slug")
       .in("publish_status", ["live", "upcoming"])
       .order("title");
     setAllCourses((data as Course[]) || []);
