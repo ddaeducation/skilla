@@ -124,7 +124,7 @@ const CourseCard = ({ course, instructor, ratingData }: {
           </>
         )}
         <div className="mt-auto space-y-3">
-          <span className="text-sm font-semibold text-primary block">{formatCoursePrice(course.monthly_price, course.price)}</span>
+          <CoursePriceDisplay monthlyPrice={course.monthly_price} price={course.price} defaultCurrency={course.price_display_currency || "USD"} />
           <div className="flex flex-wrap items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
