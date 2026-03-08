@@ -149,6 +149,7 @@ const CourseDetail = () => {
   const [previewLesson, setPreviewLesson] = useState<LessonContent | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [selectedCurriculumSection, setSelectedCurriculumSection] = useState<string | null>(null);
+  const [showCourseOverview, setShowCourseOverview] = useState(true);
   const [textPageInfo, setTextPageInfo] = useState<{ current: number; total: number }>({ current: 1, total: 1 });
   // Get active lesson ID for time tracking
   const activeLessonId = activeContent?.type === "lesson" ? activeContent.data.id : undefined;
