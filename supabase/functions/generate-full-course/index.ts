@@ -319,6 +319,7 @@ IMPORTANT: All "description" fields MUST be plain text only - NO HTML tags whats
               description: stripHtml(unit.assignment.description) || null,
               instructions: unit.assignment.instructions || null,
               max_score: unit.assignment.max_score || 100,
+              ai_grading_enabled: unit.assignment.ai_grading_enabled ?? true,
               order_index: contentIndex++,
             });
 

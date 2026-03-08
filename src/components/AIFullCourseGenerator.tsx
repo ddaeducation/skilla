@@ -195,8 +195,8 @@ export const AIFullCourseGenerator = ({
                   <Label>Lessons per Module</Label>
                   <Input
                     type="number"
-                    min={1}
-                    max={6}
+                    min={2}
+                    max={10}
                     value={lessonsPerModule}
                     onChange={(e) => setLessonsPerModule(Number(e.target.value))}
                     disabled={generating}
