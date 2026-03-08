@@ -551,8 +551,8 @@ const Apply = () => {
             enrollmentIdForCoupon = existingEnrollment.id;
           } else {
             // Create new completed enrollment for free course
-            const freeExpiresAt2 = new Date();
-            freeExpiresAt2.setMonth(freeExpiresAt2.getMonth() + numberOfMonths);
+            const freeExpiresAt2 = isFullPrice ? null : new Date();
+            if (freeExpiresAt2) freeExpiresAt2.setMonth(freeExpiresAt2.getMonth() + numberOfMonths);
             const { data: newEnrollment, error: enrollError } = await supabase
               .from("enrollments")
               .insert({
@@ -560,8 +560,8 @@ const Apply = () => {
                 course_id: selectedCourse.id,
                 payment_status: "completed",
                 amount_paid: 0,
-                months_paid: numberOfMonths,
-                subscription_expires_at: freeExpiresAt2.toISOString(),
+                months_paid: isFullPrice ? null : numberOfMonths,
+                subscription_expires_at: freeExpiresAt2 ? freeExpiresAt2.toISOString() : null,
               })
               .select("id")
               .single();
