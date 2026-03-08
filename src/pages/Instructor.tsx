@@ -175,6 +175,7 @@ const Instructor = () => {
     monthly_price: 0,
     learning_outcomes: "",
     image_url: "",
+    price_display_currency: "USD",
   });
 
   const [lessonForm, setLessonForm] = useState({
@@ -519,6 +520,7 @@ const Instructor = () => {
             monthly_price: courseForm.monthly_price,
             learning_outcomes: learningOutcomesArray,
             image_url: courseForm.image_url || null,
+            price_display_currency: courseForm.price_display_currency || "USD",
           })
           .eq("id", editingCourse.id);
 
@@ -537,6 +539,7 @@ const Instructor = () => {
             monthly_price: courseForm.monthly_price,
             learning_outcomes: learningOutcomesArray,
             image_url: courseForm.image_url || null,
+            price_display_currency: courseForm.price_display_currency || "USD",
             instructor_id: currentUserId,
             approval_status: "approved",
             publish_status: "draft",
@@ -551,7 +554,7 @@ const Instructor = () => {
 
       setCourseDialogOpen(false);
       setEditingCourse(null);
-      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "" });
+      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", price_display_currency: "USD" });
       fetchData(currentUserId!);
     } catch (error) {
       console.error("Error saving course:", error);
@@ -953,7 +956,7 @@ const Instructor = () => {
                     <Button onClick={() => {
                       setEditingCourse(null);
                       setCourseFormStep(1);
-                      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "" });
+                      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", price_display_currency: "USD" });
                     }}>
                       <Plus className="mr-2 h-4 w-4" />
                       Create Course
@@ -1059,6 +1062,17 @@ const Instructor = () => {
                                 onChange={(e) => setCourseForm({ ...courseForm, monthly_price: Number(e.target.value) })}
                                 placeholder="e.g., 20"
                               />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Display Currency on Card</Label>
+                              <select
+                                className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                value={courseForm.price_display_currency}
+                                onChange={(e) => setCourseForm({ ...courseForm, price_display_currency: e.target.value })}
+                              >
+                                <option value="USD">USD ($)</option>
+                                <option value="RWF">RWF</option>
+                              </select>
                             </div>
                           </div>
                           <div className="space-y-2">
@@ -1216,6 +1230,7 @@ const Instructor = () => {
                                 monthly_price: (course as any).monthly_price || 0,
                                 learning_outcomes: ((course as any).learning_outcomes || []).join(", "),
                                 image_url: course.image_url || "",
+                                price_display_currency: (course as any).price_display_currency || "USD",
                               });
                               setCourseDialogOpen(true);
                             }}

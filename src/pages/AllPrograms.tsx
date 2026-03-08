@@ -5,7 +5,8 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle, Star, User, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getFallbackRating, formatCoursePrice } from "@/lib/courseUtils";
+import { getFallbackRating } from "@/lib/courseUtils";
+import CoursePriceDisplay from "@/components/CoursePriceDisplay";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -27,6 +28,7 @@ interface Course {
   instructor_name: string | null;
   learning_outcomes: string[] | null;
   publish_status: string;
+  price_display_currency?: string;
 }
 
 interface InstructorInfo {
@@ -122,7 +124,7 @@ const CourseCard = ({ course, instructor, ratingData }: {
           </>
         )}
         <div className="mt-auto space-y-3">
-          <span className="text-sm font-semibold text-primary block">{formatCoursePrice(course.monthly_price, course.price)}</span>
+          <CoursePriceDisplay monthlyPrice={course.monthly_price} price={course.price} defaultCurrency={course.price_display_currency || "USD"} />
           <div className="flex flex-wrap items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
@@ -172,7 +174,7 @@ const AllPrograms = () => {
     const fetchCourses = async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title, description, school, category, price, monthly_price, duration, image_url, instructor_id, instructor_name, learning_outcomes, publish_status")
+        .select("id, title, description, school, category, price, monthly_price, duration, image_url, instructor_id, instructor_name, learning_outcomes, publish_status, price_display_currency")
         .eq("approval_status", "approved")
         .in("publish_status", ["live", "upcoming"]);
 

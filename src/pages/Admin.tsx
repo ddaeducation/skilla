@@ -285,7 +285,7 @@ const Admin = () => {
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [courseForm, setCourseForm] = useState({
-    title: "",
+     title: "",
     description: "",
     school: "",
     category: "",
@@ -296,6 +296,7 @@ const Admin = () => {
     image_url: "",
     certificate_template_url: "",
     instructor_name: "",
+    price_display_currency: "USD",
   });
   
   const [lessonForm, setLessonForm] = useState({
@@ -1062,11 +1063,12 @@ const Admin = () => {
             category: courseForm.category || null,
             duration: courseForm.duration || null,
             price: courseForm.price,
-            monthly_price: courseForm.monthly_price,
+             monthly_price: courseForm.monthly_price,
             learning_outcomes: learningOutcomesArray,
             image_url: courseForm.image_url || null,
             certificate_template_url: courseForm.certificate_template_url || null,
             instructor_name: courseForm.instructor_name || null,
+            price_display_currency: courseForm.price_display_currency || "USD",
           })
           .eq("id", editingCourse.id);
 
@@ -1082,11 +1084,12 @@ const Admin = () => {
             category: courseForm.category || null,
             duration: courseForm.duration || null,
             price: courseForm.price,
-            monthly_price: courseForm.monthly_price,
+             monthly_price: courseForm.monthly_price,
             learning_outcomes: learningOutcomesArray,
             image_url: courseForm.image_url || null,
             certificate_template_url: courseForm.certificate_template_url || null,
             instructor_name: courseForm.instructor_name || null,
+            price_display_currency: courseForm.price_display_currency || "USD",
           });
 
         if (error) throw error;
@@ -1095,7 +1098,7 @@ const Admin = () => {
 
       setCourseDialogOpen(false);
       setEditingCourse(null);
-      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", certificate_template_url: "", instructor_name: "" });
+      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", certificate_template_url: "", instructor_name: "", price_display_currency: "USD" });
       fetchData();
     } catch (error) {
       console.error("Error saving course:", error);
@@ -1114,11 +1117,12 @@ const Admin = () => {
       description: course.description || "",
       school: course.school,
       category: course.category || "",
-      duration: course.duration || "",
+       duration: course.duration || "",
       price: course.price,
       monthly_price: (course as any).monthly_price || 0,
       learning_outcomes: ((course as any).learning_outcomes || []).join(", "),
       image_url: course.image_url || "",
+      price_display_currency: (course as any).price_display_currency || "USD",
       certificate_template_url: course.certificate_template_url || "",
       instructor_name: course.instructor_name || "",
     });
@@ -1649,7 +1653,7 @@ const Admin = () => {
                   <DialogTrigger asChild>
                     <Button onClick={() => {
                       setEditingCourse(null);
-                      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", certificate_template_url: "", instructor_name: "" });
+                      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", certificate_template_url: "", instructor_name: "", price_display_currency: "USD" });
                     }}>
                       <Plus className="mr-2 h-4 w-4" />
                       Add Course
@@ -1727,9 +1731,20 @@ const Admin = () => {
                           <Input
                             type="number"
                             value={courseForm.monthly_price}
-                            onChange={(e) => setCourseForm({ ...courseForm, monthly_price: Number(e.target.value) })}
+                             onChange={(e) => setCourseForm({ ...courseForm, monthly_price: Number(e.target.value) })}
                             placeholder="e.g., 20"
                           />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Display Currency on Card</Label>
+                          <select
+                            className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                            value={courseForm.price_display_currency}
+                            onChange={(e) => setCourseForm({ ...courseForm, price_display_currency: e.target.value })}
+                          >
+                            <option value="USD">USD ($)</option>
+                            <option value="RWF">RWF</option>
+                          </select>
                         </div>
                       </div>
                       <div className="space-y-2">

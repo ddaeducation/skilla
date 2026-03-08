@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Clock, Video, Award, ArrowLeft, CheckCircle, Loader2, Star, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getFallbackRating, formatCoursePrice } from "@/lib/courseUtils";
+import { getFallbackRating } from "@/lib/courseUtils";
+import CoursePriceDisplay from "@/components/CoursePriceDisplay";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,6 +25,7 @@ interface Course {
   publish_status: string;
   instructor_id: string | null;
   instructor_name: string | null;
+  price_display_currency?: string;
 }
 
 interface InstructorInfo {
@@ -85,7 +87,7 @@ const Programs = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title, description, price, monthly_price, duration, image_url, learning_outcomes, category, publish_status, instructor_id, instructor_name")
+        .select("id, title, description, price, monthly_price, duration, image_url, learning_outcomes, category, publish_status, instructor_id, instructor_name, price_display_currency")
         .eq("category", dbCategory)
         .eq("approval_status", "approved")
         .in("publish_status", ["live", "upcoming"]);
@@ -270,9 +272,7 @@ const Programs = () => {
                         </div>
                       )}
                       <div className="mt-auto flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-primary">
-                          {formatCoursePrice(course.monthly_price, course.price)}
-                        </span>
+                        <CoursePriceDisplay monthlyPrice={course.monthly_price} price={course.price} defaultCurrency={course.price_display_currency || "USD"} />
                         <div className="flex items-center gap-2">
                           <Popover>
                             <PopoverTrigger asChild>
