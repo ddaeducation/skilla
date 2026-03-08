@@ -149,6 +149,7 @@ const CourseDetail = () => {
   const [previewLesson, setPreviewLesson] = useState<LessonContent | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [selectedCurriculumSection, setSelectedCurriculumSection] = useState<string | null>(null);
+  const [showCourseOverview, setShowCourseOverview] = useState(true);
   const [textPageInfo, setTextPageInfo] = useState<{ current: number; total: number }>({ current: 1, total: 1 });
   // Get active lesson ID for time tracking
   const activeLessonId = activeContent?.type === "lesson" ? activeContent.data.id : undefined;
@@ -1414,8 +1415,8 @@ const CourseDetail = () => {
           </div>
         )}
 
-        {!isEnrolled ? (
-          /* Not Enrolled View */
+        {(!isEnrolled || showCourseOverview) ? (
+          /* Course Overview View */
           <div className="max-w-6xl mx-auto">
             <Card>
               <CardHeader>
@@ -1668,6 +1669,11 @@ const CourseDetail = () => {
                                   {course.publish_status === "upcoming" ? (
                                     <Button size="lg" className="w-full" disabled variant="outline">
                                       Coming Soon
+                                    </Button>
+                                  ) : isEnrolled ? (
+                                    <Button onClick={() => setShowCourseOverview(false)} size="lg" className="w-full">
+                                      <Play className="w-4 h-4 mr-2" />
+                                      Continue Where You Left
                                     </Button>
                                   ) : (
                                     <Button onClick={handleEnrollClick} size="lg" className="w-full">
