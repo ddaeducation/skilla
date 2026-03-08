@@ -199,6 +199,7 @@ Make the content genuinely educational and detailed - imagine writing for a real
           { role: "user", content: userPrompt },
         ],
         temperature: 0.7,
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -222,15 +223,27 @@ Make the content genuinely educational and detailed - imagine writing for a real
     const content = data.choices?.[0]?.message?.content;
     if (!content) throw new Error("No content generated");
 
-    // Parse JSON
+    // Parse JSON - handle markdown fences and control characters
     let courseData;
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("No JSON found");
-      courseData = JSON.parse(jsonMatch[0]);
+      // Strip markdown code fences if present
+      let cleaned = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+      // Remove control characters that break JSON parsing (except normal whitespace)
+      cleaned = cleaned.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, ' ');
+      courseData = JSON.parse(cleaned);
     } catch (e) {
-      console.error("Parse error:", e, "Content:", content.substring(0, 500));
-      throw new Error("Failed to parse generated course structure");
+      console.error("Parse error:", e, "Content (first 500):", content.substring(0, 500));
+      // Second attempt: extract JSON object
+      try {
+        let extracted = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+        extracted = extracted.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, ' ');
+        const jsonMatch = extracted.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("No JSON found");
+        courseData = JSON.parse(jsonMatch[0]);
+      } catch (e2) {
+        console.error("Second parse attempt failed:", e2);
+        throw new Error("Failed to parse generated course structure. Please try again.");
+      }
     }
 
     // Strip HTML tags from descriptions
