@@ -195,7 +195,7 @@ const CourseDetail = () => {
 
   useEffect(() => {
     checkUserAndCourse();
-  }, [courseId]);
+  }, [courseParam]);
 
   const checkUserAndCourse = async () => {
     const {

@@ -299,7 +299,7 @@ const Programs = () => {
                             </PopoverContent>
                           </Popover>
                           <Button size="sm" variant="outline" asChild>
-                            <Link to={`/course/${course.id}`}>View Details</Link>
+                            <Link to={`/course/${(course as any).slug || course.id}`}>View Details</Link>
                           </Button>
                           {isUpcoming ? (
                             <Button size="sm" disabled variant="outline">
@@ -307,7 +307,7 @@ const Programs = () => {
                             </Button>
                           ) : (
                             <Button asChild size="sm" className="bg-primary hover:bg-primary/90">
-                              <Link to={`/course/${course.id}`}>Enroll Now</Link>
+                              <Link to={`/course/${(course as any).slug || course.id}`}>Enroll Now</Link>
                             </Button>
                           )}
                         </div>

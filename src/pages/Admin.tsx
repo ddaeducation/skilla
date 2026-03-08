@@ -1092,7 +1092,8 @@ const Admin = () => {
             certificate_template_url: courseForm.certificate_template_url || null,
             instructor_name: courseForm.instructor_name || null,
             price_display_currency: courseForm.price_display_currency || "USD",
-          });
+            slug: "",
+          } as any);
 
         if (error) throw error;
         toast({ title: "Course created successfully" });
