@@ -956,7 +956,7 @@ const Instructor = () => {
                     <Button onClick={() => {
                       setEditingCourse(null);
                       setCourseFormStep(1);
-                      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "" });
+                      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", price_display_currency: "USD" });
                     }}>
                       <Plus className="mr-2 h-4 w-4" />
                       Create Course
