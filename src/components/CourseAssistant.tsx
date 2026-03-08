@@ -155,7 +155,7 @@ const CourseAssistant = ({ courseName }: CourseAssistantProps) => {
 
       {/* Chat Window */}
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 w-96 h-[500px] shadow-2xl z-50 flex flex-col">
+        <Card className={`fixed shadow-2xl z-50 flex flex-col transition-all duration-200 ${sizeClasses[size]}`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
@@ -166,9 +166,14 @@ const CourseAssistant = ({ courseName }: CourseAssistantProps) => {
                 <p className="text-xs text-muted-foreground">Ask me anything</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" onClick={cycleSize} className="h-8 w-8" title="Resize">
+                {size === "full" ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => { setIsOpen(false); setSize("default"); }} className="h-8 w-8">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
 
           <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
