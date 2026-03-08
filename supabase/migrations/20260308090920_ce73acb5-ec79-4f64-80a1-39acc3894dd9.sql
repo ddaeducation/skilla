@@ -1,0 +1,1 @@
+ALTER TABLE public.assignments ADD COLUMN ai_grading_enabled boolean NOT NULL DEFAULT false;

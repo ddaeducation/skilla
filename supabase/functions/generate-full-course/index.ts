@@ -44,8 +44,8 @@ serve(async (req) => {
       courseId,
       courseTitle,
       courseDescription,
-      modulesCount = 4,
-      lessonsPerModule = 3,
+      modulesCount = 5,
+      lessonsPerModule = 5,
       includeQuizzes = true,
       includeAssignments = true,
       difficulty = "intermediate",
@@ -123,8 +123,9 @@ Return a JSON object with this exact structure:
             "title": "Assignment: Practical Exercise",
             "description": "Plain text brief description without HTML tags",
             "instructions": "<h3>Overview</h3><p>Instructions...</p><ol><li>Step 1</li><li>Step 2</li></ol>",
-            "max_score": 100
-          }` : "null"}
+            "max_score": 100,
+              "ai_grading_enabled": true
+            }` : "null"}
         }
       ]
     }
@@ -319,6 +320,7 @@ IMPORTANT: All "description" fields MUST be plain text only - NO HTML tags whats
               description: stripHtml(unit.assignment.description) || null,
               instructions: unit.assignment.instructions || null,
               max_score: unit.assignment.max_score || 100,
+              ai_grading_enabled: unit.assignment.ai_grading_enabled ?? true,
               order_index: contentIndex++,
             });
 

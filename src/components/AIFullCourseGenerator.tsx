@@ -28,8 +28,8 @@ export const AIFullCourseGenerator = ({
   const [open, setOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [description, setDescription] = useState(courseDescription || "");
-  const [modulesCount, setModulesCount] = useState(4);
-  const [lessonsPerModule, setLessonsPerModule] = useState(3);
+  const [modulesCount, setModulesCount] = useState(5);
+  const [lessonsPerModule, setLessonsPerModule] = useState(5);
   const [includeQuizzes, setIncludeQuizzes] = useState(true);
   const [includeAssignments, setIncludeAssignments] = useState(true);
   const [difficulty, setDifficulty] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
@@ -185,7 +185,7 @@ export const AIFullCourseGenerator = ({
                   <Input
                     type="number"
                     min={2}
-                    max={8}
+                    max={12}
                     value={modulesCount}
                     onChange={(e) => setModulesCount(Number(e.target.value))}
                     disabled={generating}
@@ -195,8 +195,8 @@ export const AIFullCourseGenerator = ({
                   <Label>Lessons per Module</Label>
                   <Input
                     type="number"
-                    min={1}
-                    max={6}
+                    min={2}
+                    max={10}
                     value={lessonsPerModule}
                     onChange={(e) => setLessonsPerModule(Number(e.target.value))}
                     disabled={generating}

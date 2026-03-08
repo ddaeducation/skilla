@@ -91,10 +91,12 @@ interface Assignment {
   title: string;
   description: string | null;
   instructions: string | null;
+  rubrics: string | null;
   max_score: number;
   due_date: string | null;
   order_index: number;
   section_id: string | null;
+  ai_grading_enabled: boolean;
 }
 
 interface StudentProgress {
@@ -1799,8 +1801,10 @@ const CourseDetail = () => {
           assignmentTitle={selectedAssignment.title}
           assignmentDescription={selectedAssignment.description}
           instructions={selectedAssignment.instructions}
+          rubrics={selectedAssignment.rubrics}
           maxScore={selectedAssignment.max_score}
           dueDate={selectedAssignment.due_date}
+          aiGradingEnabled={selectedAssignment.ai_grading_enabled}
           open={assignmentOpen}
           onClose={() => {
             setAssignmentOpen(false);

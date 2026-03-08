@@ -43,6 +43,7 @@ interface StudentAssignmentSubmissionProps {
   rubrics?: string | null;
   maxScore: number;
   dueDate?: string | null;
+  aiGradingEnabled?: boolean;
   open: boolean;
   onClose: () => void;
   onSubmit?: () => void;
@@ -73,6 +74,7 @@ export const StudentAssignmentSubmission = ({
   rubrics,
   maxScore,
   dueDate,
+  aiGradingEnabled = false,
   open,
   onClose,
   onSubmit,
@@ -84,6 +86,7 @@ export const StudentAssignmentSubmission = ({
   const [submissionText, setSubmissionText] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [aiGrading, setAiGrading] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -216,10 +219,59 @@ export const StudentAssignmentSubmission = ({
         if (error) throw error;
       }
 
-      toast({
-        title: "Success!",
-        description: "Your assignment has been submitted.",
-      });
+      // If AI grading is enabled and there's text to grade, trigger AI grading
+      if (aiGradingEnabled && submissionText.trim()) {
+        setAiGrading(true);
+        try {
+          const { data: gradeData, error: gradeError } = await supabase.functions.invoke("ai-grade-answer", {
+            body: {
+              questionText: `${assignmentTitle}${instructions ? '\n\nInstructions: ' + instructions.replace(/<[^>]*>/g, '') : ''}`,
+              questionType: "assignment",
+              studentAnswer: submissionText.trim(),
+              maxPoints: maxScore,
+              rubric: rubrics || undefined,
+            },
+          });
+
+          if (!gradeError && gradeData && !gradeData.error) {
+            // Get the submission ID to update
+            const { data: latestSub } = await supabase
+              .from("assignment_submissions")
+              .select("id")
+              .eq("assignment_id", assignmentId)
+              .eq("user_id", user.id)
+              .order("submitted_at", { ascending: false })
+              .limit(1)
+              .single();
+
+            if (latestSub) {
+              await supabase
+                .from("assignment_submissions")
+                .update({
+                  score: gradeData.score,
+                  feedback: gradeData.feedback,
+                  graded_at: new Date().toISOString(),
+                })
+                .eq("id", latestSub.id);
+            }
+
+            toast({
+              title: "AI Grading Complete!",
+              description: `Score: ${gradeData.score}/${maxScore}. ${gradeData.feedback}`,
+            });
+          }
+        } catch (gradeErr) {
+          console.error("AI grading error:", gradeErr);
+          // Don't fail the submission if grading fails
+        } finally {
+          setAiGrading(false);
+        }
+      } else {
+        toast({
+          title: "Success!",
+          description: "Your assignment has been submitted.",
+        });
+      }
 
       onSubmit?.();
       onClose();
@@ -381,8 +433,13 @@ export const StudentAssignmentSubmission = ({
                   <Button variant="outline" onClick={onClose}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSubmit} disabled={submitting}>
-                    {submitting ? (
+                  <Button onClick={handleSubmit} disabled={submitting || aiGrading}>
+                    {aiGrading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        AI Grading...
+                      </>
+                    ) : submitting ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Submitting...
