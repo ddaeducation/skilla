@@ -179,6 +179,55 @@ const Apply = () => {
       email: session.user.email || ""
     }));
 
+    // Check if user is already enrolled in the selected course
+    const courseIdFromUrl = searchParams.get('courseId');
+    if (courseIdFromUrl) {
+      const { data: existingEnrollment } = await supabase
+        .from("enrollments")
+        .select("id, subscription_expires_at")
+        .eq("user_id", session.user.id)
+        .eq("course_id", courseIdFromUrl)
+        .eq("payment_status", "completed")
+        .maybeSingle();
+
+      if (existingEnrollment) {
+        const isExpired = existingEnrollment.subscription_expires_at && 
+          new Date(existingEnrollment.subscription_expires_at) < new Date();
+        if (!isExpired) {
+          toast({
+            title: "Already Enrolled",
+            description: "You are already enrolled in this course. Redirecting...",
+          });
+          navigate(`/course/${courseIdFromUrl}`);
+          return;
+        }
+      }
+
+      // Also check if user is the instructor
+      const { data: courseData } = await supabase
+        .from("courses")
+        .select("instructor_id")
+        .eq("id", courseIdFromUrl)
+        .maybeSingle();
+
+      if (courseData?.instructor_id === session.user.id) {
+        navigate(`/course/${courseIdFromUrl}`);
+        return;
+      }
+
+      const { data: coInstructor } = await supabase
+        .from("course_instructors")
+        .select("id")
+        .eq("course_id", courseIdFromUrl)
+        .eq("instructor_id", session.user.id)
+        .maybeSingle();
+
+      if (coInstructor) {
+        navigate(`/course/${courseIdFromUrl}`);
+        return;
+      }
+    }
+
     // Fetch user profile for name
     const { data: profile } = await supabase
       .from("profiles")
