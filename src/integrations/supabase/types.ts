@@ -208,6 +208,7 @@ export type Database = {
       }
       assignments: {
         Row: {
+          ai_grading_enabled: boolean
           attachment_url: string | null
           course_id: string
           created_at: string
@@ -223,6 +224,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          ai_grading_enabled?: boolean
           attachment_url?: string | null
           course_id: string
           created_at?: string
@@ -238,6 +240,7 @@ export type Database = {
           title: string
         }
         Update: {
+          ai_grading_enabled?: boolean
           attachment_url?: string | null
           course_id?: string
           created_at?: string
