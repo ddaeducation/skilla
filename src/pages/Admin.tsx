@@ -1653,7 +1653,7 @@ const Admin = () => {
                   <DialogTrigger asChild>
                     <Button onClick={() => {
                       setEditingCourse(null);
-                      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", certificate_template_url: "", instructor_name: "" });
+                      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", certificate_template_url: "", instructor_name: "", price_display_currency: "USD" });
                     }}>
                       <Plus className="mr-2 h-4 w-4" />
                       Add Course
