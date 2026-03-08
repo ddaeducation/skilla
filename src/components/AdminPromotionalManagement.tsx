@@ -122,6 +122,7 @@ const AdminPromotionalManagement = () => {
     setSelectedSchool("");
     setSelectedCategory("");
     setSelectedCourseId("");
+    setStep(1);
   };
 
   const openEdit = (p: Popup) => {
