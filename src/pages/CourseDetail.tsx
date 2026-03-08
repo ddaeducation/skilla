@@ -127,6 +127,7 @@ const CourseDetail = () => {
   const [user, setUser] = useState<any>(null);
   const [course, setCourse] = useState<any>(null);
   const [instructorProfile, setInstructorProfile] = useState<{ full_name: string | null; avatar_url: string | null; bio?: string | null } | null>(null);
+  const [coInstructors, setCoInstructors] = useState<{ full_name: string | null; avatar_url: string | null; bio?: string | null }[]>([]);
   const [lessons, setLessons] = useState<LessonContent[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
