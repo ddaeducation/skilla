@@ -430,7 +430,7 @@ const LMS = () => {
                         <CardContent>
                           <Button
                             className="w-full"
-                            onClick={() => navigate(`/course/${course.id}`)}
+                            onClick={() => navigate(`/course/${(course as any).slug || course.id}`)}
                           >
                             <Play className="w-4 h-4 mr-2" />
                             Continue
