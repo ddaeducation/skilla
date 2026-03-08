@@ -276,6 +276,30 @@ const CourseDetail = () => {
       }
     }
 
+    // Fetch co-instructors
+    const { data: coInstructorLinks } = await supabase
+      .from("course_instructors")
+      .select("instructor_id")
+      .eq("course_id", courseId!)
+      .eq("role", "co_instructor");
+
+    if (coInstructorLinks && coInstructorLinks.length > 0) {
+      const coProfiles = await Promise.all(
+        coInstructorLinks.map(async (link) => {
+          const [profileRes, appRes] = await Promise.all([
+            supabase.from("profiles").select("full_name, avatar_url").eq("id", link.instructor_id).maybeSingle(),
+            supabase.from("instructor_applications").select("bio").eq("user_id", link.instructor_id).maybeSingle(),
+          ]);
+          return {
+            full_name: profileRes.data?.full_name || null,
+            avatar_url: profileRes.data?.avatar_url || null,
+            bio: appRes.data?.bio || null,
+          };
+        })
+      );
+      setCoInstructors(coProfiles);
+    }
+
     // Calculate average rating
     const { data: enrollmentCount } = await supabase
       .from("enrollments")
