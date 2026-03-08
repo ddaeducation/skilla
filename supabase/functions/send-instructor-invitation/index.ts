@@ -129,7 +129,7 @@ serve(async (req) => {
       );
     }
 
-    const origin = req.headers.get("origin") || "https://lovable.dev";
+    const origin = req.headers.get("origin") || "https://skilllafrica.lovable.app";
     const inviteLink = `${origin}/accept-instructor-invite?token=${invitation.token}`;
 
     const emailResponse = await fetch("https://api.resend.com/emails", {
