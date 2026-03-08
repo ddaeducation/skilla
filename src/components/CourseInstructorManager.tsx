@@ -360,7 +360,7 @@ export const CourseInstructorManager = ({
                       <SelectContent>
                         <SelectItem value="co_instructor">Co-Instructor</SelectItem>
                         <SelectItem value="primary">Owner (Primary Instructor)</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
+                        {isAdmin && <SelectItem value="admin">Admin</SelectItem>}
                       </SelectContent>
                     </Select>
                   </div>
