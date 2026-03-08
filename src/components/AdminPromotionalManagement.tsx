@@ -133,6 +133,27 @@ const AdminPromotionalManagement = () => {
     setCtaLink(p.cta_link || "");
     setIsActive(p.is_active);
     setEndDate(p.end_date ? p.end_date.slice(0, 16) : "");
+    // Detect if CTA link points to a course
+    const courseMatch = p.cta_link?.match(/\/course\/(.+)/);
+    if (courseMatch) {
+      const course = allCourses.find((c) => c.id === courseMatch[1]);
+      if (course) {
+        setCtaMode("course");
+        setSelectedSchool(course.school);
+        setSelectedCategory(course.category || "");
+        setSelectedCourseId(course.id);
+      } else {
+        setCtaMode("manual");
+        setSelectedSchool("");
+        setSelectedCategory("");
+        setSelectedCourseId("");
+      }
+    } else {
+      setCtaMode("manual");
+      setSelectedSchool("");
+      setSelectedCategory("");
+      setSelectedCourseId("");
+    }
     setDialogOpen(true);
   };
 
