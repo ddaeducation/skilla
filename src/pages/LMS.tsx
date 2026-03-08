@@ -765,7 +765,7 @@ const LMS = () => {
                       <CardDescription>{course.school}</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <Button className="w-full" onClick={() => navigate(`/course/${course.id}`)}>
+                      <Button className="w-full" onClick={() => navigate(`/course/${(course as any).slug || course.id}`)}>
                         <Play className="w-4 h-4 mr-2" />
                         View Lessons
                       </Button>
