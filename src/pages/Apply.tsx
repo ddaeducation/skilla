@@ -927,7 +927,7 @@ const Apply = () => {
                     className="w-full" 
                     disabled={!programFromUrl && courses.length === 0}
                   >
-                    {courseMonthlyPrice === 0 ? "Complete Free Enrollment" : "Click here to Pay"}
+                    {courseDisplayPrice === 0 ? "Complete Free Enrollment" : "Click here to Pay"}
                   </Button>
                 </form>
               </CardContent>
