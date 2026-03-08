@@ -1061,13 +1061,39 @@ const Instructor = () => {
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label>Monthly Price ($)</Label>
+                              <Label>Pricing Type</Label>
+                              <Select
+                                value={courseForm.pricing_type}
+                                onValueChange={(value) => setCourseForm({ ...courseForm, pricing_type: value })}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="monthly">Monthly Price</SelectItem>
+                                  <SelectItem value="full">Full Price</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>{courseForm.pricing_type === "monthly" ? "Monthly Price ($)" : "Full Price ($)"}</Label>
                               <Input
                                 type="number"
-                                value={courseForm.monthly_price}
-                                onChange={(e) => setCourseForm({ ...courseForm, monthly_price: Number(e.target.value) })}
-                                placeholder="e.g., 20"
+                                value={courseForm.pricing_type === "monthly" ? courseForm.monthly_price : courseForm.full_price}
+                                onChange={(e) => {
+                                  if (courseForm.pricing_type === "monthly") {
+                                    setCourseForm({ ...courseForm, monthly_price: Number(e.target.value) });
+                                  } else {
+                                    setCourseForm({ ...courseForm, full_price: Number(e.target.value) });
+                                  }
+                                }}
+                                placeholder={courseForm.pricing_type === "monthly" ? "e.g., 20" : "e.g., 200"}
                               />
+                              <p className="text-xs text-muted-foreground">
+                                {courseForm.pricing_type === "monthly" 
+                                  ? "Students pay this amount each month to maintain access" 
+                                  : "Students pay once and get lifetime access"}
+                              </p>
                             </div>
                             <div className="space-y-2">
                               <Label>Display Currency on Card</Label>
