@@ -720,7 +720,7 @@ const LMS = () => {
                       <p className="text-sm line-clamp-2">{course.description}</p>
                       <Button
                         className="w-full"
-                        onClick={() => navigate(`/course/${course.id}`)}
+                        onClick={() => navigate(`/course/${(course as any).slug || course.id}`)}
                       >
                         <BookOpen className="w-4 h-4 mr-2" />
                         Continue Learning
