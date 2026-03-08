@@ -159,6 +159,11 @@ serve(async (req) => {
                 <p style="color: #92400e; margin: 0; font-size: 14px;">
                   <strong>Note:</strong> Accepting this invitation will make you the primary owner of this course.
                 </p>
+              </div>` : role === "admin" ? `
+              <div style="background: #fff8e1; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 4px; margin: 20px 0;">
+                <p style="color: #92400e; margin: 0; font-size: 14px;">
+                  <strong>Note:</strong> Accepting this invitation will grant you platform-wide Admin access.
+                </p>
               </div>` : ""}
               <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 As a ${roleLabel}, you will be able to manage course content, view student progress, and collaborate on this course.
