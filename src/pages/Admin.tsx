@@ -1098,7 +1098,7 @@ const Admin = () => {
 
       setCourseDialogOpen(false);
       setEditingCourse(null);
-      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", certificate_template_url: "", instructor_name: "" });
+      setCourseForm({ title: "", description: "", school: "", category: "", duration: "", price: 0, monthly_price: 0, learning_outcomes: "", image_url: "", certificate_template_url: "", instructor_name: "", price_display_currency: "USD" });
       fetchData();
     } catch (error) {
       console.error("Error saving course:", error);
