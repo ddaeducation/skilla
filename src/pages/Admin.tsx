@@ -285,7 +285,7 @@ const Admin = () => {
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [courseForm, setCourseForm] = useState({
-    title: "",
+     title: "",
     description: "",
     school: "",
     category: "",
@@ -296,6 +296,7 @@ const Admin = () => {
     image_url: "",
     certificate_template_url: "",
     instructor_name: "",
+    price_display_currency: "USD",
   });
   
   const [lessonForm, setLessonForm] = useState({
