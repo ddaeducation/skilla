@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Loader2, BookOpen, FileQuestion, ClipboardList, Wand2, Check, RefreshCw } from "lucide-react";
+import { Sparkles, Loader2, BookOpen, FileQuestion, ClipboardList, Wand2, Check, RefreshCw, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RichTextEditor } from "@/components/RichTextEditor";
