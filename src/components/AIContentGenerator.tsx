@@ -65,6 +65,28 @@ const questionTypeOptions = [
 export const AIContentGenerator = ({ courseId, courseName, sectionId, onContentGenerated }: AIContentGeneratorProps) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [hasAiAccess, setHasAiAccess] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAiAccess = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setHasAiAccess(false); return; }
+      const { data: adminRole } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("role", "admin" as any)
+        .maybeSingle();
+      if (adminRole) { setHasAiAccess(true); return; }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("ai_course_generation_enabled")
+        .eq("id", user.id)
+        .maybeSingle();
+      setHasAiAccess((profile as any)?.ai_course_generation_enabled ?? false);
+    };
+    checkAiAccess();
+  }, []);
   const [activeTab, setActiveTab] = useState<"lesson" | "quiz" | "assignment">("lesson");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
