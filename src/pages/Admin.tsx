@@ -2734,6 +2734,7 @@ const Admin = () => {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>AI Course Access</TableHead>
                         <TableHead>Added</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -2748,6 +2749,34 @@ const Admin = () => {
                             </div>
                           </TableCell>
                           <TableCell>{instructor.profiles?.email || "-"}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={instructor.profiles?.ai_course_generation_enabled ?? false}
+                                onCheckedChange={async (checked) => {
+                                  const { error } = await supabase
+                                    .from("profiles")
+                                    .update({ ai_course_generation_enabled: checked } as any)
+                                    .eq("id", instructor.user_id);
+                                  if (error) {
+                                    toast({ title: "Error", description: "Failed to update AI access.", variant: "destructive" });
+                                  } else {
+                                    setInstructorUsers((prev) =>
+                                      prev.map((inst) =>
+                                        inst.id === instructor.id
+                                          ? { ...inst, profiles: { ...inst.profiles, full_name: inst.profiles?.full_name ?? null, email: inst.profiles?.email ?? null, ai_course_generation_enabled: checked } }
+                                          : inst
+                                      )
+                                    );
+                                    toast({ title: checked ? "AI Access Granted" : "AI Access Revoked", description: `${instructor.profiles?.full_name || "Instructor"} can ${checked ? "now" : "no longer"} use AI to generate courses.` });
+                                  }
+                                }}
+                              />
+                              <span className="text-xs text-muted-foreground">
+                                {instructor.profiles?.ai_course_generation_enabled ? "Enabled" : "Disabled"}
+                              </span>
+                            </div>
+                          </TableCell>
                           <TableCell>
                             {instructor.created_at 
                               ? new Date(instructor.created_at).toLocaleDateString() 
@@ -2768,7 +2797,7 @@ const Admin = () => {
                       ))}
                       {instructorUsers.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground">
+                          <TableCell colSpan={5} className="text-center text-muted-foreground">
                             No instructors found
                           </TableCell>
                         </TableRow>
