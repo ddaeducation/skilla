@@ -514,6 +514,9 @@ Return JSON:
     } else if (message === "PAYMENT_REQUIRED") {
       status = 402;
       userMessage = "AI service temporarily unavailable. Please try again later.";
+    } else if (message === "AI_ACCESS_DENIED") {
+      status = 403;
+      userMessage = "You do not have permission to use AI course generation. Please contact an administrator to enable this feature.";
     }
 
     return new Response(
