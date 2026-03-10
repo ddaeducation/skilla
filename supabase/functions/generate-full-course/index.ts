@@ -135,6 +135,25 @@ serve(async (req) => {
     const { data: { user } } = await supabaseAnon.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
+    // Check AI course generation permission
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("ai_course_generation_enabled")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    // Also check if user is admin (admins always have access)
+    const { data: adminRole } = await supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!adminRole && !profile?.ai_course_generation_enabled) {
+      throw new Error("AI_ACCESS_DENIED");
+    }
+
     const {
       courseId,
       courseTitle,
