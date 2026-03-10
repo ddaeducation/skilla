@@ -87,26 +87,24 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get enrollment to find course and instructor
-    console.log("Fetching enrollment details for:", enrollment_id);
-    const { data: enrollment, error: enrollmentFetchError } = await supabaseAdmin
-      .from("enrollments")
-      .select("course_id, user_id")
-      .eq("id", enrollment_id)
-      .single();
+    // Fetch enrollment and course details in parallel
+    const [enrollmentResult, ] = await Promise.all([
+      supabaseAdmin.from("enrollments").select("course_id, user_id").eq("id", enrollment_id).single(),
+    ]);
 
-    if (enrollmentFetchError || !enrollment) {
-      console.error("Failed to fetch enrollment:", enrollmentFetchError);
+    if (enrollmentResult.error || !enrollmentResult.data) {
+      console.error("Failed to fetch enrollment:", enrollmentResult.error);
       return new Response(
         JSON.stringify({ error: "Enrollment not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const enrollment = enrollmentResult.data;
 
-    // Get course to find instructor
+    // Fetch course (with duration for full-price) in one query
     const { data: course, error: courseFetchError } = await supabaseAdmin
       .from("courses")
-      .select("instructor_id")
+      .select("instructor_id, duration")
       .eq("id", enrollment.course_id)
       .single();
 
@@ -121,38 +119,20 @@ serve(async (req) => {
     // Convert to USD for consistent earnings calculation
     const totalAmountUSD = convertToUSD(totalAmountOriginal, paymentCurrency);
     
-    // Calculate payment split in USD: 40% platform, 60% instructor
+    // Calculate payment split: 40% platform, 60% instructor
     const platformFeeUSD = totalAmountUSD * 0.40;
     const instructorShareUSD = totalAmountUSD * 0.60;
-    
-    // Also calculate in original currency for display
     const platformFeeOriginal = totalAmountOriginal * 0.40;
     const instructorShareOriginal = totalAmountOriginal * 0.60;
 
-    console.log("Payment details:", { 
-      currency: paymentCurrency,
-      originalAmount: totalAmountOriginal,
-      amountUSD: totalAmountUSD,
-      platformFeeUSD,
-      instructorShareUSD 
-    });
-
-    // Calculate subscription expiry based on pricing type
+    // Calculate subscription expiry
     const isFullPriceCourse = is_full_price === true;
     const monthsPaid = isFullPriceCourse ? null : (months_paid || 1);
     let subscriptionExpiresAt: string | null = null;
     
     if (isFullPriceCourse) {
-      // For full-price courses: course duration + 3 weeks
-      // Fetch course duration
-      const { data: courseData } = await supabaseAdmin
-        .from("courses")
-        .select("duration")
-        .eq("id", enrollment.course_id)
-        .single();
-      
       const expiryDate = new Date();
-      const duration = courseData?.duration?.toLowerCase()?.trim() || "";
+      const duration = course?.duration?.toLowerCase()?.trim() || "";
       const numMatch = duration.match(/(\d+)/);
       const num = numMatch ? parseInt(numMatch[1], 10) : 6;
       
@@ -162,7 +142,6 @@ serve(async (req) => {
         expiryDate.setFullYear(expiryDate.getFullYear() + num);
         expiryDate.setDate(expiryDate.getDate() + 21);
       } else {
-        // Default: treat as months
         expiryDate.setMonth(expiryDate.getMonth() + num);
         expiryDate.setDate(expiryDate.getDate() + 21);
       }
@@ -172,10 +151,8 @@ serve(async (req) => {
       expiryDate.setMonth(expiryDate.getMonth() + monthsPaid);
       subscriptionExpiresAt = expiryDate.toISOString();
     }
-    // Full-price gets duration + 3 weeks; monthly gets months_paid
 
-    // Update enrollment status to completed with currency info and subscription dates
-    console.log("Updating enrollment status for:", enrollment_id, "full_price:", isFullPriceCourse, "months:", monthsPaid);
+    // Update enrollment status
     const { error: updateError } = await supabaseAdmin
       .from("enrollments")
       .update({
@@ -195,65 +172,60 @@ serve(async (req) => {
       );
     }
 
-    // Record instructor earnings if course has an instructor
+    // Record earnings and coupon usage in parallel
+    const parallelOps: Promise<any>[] = [];
+
     if (course?.instructor_id) {
-      const { error: earningsError } = await supabaseAdmin
-        .from("instructor_earnings")
-        .insert({
+      parallelOps.push(
+        supabaseAdmin.from("instructor_earnings").insert({
           instructor_id: course.instructor_id,
           course_id: enrollment.course_id,
           enrollment_id: enrollment_id,
-          // Original currency amounts
           amount: totalAmountOriginal,
           platform_fee: platformFeeOriginal,
           instructor_share: instructorShareOriginal,
           payment_currency: paymentCurrency,
-          // USD converted amounts for consistent reporting
           amount_usd: totalAmountUSD,
           platform_fee_usd: platformFeeUSD,
           instructor_share_usd: instructorShareUSD,
           status: "pending",
-        });
-
-      if (earningsError) {
-        console.error("Failed to record instructor earnings:", earningsError);
-        // Don't fail the whole transaction, just log the error
-      } else {
-        console.log("Instructor earnings recorded successfully with currency:", paymentCurrency);
-      }
+        }).then(({ error }) => {
+          if (error) console.error("Failed to record instructor earnings:", error);
+        })
+      );
     }
 
-    // Record coupon usage if a coupon was applied
     if (coupon_id && enrollment.user_id) {
-      const { error: couponUsageError } = await supabaseAdmin
-        .from("coupon_usages")
-        .insert({
-          coupon_id: coupon_id,
-          user_id: enrollment.user_id,
-          enrollment_id: enrollment_id,
-          discount_applied: discount_applied || 0,
-        });
-
-      if (couponUsageError) {
-        console.error("Failed to record coupon usage:", couponUsageError);
-        // Don't fail the whole transaction, just log the error
-      } else {
-        // Increment coupon usage count
-        const { data: couponData } = await supabaseAdmin
-          .from("coupons")
-          .select("current_uses")
-          .eq("id", coupon_id)
-          .single();
-
-        if (couponData) {
-          await supabaseAdmin
-            .from("coupons")
-            .update({ current_uses: (couponData.current_uses || 0) + 1 })
-            .eq("id", coupon_id);
-        }
-        console.log("Coupon usage recorded successfully");
-      }
+      parallelOps.push(
+        (async () => {
+          const { error: couponUsageError } = await supabaseAdmin
+            .from("coupon_usages")
+            .insert({
+              coupon_id,
+              user_id: enrollment.user_id,
+              enrollment_id,
+              discount_applied: discount_applied || 0,
+            });
+          if (couponUsageError) {
+            console.error("Failed to record coupon usage:", couponUsageError);
+          } else {
+            const { data: couponData } = await supabaseAdmin
+              .from("coupons")
+              .select("current_uses")
+              .eq("id", coupon_id)
+              .single();
+            if (couponData) {
+              await supabaseAdmin
+                .from("coupons")
+                .update({ current_uses: (couponData.current_uses || 0) + 1 })
+                .eq("id", coupon_id);
+            }
+          }
+        })()
+      );
     }
+
+    await Promise.all(parallelOps);
 
     console.log("Payment verified and enrollment updated successfully");
     return new Response(

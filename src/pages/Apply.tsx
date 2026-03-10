@@ -263,24 +263,21 @@ const calculateFullPriceExpiry = (duration: string | null): Date => {
       }
     }
 
-    // Fetch user profile for name
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, phone")
-      .eq("id", session.user.id)
-      .single();
+    // Fetch profile and courses in parallel
+    const [profileResult] = await Promise.all([
+      supabase.from("profiles").select("full_name, phone").eq("id", session.user.id).single(),
+      fetchCourses(),
+    ]);
 
-    if (profile) {
-      const nameParts = profile.full_name?.split(" ") || [];
+    if (profileResult.data) {
+      const nameParts = profileResult.data.full_name?.split(" ") || [];
       setFormData(prev => ({
         ...prev,
         firstName: nameParts[0] || "",
         lastName: nameParts.slice(1).join(" ") || "",
-        phone: profile.phone || "",
+        phone: profileResult.data.phone || "",
       }));
     }
-
-    await fetchCourses();
   };
 
   const fetchCourses = async () => {
@@ -512,24 +509,20 @@ const calculateFullPriceExpiry = (duration: string | null): Date => {
     setProcessing(true);
 
     try {
-      // Update profile first
-      await supabase
-        .from("profiles")
-        .update({
-          full_name: `${formData.firstName} ${formData.lastName}`,
-          phone: formData.phone,
-        })
-        .eq("id", user.id);
-
-      // Create enrollment if we have a database course
+      // Update profile and check enrollment in parallel
       if (formData.courseId && selectedCourse) {
-        // Check for existing enrollment
-        const { data: existingEnrollment } = await supabase
-          .from("enrollments")
-          .select("id, payment_status, subscription_expires_at")
-          .eq("user_id", user.id)
-          .eq("course_id", selectedCourse.id)
-          .maybeSingle();
+        const [, enrollmentResult] = await Promise.all([
+          supabase.from("profiles").update({
+            full_name: `${formData.firstName} ${formData.lastName}`,
+            phone: formData.phone,
+          }).eq("id", user.id),
+          supabase.from("enrollments")
+            .select("id, payment_status, subscription_expires_at")
+            .eq("user_id", user.id)
+            .eq("course_id", selectedCourse.id)
+            .maybeSingle(),
+        ]);
+        const existingEnrollment = enrollmentResult.data;
 
         if (existingEnrollment?.payment_status === "completed") {
           const isExpired = existingEnrollment.subscription_expires_at && 
@@ -729,7 +722,11 @@ const calculateFullPriceExpiry = (duration: string | null): Date => {
           },
         });
       } else {
-        // No course selected, just show success for program enrollment
+        // No course selected - update profile, then show success
+        await supabase.from("profiles").update({
+          full_name: `${formData.firstName} ${formData.lastName}`,
+          phone: formData.phone,
+        }).eq("id", user.id);
         setStep(3);
         toast({
           title: "Application Submitted!",
