@@ -133,6 +133,38 @@ serve(async (req) => {
 
     console.log(`Generating course structure for: ${courseTitle}`);
 
+    // Clean up existing generated content before regenerating
+    const { data: existingSections } = await supabase
+      .from("course_sections")
+      .select("id")
+      .eq("course_id", courseId);
+
+    if (existingSections && existingSections.length > 0) {
+      const sectionIds = existingSections.map(s => s.id);
+
+      // Delete quiz options -> questions -> quizzes
+      const { data: existingQuizzes } = await supabase
+        .from("quizzes")
+        .select("id")
+        .eq("course_id", courseId);
+      if (existingQuizzes && existingQuizzes.length > 0) {
+        const quizIds = existingQuizzes.map(q => q.id);
+        const { data: existingQuestions } = await supabase
+          .from("quiz_questions")
+          .select("id")
+          .in("quiz_id", quizIds);
+        if (existingQuestions && existingQuestions.length > 0) {
+          await supabase.from("quiz_options").delete().in("question_id", existingQuestions.map(q => q.id));
+        }
+        await supabase.from("quiz_questions").delete().in("quiz_id", quizIds);
+      }
+      await supabase.from("quizzes").delete().eq("course_id", courseId);
+      await supabase.from("assignments").delete().eq("course_id", courseId);
+      await supabase.from("lesson_content").delete().eq("course_id", courseId);
+      await supabase.from("course_sections").delete().eq("course_id", courseId);
+      console.log(`Cleaned up existing content: ${existingSections.length} sections`);
+    }
+
     // STEP 1: Generate course outline
     const outlineData = await callAI(LOVABLE_API_KEY, [
       {
