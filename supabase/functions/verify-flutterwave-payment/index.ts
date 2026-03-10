@@ -87,69 +87,30 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get enrollment to find course and instructor
-    console.log("Fetching enrollment details for:", enrollment_id);
-    const { data: enrollment, error: enrollmentFetchError } = await supabaseAdmin
-      .from("enrollments")
-      .select("course_id, user_id")
-      .eq("id", enrollment_id)
-      .single();
+    // Fetch enrollment and course details in parallel
+    const [enrollmentResult, ] = await Promise.all([
+      supabaseAdmin.from("enrollments").select("course_id, user_id").eq("id", enrollment_id).single(),
+    ]);
 
-    if (enrollmentFetchError || !enrollment) {
-      console.error("Failed to fetch enrollment:", enrollmentFetchError);
+    if (enrollmentResult.error || !enrollmentResult.data) {
+      console.error("Failed to fetch enrollment:", enrollmentResult.error);
       return new Response(
         JSON.stringify({ error: "Enrollment not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const enrollment = enrollmentResult.data;
 
-    // Get course to find instructor
+    // Fetch course (with duration for full-price) in one query
     const { data: course, error: courseFetchError } = await supabaseAdmin
       .from("courses")
-      .select("instructor_id")
+      .select("instructor_id, duration")
       .eq("id", enrollment.course_id)
       .single();
 
     if (courseFetchError) {
       console.error("Failed to fetch course:", courseFetchError);
     }
-
-    // Get payment details from Flutterwave
-    const paymentCurrency = flwData.data.currency;
-    const totalAmountOriginal = flwData.data.amount;
-    
-    // Convert to USD for consistent earnings calculation
-    const totalAmountUSD = convertToUSD(totalAmountOriginal, paymentCurrency);
-    
-    // Calculate payment split in USD: 40% platform, 60% instructor
-    const platformFeeUSD = totalAmountUSD * 0.40;
-    const instructorShareUSD = totalAmountUSD * 0.60;
-    
-    // Also calculate in original currency for display
-    const platformFeeOriginal = totalAmountOriginal * 0.40;
-    const instructorShareOriginal = totalAmountOriginal * 0.60;
-
-    console.log("Payment details:", { 
-      currency: paymentCurrency,
-      originalAmount: totalAmountOriginal,
-      amountUSD: totalAmountUSD,
-      platformFeeUSD,
-      instructorShareUSD 
-    });
-
-    // Calculate subscription expiry based on pricing type
-    const isFullPriceCourse = is_full_price === true;
-    const monthsPaid = isFullPriceCourse ? null : (months_paid || 1);
-    let subscriptionExpiresAt: string | null = null;
-    
-    if (isFullPriceCourse) {
-      // For full-price courses: course duration + 3 weeks
-      // Fetch course duration
-      const { data: courseData } = await supabaseAdmin
-        .from("courses")
-        .select("duration")
-        .eq("id", enrollment.course_id)
-        .single();
       
       const expiryDate = new Date();
       const duration = courseData?.duration?.toLowerCase()?.trim() || "";

@@ -722,7 +722,11 @@ const calculateFullPriceExpiry = (duration: string | null): Date => {
           },
         });
       } else {
-        // No course selected, just show success for program enrollment
+        // No course selected - update profile, then show success
+        await supabase.from("profiles").update({
+          full_name: `${formData.firstName} ${formData.lastName}`,
+          phone: formData.phone,
+        }).eq("id", user.id);
         setStep(3);
         toast({
           title: "Application Submitted!",
