@@ -78,6 +78,41 @@ function stripHtml(text: string | null): string | null {
   return text.replace(/<[^>]*>/g, "").trim();
 }
 
+function buildContentPrompt(difficulty: string, includeQuizzes: boolean, includeAssignments: boolean) {
+  return `You are a curriculum designer. Generate detailed, resource-rich lesson content for a ${difficulty}-level course.
+Return valid JSON only.
+
+CONTENT RULES:
+- Each lesson: 700-1000 words of HTML content using <p>, <h2>, <h3>, <ul>, <ol>, <strong>, <em>, <a>, <blockquote>, <iframe> tags.
+- Structure each lesson with these sections in order:
+
+1. <h2>Lesson Title</h2> - Main heading
+2. <h3>🎯 Learning Objectives</h3> - 3-4 bullet points of what students will learn
+3. Core content with explanations, examples, and 3-5 inline <a href="URL" target="_blank" rel="noopener noreferrer"> links to Wikipedia, official docs, etc.
+
+4. <h3>🎬 Watch & Learn</h3> - Embed 1-2 relevant YouTube videos using this EXACT format:
+   <p><strong>Video Title - Channel Name</strong></p>
+   <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:8px 0 16px 0;"><iframe src="https://www.youtube-nocookie.com/embed/VIDEO_ID?rel=0&modestbranding=1&iv_load_policy=3&showinfo=0" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+   CRITICAL: Use REAL, existing, popular YouTube video IDs. Think of well-known educational videos from Khan Academy, CrashCourse, TED-Ed, Coursera, freeCodeCamp, 3Blue1Brown, Professor Leonard, MIT OpenCourseWare, etc. The video MUST actually exist on YouTube.
+
+5. <h3>📹 More Recommended Videos</h3> - 2-3 additional YouTube links as:
+   <ul><li><a href="https://www.youtube.com/watch?v=REAL_ID" target="_blank" rel="noopener noreferrer">Video Title - Channel Name</a></li></ul>
+
+6. <h3>📚 Articles & Reading Materials</h3> - 3-4 links to relevant articles:
+   <ul><li><a href="URL" target="_blank" rel="noopener noreferrer">Article Title - Source Name</a></li></ul>
+   Use real articles from: Investopedia, Harvard Business Review, Medium, GeeksForGeeks, MDN Web Docs, W3Schools, Real Python, Towards Data Science, official documentation sites, etc.
+
+7. <h3>🔗 Useful Tools & Resources</h3> - 2-3 links to interactive tools:
+   <ul><li><a href="URL" target="_blank" rel="noopener noreferrer">Tool Name - Brief description</a></li></ul>
+   Link to real tools: calculators, simulators, practice platforms, sandboxes, cheat sheets, etc.
+
+8. <h3>📝 Key Takeaways</h3> - 3-5 bullet points summarizing the lesson
+
+IMPORTANT: All URLs MUST be real, well-known domains. Do NOT fabricate or guess URLs. If unsure about a specific URL, use the homepage of the relevant site instead.
+${includeQuizzes ? "- Generate a quiz with 4-5 questions (single_choice, 4 options each, with detailed explanations)." : ""}
+${includeAssignments ? "- Generate an assignment with HTML instructions including links to tools/references." : ""}`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -140,9 +175,6 @@ serve(async (req) => {
       .eq("course_id", courseId);
 
     if (existingSections && existingSections.length > 0) {
-      const sectionIds = existingSections.map(s => s.id);
-
-      // Delete quiz options -> questions -> quizzes
       const { data: existingQuizzes } = await supabase
         .from("quizzes")
         .select("id")
@@ -249,11 +281,13 @@ Each module should have 1 unit with exactly ${lessonsPerModule} lesson titles.`,
       }
     }
 
-    // STEP 3: Generate content for ALL units IN PARALLEL (key optimization)
-    const BATCH_SIZE = 3; // Process 3 units at a time to avoid rate limits
+    // STEP 3: Generate content for ALL units IN PARALLEL
+    const BATCH_SIZE = 3;
     let totalLessons = 0;
     let totalQuizzes = 0;
     let totalAssignments = 0;
+
+    const systemPrompt = buildContentPrompt(difficulty, includeQuizzes, includeAssignments);
 
     for (let batchStart = 0; batchStart < unitJobs.length; batchStart += BATCH_SIZE) {
       const batch = unitJobs.slice(batchStart, batchStart + BATCH_SIZE);
@@ -264,27 +298,14 @@ Each module should have 1 unit with exactly ${lessonsPerModule} lesson titles.`,
           
           try {
             return await callAI(LOVABLE_API_KEY, [
-              {
-                role: "system",
-                content: `You are a curriculum designer. Generate detailed lesson content for a ${difficulty}-level course.
-Return valid JSON only.
-
-CONTENT RULES:
-- Each lesson: 400-600 words of HTML content using <p>, <h2>, <h3>, <ul>, <ol>, <strong>, <em>, <a>, <blockquote> tags.
-- Include learning objectives, core concepts, practical examples, key takeaways.
-- Include 3-5 inline <a href="URL" target="_blank" rel="noopener noreferrer"> links per lesson to Wikipedia, official docs, etc.
-- End each lesson with <h3>Further Reading & Resources</h3> with 2-4 curated links.
-- All URLs must be real well-known domains.
-${includeQuizzes ? "- Generate a quiz with 4 questions (single_choice, 4 options each, with explanations)." : ""}
-${includeAssignments ? "- Generate an assignment with HTML instructions including links to tools/references." : ""}`,
-              },
+              { role: "system", content: systemPrompt },
               {
                 role: "user",
                 content: `Course: "${courseTitle}"
 Module: "${job.mod.title}"
 Unit: "${job.unit.title}"
 
-Generate content for these lessons: ${JSON.stringify(lessonTitles)}
+Generate rich content with embedded YouTube videos, articles, tools, and resources for these lessons: ${JSON.stringify(lessonTitles)}
 
 Return JSON:
 {
@@ -292,8 +313,8 @@ Return JSON:
     {
       "title": "Lesson Title",
       "description": "Plain text 2-sentence description",
-      "content_text": "<h2>Title</h2><p>...</p>...<h3>Further Reading & Resources</h3><ul><li><a href='url'>Resource</a></li></ul>",
-      "duration_minutes": 20
+      "content_text": "<h2>Lesson Title</h2><h3>🎯 Learning Objectives</h3><ul><li>...</li></ul><p>Core content with inline links...</p><h3>🎬 Watch & Learn</h3><p><strong>Video Title</strong></p><div style='position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:8px 0 16px 0;'><iframe src='https://www.youtube-nocookie.com/embed/REAL_VIDEO_ID?rel=0&modestbranding=1&iv_load_policy=3&showinfo=0' style='position:absolute;top:0;left:0;width:100%;height:100%;' frameborder='0' allowfullscreen></iframe></div><h3>📹 More Recommended Videos</h3><ul><li><a href='https://www.youtube.com/watch?v=ID' target='_blank'>Title - Channel</a></li></ul><h3>📚 Articles & Reading Materials</h3><ul><li><a href='url' target='_blank'>Title - Source</a></li></ul><h3>🔗 Useful Tools & Resources</h3><ul><li><a href='url' target='_blank'>Tool - Description</a></li></ul><h3>📝 Key Takeaways</h3><ul><li>Point 1</li></ul>",
+      "duration_minutes": 25
     }
   ]${includeQuizzes ? `,
   "quiz": {
@@ -305,7 +326,7 @@ Return JSON:
         "question_text": "Question?",
         "question_type": "single_choice",
         "points": 1,
-        "explanation": "Explanation of correct answer",
+        "explanation": "Detailed explanation of correct answer",
         "options": [
           {"text": "Option A", "is_correct": false},
           {"text": "Option B", "is_correct": true},
@@ -318,7 +339,7 @@ Return JSON:
   "assignment": {
     "title": "Assignment Title",
     "description": "Plain text description",
-    "instructions": "<h3>Overview</h3><p>...</p><h3>Requirements</h3><ol><li>...</li></ol>",
+    "instructions": "<h3>Overview</h3><p>...</p><h3>Requirements</h3><ol><li>...</li></ol><h3>🔗 Helpful Resources</h3><ul><li><a href='url' target='_blank'>Resource</a></li></ul>",
     "max_score": 100
   }` : ""}
 }`,
@@ -365,7 +386,7 @@ Return JSON:
               content_text: lesson.content_text || null,
               content_type: "text",
               order_index: contentIndex++,
-              duration_minutes: lesson.duration_minutes || 20,
+              duration_minutes: lesson.duration_minutes || 25,
             });
           if (!lessonError) totalLessons++;
           else console.error("Lesson insert error:", lessonError);
