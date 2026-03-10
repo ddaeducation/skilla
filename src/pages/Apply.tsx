@@ -263,24 +263,21 @@ const calculateFullPriceExpiry = (duration: string | null): Date => {
       }
     }
 
-    // Fetch user profile for name
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, phone")
-      .eq("id", session.user.id)
-      .single();
+    // Fetch profile and courses in parallel
+    const [profileResult] = await Promise.all([
+      supabase.from("profiles").select("full_name, phone").eq("id", session.user.id).single(),
+      fetchCourses(),
+    ]);
 
-    if (profile) {
-      const nameParts = profile.full_name?.split(" ") || [];
+    if (profileResult.data) {
+      const nameParts = profileResult.data.full_name?.split(" ") || [];
       setFormData(prev => ({
         ...prev,
         firstName: nameParts[0] || "",
         lastName: nameParts.slice(1).join(" ") || "",
-        phone: profile.phone || "",
+        phone: profileResult.data.phone || "",
       }));
     }
-
-    await fetchCourses();
   };
 
   const fetchCourses = async () => {
