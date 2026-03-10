@@ -545,6 +545,24 @@ export const AIContentGenerator = ({ courseId, courseName, sectionId, onContentG
     });
   };
 
+  if (hasAiAccess === false) {
+    return (
+      <Button variant="outline" className="gap-2 opacity-60 cursor-not-allowed" disabled title="AI content generation is not enabled for your account. Contact an administrator.">
+        <ShieldAlert className="h-4 w-4" />
+        AI Generate (No Access)
+      </Button>
+    );
+  }
+
+  if (hasAiAccess === null) {
+    return (
+      <Button variant="outline" className="gap-2" disabled>
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Checking access...
+      </Button>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) resetForm(); }}>
       <DialogTrigger asChild>
