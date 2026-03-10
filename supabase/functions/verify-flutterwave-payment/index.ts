@@ -209,7 +209,6 @@ serve(async (req) => {
           if (couponUsageError) {
             console.error("Failed to record coupon usage:", couponUsageError);
           } else {
-            await supabaseAdmin.rpc('', {}).catch(() => {}); // no-op
             const { data: couponData } = await supabaseAdmin
               .from("coupons")
               .select("current_uses")
