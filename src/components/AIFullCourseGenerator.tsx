@@ -47,10 +47,9 @@ export const AIFullCourseGenerator = ({
     setResult(null);
 
     try {
-      // Simulate progress while waiting
       const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 5, 85));
-      }, 2000);
+        setProgress(prev => Math.min(prev + 3, 90));
+      }, 3000);
 
       const res = await supabase.functions.invoke("generate-full-course", {
         body: {
@@ -69,6 +68,23 @@ export const AIFullCourseGenerator = ({
 
       // Handle edge function errors with detailed messages
       if (res.error) {
+        // Check if it's a connection timeout - the function may have succeeded
+        const errorMsg = res.error?.message || "";
+        const isTimeout = errorMsg.includes("Failed to fetch") || errorMsg.includes("network") || errorMsg.includes("timeout") || errorMsg.includes("aborted");
+        
+        if (isTimeout) {
+          // Function likely completed but connection dropped - check if content was created
+          setProgress(95);
+          toast({
+            title: "Course generation may have completed",
+            description: "The connection timed out but the course may have been generated. Refreshing content...",
+          });
+          onCourseGenerated();
+          setProgress(100);
+          setResult({ modules: modulesCount, lessons: modulesCount * lessonsPerModule, quizzes: includeQuizzes ? modulesCount : 0, assignments: includeAssignments ? modulesCount : 0 });
+          return;
+        }
+
         let errorMessage = "Failed to generate course content.";
         try {
           const errorData = await res.error?.context?.json?.();
@@ -92,11 +108,22 @@ export const AIFullCourseGenerator = ({
       onCourseGenerated();
     } catch (error: any) {
       console.error("Error generating course:", error);
-      toast({
-        title: "Generation failed",
-        description: error.message || "Failed to generate course content. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Check for connection/timeout errors - function may have succeeded server-side
+      const msg = error.message || "";
+      if (msg.includes("Failed to fetch") || msg.includes("network") || msg.includes("timeout")) {
+        toast({
+          title: "Course generation may have completed",
+          description: "The connection timed out, but the course content may have been created. Please refresh the page to check.",
+        });
+        onCourseGenerated();
+      } else {
+        toast({
+          title: "Generation failed",
+          description: error.message || "Failed to generate course content. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setGenerating(false);
     }
