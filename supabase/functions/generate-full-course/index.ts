@@ -19,7 +19,6 @@ interface GenerateFullCourseRequest {
   difficulty?: "beginner" | "intermediate" | "advanced";
 }
 
-// Helper to call AI with retries
 async function callAI(apiKey: string, messages: any[], retries = 2): Promise<any> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -59,7 +58,6 @@ async function callAI(apiKey: string, messages: any[], retries = 2): Promise<any
       const content = data.choices?.[0]?.message?.content;
       if (!content) throw new Error("No content generated");
 
-      // Parse JSON robustly
       let cleaned = content.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
       cleaned = cleaned.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, " ");
       try {
@@ -75,7 +73,6 @@ async function callAI(apiKey: string, messages: any[], retries = 2): Promise<any
   }
 }
 
-// Strip HTML from description fields
 function stripHtml(text: string | null): string | null {
   if (!text) return null;
   return text.replace(/<[^>]*>/g, "").trim();
@@ -136,11 +133,11 @@ serve(async (req) => {
 
     console.log(`Generating course structure for: ${courseTitle}`);
 
-    // STEP 1: Generate course outline (lightweight - just titles and descriptions)
+    // STEP 1: Generate course outline
     const outlineData = await callAI(LOVABLE_API_KEY, [
       {
         role: "system",
-        content: `You are a curriculum designer. Generate a course outline with module and unit titles only. Return valid JSON, no markdown. Difficulty: ${difficulty}.`,
+        content: `You are a curriculum designer. Generate a course outline. Return valid JSON only. Difficulty: ${difficulty}.`,
       },
       {
         role: "user",
@@ -173,15 +170,11 @@ Each module should have 1 unit with exactly ${lessonsPerModule} lesson titles.`,
 
     console.log(`Outline generated: ${outlineData.modules?.length || 0} modules`);
 
-    // STEP 2: For each module, generate detailed content
-    let totalLessons = 0;
-    let totalQuizzes = 0;
-    let totalAssignments = 0;
+    // STEP 2: Create all module and unit sections in DB first
+    const unitJobs: { moduleIndex: number; unitIndex: number; unitSectionId: string; mod: any; unit: any }[] = [];
 
     for (let mi = 0; mi < (outlineData.modules || []).length; mi++) {
       const mod = outlineData.modules[mi];
-
-      // Create module section
       const { data: moduleSection, error: moduleError } = await supabase
         .from("course_sections")
         .insert({
@@ -202,8 +195,6 @@ Each module should have 1 unit with exactly ${lessonsPerModule} lesson titles.`,
 
       for (let ui = 0; ui < (mod.units || []).length; ui++) {
         const unit = mod.units[ui];
-
-        // Create unit section
         const { data: unitSection, error: unitError } = await supabase
           .from("course_sections")
           .insert({
@@ -222,15 +213,28 @@ Each module should have 1 unit with exactly ${lessonsPerModule} lesson titles.`,
           continue;
         }
 
-        // Generate detailed content for this unit's lessons
-        const lessonTitles = unit.lesson_titles || unit.lessons?.map((l: any) => l.title || l) || [];
-        
-        let unitContent;
-        try {
-          unitContent = await callAI(LOVABLE_API_KEY, [
-            {
-              role: "system",
-              content: `You are a world-class curriculum designer. Generate detailed lesson content for a ${difficulty}-level course. 
+        unitJobs.push({ moduleIndex: mi, unitIndex: ui, unitSectionId: unitSection.id, mod, unit });
+      }
+    }
+
+    // STEP 3: Generate content for ALL units IN PARALLEL (key optimization)
+    const BATCH_SIZE = 3; // Process 3 units at a time to avoid rate limits
+    let totalLessons = 0;
+    let totalQuizzes = 0;
+    let totalAssignments = 0;
+
+    for (let batchStart = 0; batchStart < unitJobs.length; batchStart += BATCH_SIZE) {
+      const batch = unitJobs.slice(batchStart, batchStart + BATCH_SIZE);
+      
+      const batchResults = await Promise.allSettled(
+        batch.map(async (job) => {
+          const lessonTitles = job.unit.lesson_titles || job.unit.lessons?.map((l: any) => l.title || l) || [];
+          
+          try {
+            return await callAI(LOVABLE_API_KEY, [
+              {
+                role: "system",
+                content: `You are a curriculum designer. Generate detailed lesson content for a ${difficulty}-level course.
 Return valid JSON only.
 
 CONTENT RULES:
@@ -241,12 +245,12 @@ CONTENT RULES:
 - All URLs must be real well-known domains.
 ${includeQuizzes ? "- Generate a quiz with 4 questions (single_choice, 4 options each, with explanations)." : ""}
 ${includeAssignments ? "- Generate an assignment with HTML instructions including links to tools/references." : ""}`,
-            },
-            {
-              role: "user",
-              content: `Course: "${courseTitle}"
-Module: "${mod.title}"
-Unit: "${unit.title}"
+              },
+              {
+                role: "user",
+                content: `Course: "${courseTitle}"
+Module: "${job.mod.title}"
+Unit: "${job.unit.title}"
 
 Generate content for these lessons: ${JSON.stringify(lessonTitles)}
 
@@ -282,33 +286,48 @@ Return JSON:
   "assignment": {
     "title": "Assignment Title",
     "description": "Plain text description",
-    "instructions": "<h3>Overview</h3><p>...</p><h3>Requirements</h3><ol><li>...</li></ol><h3>Evaluation Criteria</h3><ul><li>...</li></ul>",
+    "instructions": "<h3>Overview</h3><p>...</p><h3>Requirements</h3><ol><li>...</li></ol>",
     "max_score": 100
   }` : ""}
 }`,
-            },
-          ]);
-        } catch (e) {
-          console.error(`Failed to generate content for unit ${unit.title}:`, e);
-          // Create placeholder lessons so the structure isn't empty
-          unitContent = {
-            lessons: lessonTitles.map((title: string) => ({
-              title,
-              description: `Lesson on ${title}`,
-              content_text: `<h2>${title}</h2><p>Content for this lesson is being prepared. Please check back later or edit this lesson manually.</p>`,
-              duration_minutes: 20,
-            })),
-          };
-        }
+              },
+            ]);
+          } catch (e) {
+            console.error(`Failed to generate content for unit ${job.unit.title}:`, e);
+            return {
+              lessons: lessonTitles.map((title: string) => ({
+                title,
+                description: `Lesson on ${title}`,
+                content_text: `<h2>${title}</h2><p>Content for this lesson is being prepared. Please check back later or edit this lesson manually.</p>`,
+                duration_minutes: 20,
+              })),
+            };
+          }
+        })
+      );
+
+      // Insert results into DB
+      for (let i = 0; i < batch.length; i++) {
+        const job = batch[i];
+        const result = batchResults[i];
+        const unitContent = result.status === "fulfilled" ? result.value : {
+          lessons: (job.unit.lesson_titles || []).map((title: string) => ({
+            title,
+            description: `Lesson on ${title}`,
+            content_text: `<h2>${title}</h2><p>Content is being prepared.</p>`,
+            duration_minutes: 20,
+          })),
+        };
+
+        let contentIndex = 0;
 
         // Insert lessons
-        let contentIndex = 0;
         for (const lesson of (unitContent.lessons || [])) {
           const { error: lessonError } = await supabase
             .from("lesson_content")
             .insert({
               course_id: courseId,
-              section_id: unitSection.id,
+              section_id: job.unitSectionId,
               title: lesson.title,
               description: stripHtml(lesson.description) || null,
               content_text: lesson.content_text || null,
@@ -316,7 +335,6 @@ Return JSON:
               order_index: contentIndex++,
               duration_minutes: lesson.duration_minutes || 20,
             });
-
           if (!lessonError) totalLessons++;
           else console.error("Lesson insert error:", lessonError);
         }
@@ -327,7 +345,7 @@ Return JSON:
             .from("quizzes")
             .insert({
               course_id: courseId,
-              section_id: unitSection.id,
+              section_id: job.unitSectionId,
               title: unitContent.quiz.title,
               description: stripHtml(unitContent.quiz.description) || null,
               passing_score: unitContent.quiz.passing_score || 70,
@@ -375,7 +393,7 @@ Return JSON:
             .from("assignments")
             .insert({
               course_id: courseId,
-              section_id: unitSection.id,
+              section_id: job.unitSectionId,
               title: unitContent.assignment.title,
               description: stripHtml(unitContent.assignment.description) || null,
               instructions: unitContent.assignment.instructions || null,
@@ -383,7 +401,6 @@ Return JSON:
               ai_grading_enabled: true,
               order_index: contentIndex++,
             });
-
           if (!assignError) totalAssignments++;
           else console.error("Assignment insert error:", assignError);
         }
