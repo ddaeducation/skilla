@@ -137,14 +137,21 @@ serve(async (req) => {
     const outlineData = await callAI(LOVABLE_API_KEY, [
       {
         role: "system",
-        content: `You are a curriculum designer. Generate a course outline. Return valid JSON only. Difficulty: ${difficulty}.`,
+        content: `You are a curriculum designer. Generate a course outline. Return valid JSON only. Difficulty: ${difficulty}.
+STRICT RULES:
+- You MUST generate EXACTLY ${modulesCount} modules, no more, no less.
+- Each module MUST have EXACTLY 1 unit.
+- Each unit MUST have EXACTLY ${lessonsPerModule} lesson titles in its lesson_titles array.
+- Do NOT add extra units or lessons beyond what is specified.`,
       },
       {
         role: "user",
         content: `Create an outline for:
 Title: "${courseTitle}"
 Description: "${courseDescription}"
-Modules: ${modulesCount}, Lessons per module: ${lessonsPerModule}
+
+IMPORTANT: Generate EXACTLY ${modulesCount} modules. Each module has EXACTLY 1 unit with EXACTLY ${lessonsPerModule} lesson titles.
+Total lessons should be exactly ${modulesCount * lessonsPerModule}.
 
 Return JSON:
 {
@@ -156,17 +163,30 @@ Return JSON:
         {
           "title": "Unit 1.1: Title",
           "description": "2-3 sentence description",
-          "lesson_titles": ["Lesson 1 Title", "Lesson 2 Title"]
+          "lesson_titles": ["Lesson 1 Title", "Lesson 2 Title", ...]
         }
       ]
     }
   ],
   "learning_outcomes": ["Outcome 1", "Outcome 2", "Outcome 3", "Outcome 4", "Outcome 5"]
-}
-
-Each module should have 1 unit with exactly ${lessonsPerModule} lesson titles.`,
+}`,
       },
     ]);
+
+    // ENFORCE COUNTS: Trim outline to match requested counts
+    if (outlineData.modules) {
+      outlineData.modules = outlineData.modules.slice(0, modulesCount);
+      for (const mod of outlineData.modules) {
+        if (mod.units) {
+          mod.units = mod.units.slice(0, 1); // Only 1 unit per module
+          for (const unit of mod.units) {
+            if (unit.lesson_titles) {
+              unit.lesson_titles = unit.lesson_titles.slice(0, lessonsPerModule);
+            }
+          }
+        }
+      }
+    }
 
     console.log(`Outline generated: ${outlineData.modules?.length || 0} modules`);
 
