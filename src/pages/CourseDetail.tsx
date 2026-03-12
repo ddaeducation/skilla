@@ -245,7 +245,7 @@ const CourseDetail = () => {
     }
   };
 
-  const fetchCourse = async () => {
+  const fetchCourse = async (): Promise<string | null> => {
     // Try fetching by slug first, then fall back to UUID
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseParam || "");
     
@@ -267,7 +267,7 @@ const CourseDetail = () => {
         variant: "destructive",
       });
       navigate("/lms");
-      return;
+      return null;
     }
     
     // Set the resolved UUID as courseId for internal use
