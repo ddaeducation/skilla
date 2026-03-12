@@ -1619,6 +1619,11 @@ const CourseDetail = () => {
                                           onClick={() => {
                                             if (lesson.is_free_preview) {
                                               handleFreePreviewClick(lesson);
+                                            } else if (!isEnrolled) {
+                                              toast({
+                                                title: "Enroll to Access",
+                                                description: "This lesson is only available to enrolled students. Enroll now to unlock all content.",
+                                              });
                                             }
                                           }}
                                         >
