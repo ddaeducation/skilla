@@ -214,14 +214,16 @@ const CourseDetail = () => {
     }
   };
 
-  const fetchPublicCourseContent = async () => {
+  const fetchPublicCourseContent = async (resolvedCourseId?: string) => {
+    const cid = resolvedCourseId || courseId;
+    if (!cid) return;
     const [sectionsRes, curriculumRes] = await Promise.all([
       supabase
         .from("course_sections")
         .select("*")
-        .eq("course_id", courseId)
+        .eq("course_id", cid)
         .order("order_index"),
-      supabase.rpc("get_course_curriculum", { p_course_id: courseId }),
+      supabase.rpc("get_course_curriculum", { p_course_id: cid }),
     ]);
     if (sectionsRes.data) setSections(sectionsRes.data);
     if (curriculumRes.data) {
