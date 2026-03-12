@@ -597,10 +597,6 @@ const CourseDetail = () => {
   };
 
   const handleFreePreviewClick = async (lesson: LessonContent) => {
-    if (!user) {
-      navigate(`/signin?redirect=/course/${courseSlug}`);
-      return;
-    }
     setLoadingPreview(true);
     const { data } = await supabase.rpc("get_free_preview_lesson", { p_lesson_id: lesson.id });
     if (data && (data as any[]).length > 0) {
