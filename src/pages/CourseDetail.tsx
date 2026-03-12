@@ -597,10 +597,6 @@ const CourseDetail = () => {
   };
 
   const handleFreePreviewClick = async (lesson: LessonContent) => {
-    if (!user) {
-      navigate(`/signin?redirect=/course/${courseSlug}`);
-      return;
-    }
     setLoadingPreview(true);
     const { data } = await supabase.rpc("get_free_preview_lesson", { p_lesson_id: lesson.id });
     if (data && (data as any[]).length > 0) {
@@ -1623,6 +1619,11 @@ const CourseDetail = () => {
                                           onClick={() => {
                                             if (lesson.is_free_preview) {
                                               handleFreePreviewClick(lesson);
+                                            } else if (!isEnrolled) {
+                                              toast({
+                                                title: "Enroll to Access",
+                                                description: "This lesson is only available to enrolled students. Enroll now to unlock all content.",
+                                              });
                                             }
                                           }}
                                         >
