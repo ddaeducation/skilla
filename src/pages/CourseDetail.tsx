@@ -307,7 +307,7 @@ const CourseDetail = () => {
     const { data: coInstructorLinks } = await supabase
       .from("course_instructors")
       .select("instructor_id")
-      .eq("course_id", courseId!)
+      .eq("course_id", data.id)
       .eq("role", "co_instructor");
 
     if (coInstructorLinks && coInstructorLinks.length > 0) {
