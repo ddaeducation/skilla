@@ -1285,15 +1285,24 @@ const CourseDetail = () => {
 
   const renderActiveContent = () => {
     if (!activeContent) {
-      return (
-        <div className="text-center py-12">
-          <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-xl font-medium mb-2">No content yet</h3>
-          <p className="text-muted-foreground">
-            The instructor is still preparing the course content. Check back soon!
-          </p>
-        </div>
-      );
+      if (unifiedContent.length === 0) {
+        return (
+          <div className="text-center py-12">
+            <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-xl font-medium mb-2">No content yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Course content is being prepared. Check back soon!
+            </p>
+            <Button variant="outline" onClick={() => setShowCourseOverview(true)}>
+              Back to Course Overview
+            </Button>
+          </div>
+        );
+      }
+      // Content exists but nothing selected yet — auto-select first item
+      const first = unifiedContent[0];
+      setActiveContent(first);
+      return null;
     }
 
     switch (activeContent.type) {
