@@ -416,12 +416,15 @@ const CourseDetail = () => {
     }
   };
 
-  const fetchCourseContent = async (userId: string) => {
+  const fetchCourseContent = async (userId: string, resolvedCourseId?: string) => {
+    const cid = resolvedCourseId || courseId;
+    if (!cid) return;
+
     // Fetch sections
     const { data: sectionsData } = await supabase
       .from("course_sections")
       .select("*")
-      .eq("course_id", courseId)
+      .eq("course_id", cid)
       .order("order_index");
 
     if (sectionsData) {
@@ -432,7 +435,7 @@ const CourseDetail = () => {
     const { data: lessonsData } = await supabase
       .from("lesson_content")
       .select("*")
-      .eq("course_id", courseId)
+      .eq("course_id", cid)
       .order("order_index");
 
     if (lessonsData) setLessons(lessonsData);
@@ -441,7 +444,7 @@ const CourseDetail = () => {
     const { data: quizzesData } = await supabase
       .from("quizzes")
       .select("*")
-      .eq("course_id", courseId)
+      .eq("course_id", cid)
       .order("order_index");
 
     if (quizzesData) setQuizzes(quizzesData);
@@ -450,7 +453,7 @@ const CourseDetail = () => {
     const { data: assignmentsData } = await supabase
       .from("assignments")
       .select("*")
-      .eq("course_id", courseId)
+      .eq("course_id", cid)
       .order("order_index");
 
     if (assignmentsData) setAssignments(assignmentsData);
@@ -460,7 +463,7 @@ const CourseDetail = () => {
       .from("student_progress")
       .select("lesson_id, completed")
       .eq("user_id", userId)
-      .eq("course_id", courseId);
+      .eq("course_id", cid);
 
     if (progressData) setProgress(progressData);
 
@@ -481,16 +484,17 @@ const CourseDetail = () => {
     if (submissionsData) setAssignmentSubmissions(submissionsData);
 
     // Fetch peer review completion status for each assignment
-    await fetchPeerReviewStatus(userId);
+    await fetchPeerReviewStatus(userId, cid);
   };
 
-  const fetchPeerReviewStatus = async (userId: string) => {
-    if (!courseId) return;
+  const fetchPeerReviewStatus = async (userId: string, resolvedCourseId?: string) => {
+    const cid = resolvedCourseId || courseId;
+    if (!cid) return;
     const { data: reviews } = await supabase
       .from("peer_reviews")
       .select("assignment_id, reviewed_at")
       .eq("reviewer_id", userId)
-      .eq("course_id", courseId);
+      .eq("course_id", cid);
 
     if (reviews) {
       const status: Record<string, { assigned: number; completed: number }> = {};
