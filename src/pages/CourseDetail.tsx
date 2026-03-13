@@ -573,7 +573,7 @@ const CourseDetail = () => {
 
   // Set active content to where student left off (first uncompleted item)
   useEffect(() => {
-    if (unifiedContent.length > 0 && !activeContent) {
+    if (unifiedContent.length > 0 && !activeContent && !showCourseOverview) {
       if (isEnrolled || isInstructor) {
         // Find the first uncompleted content item
         const firstUncompleted = unifiedContent.find((item) => {
@@ -594,7 +594,7 @@ const CourseDetail = () => {
         setActiveContent(unifiedContent[0]);
       }
     }
-  }, [lessons, quizzes, assignments, progress, quizAttempts, assignmentSubmissions]);
+  }, [lessons, quizzes, assignments, progress, quizAttempts, assignmentSubmissions, showCourseOverview]);
 
   const courseSlug = course?.slug || courseId;
 
