@@ -2020,7 +2020,9 @@ const Admin = () => {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => {
                       const cols = [
-                        { header: "Name", accessor: (r: Profile) => r.full_name || "-" },
+                        { header: "Student ID", accessor: (r: Profile) => r.student_id || "-" },
+                        { header: "First Name", accessor: (r: Profile) => r.first_name || "-" },
+                        { header: "Last Name", accessor: (r: Profile) => r.last_name || "-" },
                         { header: "Email", accessor: (r: Profile) => r.email || "-" },
                         { header: "Phone", accessor: (r: Profile) => r.phone || "-" },
                         { header: "Country", accessor: (r: Profile) => r.country || "-" },
@@ -2028,6 +2030,8 @@ const Admin = () => {
                         { header: "Education", accessor: (r: Profile) => r.education_level || "-" },
                         { header: "Employment", accessor: (r: Profile) => r.employment_status || "-" },
                         { header: "Year of Birth", accessor: (r: Profile) => r.year_of_birth?.toString() || "-" },
+                        { header: "Disability", accessor: (r: Profile) => r.has_disability ? "Yes" : "No" },
+                        { header: "Residence", accessor: (r: Profile) => r.student_residence || "-" },
                         { header: "LinkedIn", accessor: (r: Profile) => r.linkedin_profile || "-" },
                         { header: "Heard About", accessor: (r: Profile) => r.hear_about || "-" },
                         { header: "Role", accessor: (r: Profile) => {
