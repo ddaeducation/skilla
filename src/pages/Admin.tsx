@@ -73,6 +73,8 @@ interface Course {
 interface Profile {
   id: string;
   full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   email: string | null;
   phone: string | null;
   country: string | null;
@@ -82,6 +84,9 @@ interface Profile {
   employment_status: string | null;
   linkedin_profile: string | null;
   hear_about: string | null;
+  has_disability: boolean | null;
+  student_residence: string | null;
+  student_id: string | null;
   created_at: string | null;
 }
 
