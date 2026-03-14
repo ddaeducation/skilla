@@ -2069,7 +2069,9 @@ const Admin = () => {
                 <Table>
                    <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
+                      <TableHead>Student ID</TableHead>
+                      <TableHead>First Name</TableHead>
+                      <TableHead>Last Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>Country</TableHead>
@@ -2077,6 +2079,8 @@ const Admin = () => {
                       <TableHead>Education</TableHead>
                       <TableHead>Employment</TableHead>
                       <TableHead>Year of Birth</TableHead>
+                      <TableHead>Disability</TableHead>
+                      <TableHead>Residence</TableHead>
                       <TableHead>LinkedIn</TableHead>
                       <TableHead>Heard About</TableHead>
                       <TableHead>Role</TableHead>
