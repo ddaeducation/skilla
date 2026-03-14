@@ -73,8 +73,6 @@ interface Course {
 interface Profile {
   id: string;
   full_name: string | null;
-  first_name: string | null;
-  last_name: string | null;
   email: string | null;
   phone: string | null;
   country: string | null;
@@ -84,9 +82,6 @@ interface Profile {
   employment_status: string | null;
   linkedin_profile: string | null;
   hear_about: string | null;
-  has_disability: boolean | null;
-  student_residence: string | null;
-  student_id: string | null;
   created_at: string | null;
 }
 
@@ -1994,9 +1989,7 @@ const Admin = () => {
                   <DropdownMenuContent>
                     <DropdownMenuItem onClick={() => {
                       const cols = [
-                        { header: "Student ID", accessor: (r: Profile) => r.student_id || "-" },
-                        { header: "First Name", accessor: (r: Profile) => r.first_name || "-" },
-                        { header: "Last Name", accessor: (r: Profile) => r.last_name || "-" },
+                        { header: "Name", accessor: (r: Profile) => r.full_name || "-" },
                         { header: "Email", accessor: (r: Profile) => r.email || "-" },
                         { header: "Phone", accessor: (r: Profile) => r.phone || "-" },
                         { header: "Country", accessor: (r: Profile) => r.country || "-" },
@@ -2004,8 +1997,6 @@ const Admin = () => {
                         { header: "Education", accessor: (r: Profile) => r.education_level || "-" },
                         { header: "Employment", accessor: (r: Profile) => r.employment_status || "-" },
                         { header: "Year of Birth", accessor: (r: Profile) => r.year_of_birth?.toString() || "-" },
-                        { header: "Disability", accessor: (r: Profile) => r.has_disability ? "Yes" : "No" },
-                        { header: "Residence", accessor: (r: Profile) => r.student_residence || "-" },
                         { header: "LinkedIn", accessor: (r: Profile) => r.linkedin_profile || "-" },
                         { header: "Heard About", accessor: (r: Profile) => r.hear_about || "-" },
                         { header: "Role", accessor: (r: Profile) => {
@@ -2020,9 +2011,7 @@ const Admin = () => {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => {
                       const cols = [
-                        { header: "Student ID", accessor: (r: Profile) => r.student_id || "-" },
-                        { header: "First Name", accessor: (r: Profile) => r.first_name || "-" },
-                        { header: "Last Name", accessor: (r: Profile) => r.last_name || "-" },
+                        { header: "Name", accessor: (r: Profile) => r.full_name || "-" },
                         { header: "Email", accessor: (r: Profile) => r.email || "-" },
                         { header: "Phone", accessor: (r: Profile) => r.phone || "-" },
                         { header: "Country", accessor: (r: Profile) => r.country || "-" },
@@ -2030,8 +2019,6 @@ const Admin = () => {
                         { header: "Education", accessor: (r: Profile) => r.education_level || "-" },
                         { header: "Employment", accessor: (r: Profile) => r.employment_status || "-" },
                         { header: "Year of Birth", accessor: (r: Profile) => r.year_of_birth?.toString() || "-" },
-                        { header: "Disability", accessor: (r: Profile) => r.has_disability ? "Yes" : "No" },
-                        { header: "Residence", accessor: (r: Profile) => r.student_residence || "-" },
                         { header: "LinkedIn", accessor: (r: Profile) => r.linkedin_profile || "-" },
                         { header: "Heard About", accessor: (r: Profile) => r.hear_about || "-" },
                         { header: "Role", accessor: (r: Profile) => {
@@ -2077,9 +2064,7 @@ const Admin = () => {
                 <Table>
                    <TableHeader>
                     <TableRow>
-                      <TableHead>Student ID</TableHead>
-                      <TableHead>First Name</TableHead>
-                      <TableHead>Last Name</TableHead>
+                      <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>Country</TableHead>
@@ -2087,8 +2072,6 @@ const Admin = () => {
                       <TableHead>Education</TableHead>
                       <TableHead>Employment</TableHead>
                       <TableHead>Year of Birth</TableHead>
-                      <TableHead>Disability</TableHead>
-                      <TableHead>Residence</TableHead>
                       <TableHead>LinkedIn</TableHead>
                       <TableHead>Heard About</TableHead>
                       <TableHead>Role</TableHead>
@@ -2122,10 +2105,7 @@ const Admin = () => {
                           const query = userSearchQuery.toLowerCase();
                           const nameMatch = profile.full_name?.toLowerCase().includes(query);
                           const emailMatch = profile.email?.toLowerCase().includes(query);
-                          const studentIdMatch = profile.student_id?.toLowerCase().includes(query);
-                          const firstNameMatch = profile.first_name?.toLowerCase().includes(query);
-                          const lastNameMatch = profile.last_name?.toLowerCase().includes(query);
-                          if (!nameMatch && !emailMatch && !studentIdMatch && !firstNameMatch && !lastNameMatch) return false;
+                          if (!nameMatch && !emailMatch) return false;
                         }
                         
                         // Filter by status
@@ -2141,9 +2121,7 @@ const Admin = () => {
                         
                         return (
                           <TableRow key={profile.id}>
-                            <TableCell className="font-mono text-xs">{profile.student_id || "-"}</TableCell>
-                            <TableCell className="font-medium">{profile.first_name || "-"}</TableCell>
-                            <TableCell className="font-medium">{profile.last_name || "-"}</TableCell>
+                            <TableCell className="font-medium">{profile.full_name || "-"}</TableCell>
                             <TableCell>{profile.email || "-"}</TableCell>
                             <TableCell>{profile.phone || "-"}</TableCell>
                             <TableCell>{profile.country || "-"}</TableCell>
@@ -2151,8 +2129,6 @@ const Admin = () => {
                             <TableCell>{profile.education_level || "-"}</TableCell>
                             <TableCell>{profile.employment_status || "-"}</TableCell>
                             <TableCell>{profile.year_of_birth || "-"}</TableCell>
-                            <TableCell>{profile.has_disability ? "Yes" : "No"}</TableCell>
-                            <TableCell>{profile.student_residence || "-"}</TableCell>
                             <TableCell>
                               {profile.linkedin_profile ? (
                                 <a href={profile.linkedin_profile} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">View</a>
