@@ -12,7 +12,7 @@ import Footer from "@/components/Footer";
 import { Loader2, Eye, EyeOff, ArrowLeft, ArrowRight, Gift } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { z } from "zod";
 
 const countries = [
   "Nigeria", "Ghana", "Kenya", "South Africa", "Egypt", "Morocco", "Tanzania",
@@ -60,8 +60,7 @@ const TOTAL_STEPS = 5;
 const SignUp = () => {
   const [step, setStep] = useState(1);
   // Step 1
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -74,8 +73,6 @@ const SignUp = () => {
   const [educationLevel, setEducationLevel] = useState("");
   const [employmentStatus, setEmploymentStatus] = useState("");
   // Step 4
-  const [hasDisability, setHasDisability] = useState("");
-  const [studentResidence, setStudentResidence] = useState("");
   const [linkedIn, setLinkedIn] = useState("");
   const [hearAbout, setHearAbout] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -103,8 +100,7 @@ const SignUp = () => {
     const errors: Record<string, string> = {};
 
     if (s === 1) {
-      if (!firstName.trim() || firstName.trim().length < 2) errors.firstName = "First name must be at least 2 characters";
-      if (!lastName.trim() || lastName.trim().length < 2) errors.lastName = "Last name must be at least 2 characters";
+      if (!fullName.trim() || fullName.trim().length < 2) errors.fullName = "Full name must be at least 2 characters";
       if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errors.email = "Please enter a valid email address";
       if (!password || password.length < 6) errors.password = "Password must be at least 6 characters";
     }
@@ -118,8 +114,6 @@ const SignUp = () => {
       if (!employmentStatus) errors.employmentStatus = "Please select your employment status";
     }
     if (s === 4) {
-      if (!hasDisability) errors.hasDisability = "Please select an option";
-      if (!studentResidence) errors.studentResidence = "Please select your residence type";
       if (!agreeTerms) errors.agreeTerms = "You must agree to the Terms & Conditions";
     }
     if (s === 5) {
@@ -151,9 +145,7 @@ const SignUp = () => {
       password,
       options: {
         data: {
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          full_name: `${firstName.trim()} ${lastName.trim()}`,
+          full_name: fullName.trim(),
           phone: phone.trim(),
           country,
           education_level: educationLevel,
@@ -163,8 +155,6 @@ const SignUp = () => {
           linkedin_profile: linkedIn.trim() || null,
           hear_about: hearAbout || null,
           referred_by_code: referralCode || null,
-          has_disability: hasDisability === "yes",
-          student_residence: studentResidence,
         },
         emailRedirectTo: `${window.location.origin}/`,
       },
@@ -193,17 +183,10 @@ const SignUp = () => {
 
   const renderStep1 = () => (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="firstName">First Name *</Label>
-          <Input id="firstName" placeholder="John" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-          {stepErrors.firstName && <p className="text-xs text-destructive">{stepErrors.firstName}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="lastName">Last Name *</Label>
-          <Input id="lastName" placeholder="Doe" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-          {stepErrors.lastName && <p className="text-xs text-destructive">{stepErrors.lastName}</p>}
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="fullName">Full Name *</Label>
+        <Input id="fullName" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        {stepErrors.fullName && <p className="text-xs text-destructive">{stepErrors.fullName}</p>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="signup-email">Email *</Label>
@@ -286,34 +269,6 @@ const SignUp = () => {
   const renderStep4 = () => (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label>Do you have any disabilities? *</Label>
-        <RadioGroup value={hasDisability} onValueChange={setHasDisability} className="flex gap-6">
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="yes" id="disability-yes" />
-            <Label htmlFor="disability-yes" className="font-normal cursor-pointer">Yes</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="no" id="disability-no" />
-            <Label htmlFor="disability-no" className="font-normal cursor-pointer">No</Label>
-          </div>
-        </RadioGroup>
-        {stepErrors.hasDisability && <p className="text-xs text-destructive">{stepErrors.hasDisability}</p>}
-      </div>
-      <div className="space-y-2">
-        <Label>Student Residence *</Label>
-        <RadioGroup value={studentResidence} onValueChange={setStudentResidence} className="flex gap-6">
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="Urban" id="residence-urban" />
-            <Label htmlFor="residence-urban" className="font-normal cursor-pointer">Urban</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="Rural" id="residence-rural" />
-            <Label htmlFor="residence-rural" className="font-normal cursor-pointer">Rural</Label>
-          </div>
-        </RadioGroup>
-        {stepErrors.studentResidence && <p className="text-xs text-destructive">{stepErrors.studentResidence}</p>}
-      </div>
-      <div className="space-y-2">
         <Label htmlFor="linkedin">LinkedIn Profile (Optional)</Label>
         <Input id="linkedin" type="url" placeholder="https://linkedin.com/in/yourname" value={linkedIn} onChange={(e) => setLinkedIn(e.target.value)} />
       </div>
@@ -342,14 +297,12 @@ const SignUp = () => {
         <h4 className="text-sm font-semibold text-foreground">Review & Confirm</h4>
         <p className="text-xs text-muted-foreground">Please confirm that all the information you provided is accurate before creating your account.</p>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-          <span className="text-muted-foreground">Name:</span><span className="font-medium truncate">{firstName} {lastName}</span>
+          <span className="text-muted-foreground">Name:</span><span className="font-medium truncate">{fullName}</span>
           <span className="text-muted-foreground">Email:</span><span className="font-medium truncate">{email}</span>
           <span className="text-muted-foreground">Phone:</span><span className="font-medium">{phone}</span>
           <span className="text-muted-foreground">Country:</span><span className="font-medium">{country}</span>
           <span className="text-muted-foreground">Education:</span><span className="font-medium">{educationLevel}</span>
           <span className="text-muted-foreground">Employment:</span><span className="font-medium">{employmentStatus}</span>
-          <span className="text-muted-foreground">Disability:</span><span className="font-medium">{hasDisability === "yes" ? "Yes" : "No"}</span>
-          <span className="text-muted-foreground">Residence:</span><span className="font-medium">{studentResidence}</span>
         </div>
       </div>
       <div className="flex items-start space-x-2">

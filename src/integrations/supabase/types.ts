@@ -2024,18 +2024,13 @@ export type Database = {
           education_level: string | null
           email: string | null
           employment_status: string | null
-          first_name: string | null
           full_name: string | null
           gender: string | null
-          has_disability: boolean | null
           hear_about: string | null
           id: string
-          last_name: string | null
           linkedin_profile: string | null
           phone: string | null
           referred_by_code: string | null
-          student_id: string | null
-          student_residence: string | null
           year_of_birth: number | null
         }
         Insert: {
@@ -2046,18 +2041,13 @@ export type Database = {
           education_level?: string | null
           email?: string | null
           employment_status?: string | null
-          first_name?: string | null
           full_name?: string | null
           gender?: string | null
-          has_disability?: boolean | null
           hear_about?: string | null
           id: string
-          last_name?: string | null
           linkedin_profile?: string | null
           phone?: string | null
           referred_by_code?: string | null
-          student_id?: string | null
-          student_residence?: string | null
           year_of_birth?: number | null
         }
         Update: {
@@ -2068,18 +2058,13 @@ export type Database = {
           education_level?: string | null
           email?: string | null
           employment_status?: string | null
-          first_name?: string | null
           full_name?: string | null
           gender?: string | null
-          has_disability?: boolean | null
           hear_about?: string | null
           id?: string
-          last_name?: string | null
           linkedin_profile?: string | null
           phone?: string | null
           referred_by_code?: string | null
-          student_id?: string | null
-          student_residence?: string | null
           year_of_birth?: number | null
         }
         Relationships: []
@@ -2561,7 +2546,6 @@ export type Database = {
     }
     Functions: {
       generate_referral_code: { Args: { p_user_id: string }; Returns: string }
-      generate_student_id: { Args: never; Returns: string }
       get_course_content_counts: {
         Args: { p_course_id: string }
         Returns: Json
