@@ -18,6 +18,8 @@ interface AIContentGeneratorProps {
   courseId: string;
   courseName: string;
   sectionId?: string;
+  sectionTitle?: string;
+  sectionDescription?: string | null;
   onContentGenerated: () => void;
 }
 
@@ -62,7 +64,7 @@ const questionTypeOptions = [
   { value: "matching", label: "Matching" },
 ];
 
-export const AIContentGenerator = ({ courseId, courseName, sectionId, onContentGenerated }: AIContentGeneratorProps) => {
+export const AIContentGenerator = ({ courseId, courseName, sectionId, sectionTitle, sectionDescription, onContentGenerated }: AIContentGeneratorProps) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [hasAiAccess, setHasAiAccess] = useState<boolean | null>(null);
@@ -95,8 +97,8 @@ export const AIContentGenerator = ({ courseId, courseName, sectionId, onContentG
   const [regeneratingAll, setRegeneratingAll] = useState(false);
 
   // Common form fields
-  const [topic, setTopic] = useState("");
-  const [additionalContext, setAdditionalContext] = useState("");
+  const [topic, setTopic] = useState(sectionTitle || "");
+  const [additionalContext, setAdditionalContext] = useState(sectionDescription || "");
   const [difficulty, setDifficulty] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
 
   // Lesson-specific
@@ -112,8 +114,8 @@ export const AIContentGenerator = ({ courseId, courseName, sectionId, onContentG
   const [generatedAssignment, setGeneratedAssignment] = useState<GeneratedAssignment | null>(null);
 
   const resetForm = () => {
-    setTopic("");
-    setAdditionalContext("");
+    setTopic(sectionTitle || "");
+    setAdditionalContext(sectionDescription || "");
     setDifficulty("intermediate");
     setLessonCount(5);
     setQuestionCount(5);

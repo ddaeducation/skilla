@@ -186,6 +186,8 @@ const SortableSection = ({
                 courseId={courseId}
                 courseName={courseName}
                 sectionId={section.id}
+                sectionTitle={section.title}
+                sectionDescription={section.description}
                 onContentGenerated={onContentGenerated}
               />
               <AddContentToSection
