@@ -175,34 +175,17 @@ serve(async (req) => {
 
     console.log(`Generating course structure for: ${courseTitle}`);
 
-    // Clean up existing generated content before regenerating
+    // Get the max order_index of existing top-level sections to append after them
     const { data: existingSections } = await supabase
       .from("course_sections")
-      .select("id")
-      .eq("course_id", courseId);
+      .select("order_index")
+      .eq("course_id", courseId)
+      .is("parent_id", null)
+      .order("order_index", { ascending: false })
+      .limit(1);
 
-    if (existingSections && existingSections.length > 0) {
-      const { data: existingQuizzes } = await supabase
-        .from("quizzes")
-        .select("id")
-        .eq("course_id", courseId);
-      if (existingQuizzes && existingQuizzes.length > 0) {
-        const quizIds = existingQuizzes.map(q => q.id);
-        const { data: existingQuestions } = await supabase
-          .from("quiz_questions")
-          .select("id")
-          .in("quiz_id", quizIds);
-        if (existingQuestions && existingQuestions.length > 0) {
-          await supabase.from("quiz_options").delete().in("question_id", existingQuestions.map(q => q.id));
-        }
-        await supabase.from("quiz_questions").delete().in("quiz_id", quizIds);
-      }
-      await supabase.from("quizzes").delete().eq("course_id", courseId);
-      await supabase.from("assignments").delete().eq("course_id", courseId);
-      await supabase.from("lesson_content").delete().eq("course_id", courseId);
-      await supabase.from("course_sections").delete().eq("course_id", courseId);
-      console.log(`Cleaned up existing content: ${existingSections.length} sections`);
-    }
+    const startModuleIndex = (existingSections?.[0]?.order_index ?? -1) + 1;
+    console.log(`Appending new modules starting at order_index ${startModuleIndex}`);
 
     // STEP 1: Generate course outline
     const outlineData = await callAI(LOVABLE_API_KEY, [
