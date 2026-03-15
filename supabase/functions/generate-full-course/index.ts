@@ -235,7 +235,7 @@ Each module should have 1 unit with exactly ${lessonsPerModule} lesson titles.`,
           course_id: courseId,
           title: mod.title,
           description: stripHtml(mod.description) || null,
-          order_index: mi,
+          order_index: startModuleIndex + mi,
           section_level: 1,
           parent_id: null,
         })
