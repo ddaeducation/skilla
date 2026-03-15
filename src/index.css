@@ -248,6 +248,11 @@ All colors MUST be HSL.
   }
 
   /* Content spacing for AI-generated and rich text content */
+  .prose {
+    font-size: 1.125rem;
+    text-align: justify;
+  }
+
   .prose p {
     @apply mb-4;
   }
