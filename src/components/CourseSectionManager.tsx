@@ -248,6 +248,8 @@ export const CourseSectionManager = ({ courseId, courseName, sections, onSection
   const [description, setDescription] = useState("");
   const [sectionLevel, setSectionLevel] = useState<number>(1);
   const [parentId, setParentId] = useState<string | null>(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const [unlockAt, setUnlockAt] = useState<string>("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   
   // Content items state
