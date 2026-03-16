@@ -24,6 +24,7 @@ import {
   ChevronsUpDown,
   PanelLeftClose,
   Lock,
+  Clock,
 } from "lucide-react";
 
 interface CourseSection {
