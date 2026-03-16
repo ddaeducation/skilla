@@ -1,3 +1,4 @@
+import HighlightedHTML from "@/components/HighlightedHTML";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { stripHtml } from "@/lib/utils";
 import { sanitizeYouTubeIframes } from "@/lib/youtubeUtils";
