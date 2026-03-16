@@ -137,6 +137,8 @@ export const ContentItemEditDialog = ({
             duration_minutes: lessonForm.duration_minutes,
             is_free_preview: lessonForm.is_free_preview,
             required_watch_percentage: lessonForm.required_watch_percentage,
+            is_locked: lessonForm.is_locked,
+            unlock_at: lessonForm.unlock_at,
           })
           .eq("id", itemId);
         if (error) throw error;
