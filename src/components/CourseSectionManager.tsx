@@ -383,12 +383,16 @@ export const CourseSectionManager = ({ courseId, courseName, sections, onSection
       setDescription(section.description || "");
       setSectionLevel(section.section_level || 1);
       setParentId(section.parent_id);
+      setIsLocked(section.is_locked || false);
+      setUnlockAt(section.unlock_at ? new Date(section.unlock_at).toISOString().slice(0, 16) : "");
     } else {
       setEditingSection(null);
       setTitle("");
       setDescription("");
       setSectionLevel(newLevel || 1);
       setParentId(newParentId || null);
+      setIsLocked(false);
+      setUnlockAt("");
     }
     setDialogOpen(true);
   };
