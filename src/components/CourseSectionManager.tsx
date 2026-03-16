@@ -162,6 +162,18 @@ const SortableSection = ({
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
                 {getLevelLabel(level)}
               </span>
+              {section.is_locked && (
+                <span className="text-xs text-destructive flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  Locked
+                </span>
+              )}
+              {section.unlock_at && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {new Date(section.unlock_at).toLocaleDateString()} {new Date(section.unlock_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
             </div>
             {section.description && (
               <p className="text-xs text-muted-foreground line-clamp-1">{section.description.replace(/<[^>]*>/g, '')}</p>
