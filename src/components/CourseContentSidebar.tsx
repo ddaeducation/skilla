@@ -356,6 +356,8 @@ export function CourseContentSidebar({
     // For Units (level 2), show content items directly
     const sectionContent = getSectionContent(section.id);
     const stats = getSectionStats(section.id);
+    const isSectionLocked = section.is_locked && !(section.unlock_at && new Date(section.unlock_at) <= new Date());
+    const hasSchedule = section.unlock_at && new Date(section.unlock_at) > new Date();
 
     return (
       <Collapsible
@@ -365,7 +367,7 @@ export function CourseContentSidebar({
       >
         <CollapsibleTrigger asChild>
           <button
-            className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left"
+            className={`w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left ${isSectionLocked ? 'opacity-60' : ''}`}
             style={{ paddingLeft: `${paddingLeft + 8}px` }}
           >
             {isExpanded ? (
@@ -373,10 +375,19 @@ export function CourseContentSidebar({
             ) : (
               <ChevronRight className="w-4 h-4 flex-shrink-0" />
             )}
-              {getSectionIcon(level)}
+            {isSectionLocked ? (
+              <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            ) : (
+              getSectionIcon(level)
+            )}
             <span className="font-medium text-sm break-words flex-1 min-w-0">
               {section.title}
             </span>
+            {hasSchedule && (
+              <span className="text-xs text-muted-foreground flex items-center gap-0.5" title={`Unlocks ${new Date(section.unlock_at!).toLocaleString()}`}>
+                <Clock className="w-3 h-3" />
+              </span>
+            )}
             <Badge variant="secondary" className="text-xs">
               {stats.completed}/{stats.total}
             </Badge>
