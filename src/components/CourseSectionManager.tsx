@@ -813,6 +813,59 @@ export const CourseSectionManager = ({ courseId, courseName, sections, onSection
                 </Select>
               </div>
             )}
+
+            {/* Lock & Schedule */}
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    Lock {getLevelLabel(sectionLevel)}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Prevent students from accessing this content
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant={isLocked ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsLocked(!isLocked)}
+                >
+                  {isLocked ? <Lock className="h-4 w-4 mr-1" /> : <Unlock className="h-4 w-4 mr-1" />}
+                  {isLocked ? "Locked" : "Unlocked"}
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="unlock_at" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Scheduled Unlock (optional)
+                </Label>
+                <Input
+                  id="unlock_at"
+                  type="datetime-local"
+                  value={unlockAt}
+                  onChange={(e) => {
+                    setUnlockAt(e.target.value);
+                    if (e.target.value) setIsLocked(true);
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Content will automatically become visible to students at this time
+                </p>
+                {unlockAt && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setUnlockAt("")}
+                    className="text-xs"
+                  >
+                    Clear schedule
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
