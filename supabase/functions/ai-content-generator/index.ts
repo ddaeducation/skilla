@@ -260,6 +260,11 @@ CRITICAL STRUCTURE & FORMATTING RULES:
    - Use <em> for emphasis sparingly.
 5. End with a <h3>Summary</h3> or <h3>Key Takeaways</h3> section containing a concise <ul> list of main points.
 
+CODE BLOCKS RULE:
+- When including code examples (SQL, Python, JavaScript, etc.), ALWAYS wrap them in <pre><code class="language-LANG">...</code></pre> where LANG is the language name (e.g. sql, python, javascript, java, bash, etc.).
+- Never use markdown code fences. Always use HTML <pre><code> tags.
+- Escape HTML entities inside code blocks: use &lt; for <, &gt; for >, &amp; for &.
+
 CONTENT QUALITY RULES:
 - Each paragraph must be substantive (3-5 sentences minimum), not just a single sentence.
 - Maintain logical flow between sections — use transitions.
