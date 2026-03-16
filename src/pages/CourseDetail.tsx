@@ -1393,11 +1393,27 @@ const CourseDetail = () => {
   // Handle content selection with lock check
   const handleSelectContent = (item: ContentItem) => {
     if (isItemLocked(item)) {
-      toast({
-        title: "Content Locked",
-        description: "Complete the previous item first to unlock this content.",
-        variant: "destructive",
-      });
+      // Check if locked by schedule
+      const section = item.data.section_id ? sections.find(s => s.id === item.data.section_id) : null;
+      const parentModule = section?.parent_id ? sections.find(s => s.id === section.parent_id) : null;
+      const lessonUnlock = item.type === "lesson" && (item.data as LessonContent).unlock_at;
+      const sectionUnlock = section?.unlock_at;
+      const moduleUnlock = parentModule?.unlock_at;
+      const unlockTime = lessonUnlock || sectionUnlock || moduleUnlock;
+      
+      if (unlockTime && new Date(unlockTime) > new Date()) {
+        toast({
+          title: "Content Scheduled",
+          description: `This content will be available on ${new Date(unlockTime).toLocaleDateString()} at ${new Date(unlockTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Content Locked",
+          description: "Complete the previous item first to unlock this content.",
+          variant: "destructive",
+        });
+      }
       return;
     }
     setActiveContent(item);
