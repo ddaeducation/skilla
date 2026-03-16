@@ -50,6 +50,7 @@ import CodeLessonPlayer from "@/components/CodeLessonPlayer";
 import PdfPresentationViewer from "@/components/PdfPresentationViewer";
 import PaginatedTextContent from "@/components/PaginatedTextContent";
 import { PeerReviewPanel } from "@/components/PeerReviewPanel";
+import HighlightedHTML from "@/components/HighlightedHTML";
 import { useVideoWatchProgress } from "@/hooks/useVideoWatchProgress";
 
 interface CourseSection {
