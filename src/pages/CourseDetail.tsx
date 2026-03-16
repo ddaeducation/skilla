@@ -1337,14 +1337,55 @@ const CourseDetail = () => {
     }
   };
 
-  // Sequential locking: an item is locked if the previous item is not completed
+  // Sequential locking + instructor-set locks
   // Instructors bypass all locks
   const isItemLocked = (item: ContentItem) => {
     if (isInstructor) return false;
+
+    // Check instructor-set lock on the lesson itself
+    if (item.type === "lesson") {
+      const lesson = item.data as LessonContent;
+      if (lesson.is_locked) {
+        // Check if scheduled unlock time has passed
+        if (lesson.unlock_at && new Date(lesson.unlock_at) <= new Date()) {
+          // Time has passed, not locked anymore
+        } else {
+          return true;
+        }
+      }
+    }
+
+    // Check instructor-set lock on the parent section/module
+    if (item.data.section_id) {
+      const section = sections.find(s => s.id === item.data.section_id);
+      if (section) {
+        // Check the unit itself
+        if (section.is_locked) {
+          if (section.unlock_at && new Date(section.unlock_at) <= new Date()) {
+            // Scheduled unlock passed
+          } else {
+            return true;
+          }
+        }
+        // Check the parent module
+        if (section.parent_id) {
+          const parentModule = sections.find(s => s.id === section.parent_id);
+          if (parentModule?.is_locked) {
+            if (parentModule.unlock_at && new Date(parentModule.unlock_at) <= new Date()) {
+              // Scheduled unlock passed
+            } else {
+              return true;
+            }
+          }
+        }
+      }
+    }
+
+    // Sequential lock: item is locked if the previous item is not completed
     const currentIndex = unifiedContent.findIndex(
       (i) => i.type === item.type && i.data.id === item.data.id
     );
-    if (currentIndex <= 0) return false; // First item is never locked
+    if (currentIndex <= 0) return false;
     const previousItem = unifiedContent[currentIndex - 1];
     return !getItemStatus(previousItem);
   };
