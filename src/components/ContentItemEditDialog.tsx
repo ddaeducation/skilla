@@ -23,6 +23,8 @@ interface LessonData {
   order_index: number;
   section_id: string | null;
   required_watch_percentage: number | null;
+  is_locked: boolean;
+  unlock_at: string | null;
 }
 
 interface QuizData {
