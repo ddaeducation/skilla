@@ -468,6 +468,8 @@ export const CourseSectionManager = ({ courseId, courseName, sections, onSection
           order_index: maxOrderIndex,
           section_level: sectionLevel,
           parent_id: parentId,
+          is_locked: isLocked,
+          unlock_at: unlockAt ? new Date(unlockAt).toISOString() : null,
         });
 
       if (error) {
