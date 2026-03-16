@@ -23,6 +23,8 @@ interface LessonData {
   order_index: number;
   section_id: string | null;
   required_watch_percentage: number | null;
+  is_locked: boolean;
+  unlock_at: string | null;
 }
 
 interface QuizData {
@@ -135,6 +137,8 @@ export const ContentItemEditDialog = ({
             duration_minutes: lessonForm.duration_minutes,
             is_free_preview: lessonForm.is_free_preview,
             required_watch_percentage: lessonForm.required_watch_percentage,
+            is_locked: lessonForm.is_locked,
+            unlock_at: lessonForm.unlock_at,
           })
           .eq("id", itemId);
         if (error) throw error;
@@ -309,6 +313,41 @@ export const ContentItemEditDialog = ({
                     </p>
                   </div>
                 )}
+
+                {/* Lock & Schedule */}
+                <div className="space-y-3 border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-medium">Lock Lesson</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Prevent students from accessing this lesson
+                      </p>
+                    </div>
+                    <Switch
+                      checked={lessonForm.is_locked}
+                      onCheckedChange={(checked) => setLessonForm({ ...lessonForm, is_locked: checked })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unlock_at">Scheduled Unlock (optional)</Label>
+                    <Input
+                      id="unlock_at"
+                      type="datetime-local"
+                      value={lessonForm.unlock_at ? new Date(lessonForm.unlock_at).toISOString().slice(0, 16) : ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setLessonForm({ 
+                          ...lessonForm, 
+                          unlock_at: val ? new Date(val).toISOString() : null,
+                          is_locked: val ? true : lessonForm.is_locked,
+                        });
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Lesson will automatically become visible at this time
+                    </p>
+                  </div>
+                </div>
               </>
             )}
 

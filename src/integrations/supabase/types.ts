@@ -1172,10 +1172,12 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_locked: boolean
           order_index: number
           parent_id: string | null
           section_level: number | null
           title: string
+          unlock_at: string | null
           updated_at: string
         }
         Insert: {
@@ -1183,10 +1185,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_locked?: boolean
           order_index?: number
           parent_id?: string | null
           section_level?: number | null
           title: string
+          unlock_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -1194,10 +1198,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_locked?: boolean
           order_index?: number
           parent_id?: string | null
           section_level?: number | null
           title?: string
+          unlock_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1729,10 +1735,12 @@ export type Database = {
           duration_minutes: number | null
           id: string
           is_free_preview: boolean
+          is_locked: boolean
           order_index: number
           required_watch_percentage: number | null
           section_id: string | null
           title: string
+          unlock_at: string | null
           updated_at: string
         }
         Insert: {
@@ -1745,10 +1753,12 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_free_preview?: boolean
+          is_locked?: boolean
           order_index?: number
           required_watch_percentage?: number | null
           section_id?: string | null
           title: string
+          unlock_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -1761,10 +1771,12 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_free_preview?: boolean
+          is_locked?: boolean
           order_index?: number
           required_watch_percentage?: number | null
           section_id?: string | null
           title?: string
+          unlock_at?: string | null
           updated_at?: string
         }
         Relationships: [

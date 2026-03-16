@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Plus, GripVertical, Pencil, Trash2, ChevronDown, ChevronRight, FolderOpen, Calendar, CalendarDays, ChevronsUpDown } from "lucide-react";
+import { Plus, GripVertical, Pencil, Trash2, ChevronDown, ChevronRight, FolderOpen, Calendar, CalendarDays, ChevronsUpDown, Lock, Unlock, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,6 +44,8 @@ interface CourseSection {
   order_index: number;
   parent_id: string | null;
   section_level: number | null;
+  is_locked?: boolean;
+  unlock_at?: string | null;
 }
 
 interface CourseSectionManagerProps {
@@ -160,6 +162,18 @@ const SortableSection = ({
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
                 {getLevelLabel(level)}
               </span>
+              {section.is_locked && (
+                <span className="text-xs text-destructive flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  Locked
+                </span>
+              )}
+              {section.unlock_at && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {new Date(section.unlock_at).toLocaleDateString()} {new Date(section.unlock_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
             </div>
             {section.description && (
               <p className="text-xs text-muted-foreground line-clamp-1">{section.description.replace(/<[^>]*>/g, '')}</p>
@@ -234,6 +248,8 @@ export const CourseSectionManager = ({ courseId, courseName, sections, onSection
   const [description, setDescription] = useState("");
   const [sectionLevel, setSectionLevel] = useState<number>(1);
   const [parentId, setParentId] = useState<string | null>(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const [unlockAt, setUnlockAt] = useState<string>("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   
   // Content items state
@@ -367,12 +383,16 @@ export const CourseSectionManager = ({ courseId, courseName, sections, onSection
       setDescription(section.description || "");
       setSectionLevel(section.section_level || 1);
       setParentId(section.parent_id);
+      setIsLocked(section.is_locked || false);
+      setUnlockAt(section.unlock_at ? new Date(section.unlock_at).toISOString().slice(0, 16) : "");
     } else {
       setEditingSection(null);
       setTitle("");
       setDescription("");
       setSectionLevel(newLevel || 1);
       setParentId(newParentId || null);
+      setIsLocked(false);
+      setUnlockAt("");
     }
     setDialogOpen(true);
   };
@@ -417,6 +437,8 @@ export const CourseSectionManager = ({ courseId, courseName, sections, onSection
           description: description || null,
           section_level: sectionLevel,
           parent_id: parentId,
+          is_locked: isLocked,
+          unlock_at: unlockAt ? new Date(unlockAt).toISOString() : null,
         })
         .eq("id", editingSection.id);
 
@@ -446,6 +468,8 @@ export const CourseSectionManager = ({ courseId, courseName, sections, onSection
           order_index: maxOrderIndex,
           section_level: sectionLevel,
           parent_id: parentId,
+          is_locked: isLocked,
+          unlock_at: unlockAt ? new Date(unlockAt).toISOString() : null,
         });
 
       if (error) {
@@ -789,6 +813,59 @@ export const CourseSectionManager = ({ courseId, courseName, sections, onSection
                 </Select>
               </div>
             )}
+
+            {/* Lock & Schedule */}
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    Lock {getLevelLabel(sectionLevel)}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Prevent students from accessing this content
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant={isLocked ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsLocked(!isLocked)}
+                >
+                  {isLocked ? <Lock className="h-4 w-4 mr-1" /> : <Unlock className="h-4 w-4 mr-1" />}
+                  {isLocked ? "Locked" : "Unlocked"}
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="unlock_at" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Scheduled Unlock (optional)
+                </Label>
+                <Input
+                  id="unlock_at"
+                  type="datetime-local"
+                  value={unlockAt}
+                  onChange={(e) => {
+                    setUnlockAt(e.target.value);
+                    if (e.target.value) setIsLocked(true);
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Content will automatically become visible to students at this time
+                </p>
+                {unlockAt && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setUnlockAt("")}
+                    className="text-xs"
+                  >
+                    Clear schedule
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
