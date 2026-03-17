@@ -72,6 +72,8 @@ const SignUp = () => {
   const [gender, setGender] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
   const [employmentStatus, setEmploymentStatus] = useState("");
+  const [studentResidence, setStudentResidence] = useState("");
+  const [hasDisability, setHasDisability] = useState("");
   // Step 4
   const [linkedIn, setLinkedIn] = useState("");
   const [hearAbout, setHearAbout] = useState("");
