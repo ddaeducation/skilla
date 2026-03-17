@@ -49,7 +49,7 @@ const CoursePriceDisplay = ({ monthlyPrice, price, defaultCurrency = "USD", pric
           onClick={() => setCurrency("USD")}
           className={currency === "USD" ? "bg-accent" : ""}
         >
-          {`$${displayPrice}${isFullPrice ? '' : '/mo'}`}
+          {`$${displayPrice}${isFullPrice ? ' (FP)' : '/mo'}`}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setCurrency("RWF")}
