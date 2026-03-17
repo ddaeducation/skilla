@@ -114,6 +114,8 @@ const SignUp = () => {
     if (s === 3) {
       if (!educationLevel) errors.educationLevel = "Please select your education level";
       if (!employmentStatus) errors.employmentStatus = "Please select your employment status";
+      if (!studentResidence) errors.studentResidence = "Please select your location";
+      if (!hasDisability) errors.hasDisability = "Please select an option";
     }
     if (s === 4) {
       if (!agreeTerms) errors.agreeTerms = "You must agree to the Terms & Conditions";
