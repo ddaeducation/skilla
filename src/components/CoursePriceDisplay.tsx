@@ -33,9 +33,9 @@ const CoursePriceDisplay = ({ monthlyPrice, price, defaultCurrency = "USD", pric
     if (cur === "RWF") {
       const rwfAmount = displayPrice * USD_TO_RWF_RATE;
       const formattedRwf = rwfAmount.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      return isFullPrice ? `RWF ${formattedRwf} (FP)` : `RWF ${formattedRwf}/mo`;
+      return isFullPrice ? `RWF ${formattedRwf} /FP` : `RWF ${formattedRwf}/mo`;
     }
-    return isFullPrice ? `$${displayPrice} (FP)` : `$${displayPrice}/mo`;
+    return isFullPrice ? `$${displayPrice} /FP` : `$${displayPrice}/mo`;
   };
 
   return (
