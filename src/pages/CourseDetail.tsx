@@ -1006,7 +1006,7 @@ const CourseDetail = () => {
                   }
                 } : undefined}
               >
-                <source src={videoUrl} />
+                <source src={videoUrl} type={videoUrl.match(/\.webm$/i) ? 'video/webm' : videoUrl.match(/\.ogg$/i) ? 'video/ogg' : videoUrl.match(/\.mov$/i) ? 'video/quicktime' : 'video/mp4'} />
                 Your browser does not support the video tag.
               </video>
             );
