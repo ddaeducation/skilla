@@ -17,7 +17,7 @@ export const getFallbackRating = (courseId: string): number => {
 export const formatCoursePrice = (monthlyPrice: number | null, price: number, pricingType?: string, fullPrice?: number | null): string => {
   if (pricingType === "full") {
     const fp = fullPrice && fullPrice > 0 ? fullPrice : 5;
-    return `$${fp} (FP)`;
+    return `$${fp} /FP`;
   }
   const displayPrice = monthlyPrice ?? price;
   return `$${displayPrice > 0 ? displayPrice : 5}/mo`;
