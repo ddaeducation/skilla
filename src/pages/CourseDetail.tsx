@@ -1913,6 +1913,7 @@ const CourseDetail = () => {
           rubrics={selectedAssignment.rubrics}
           maxScore={selectedAssignment.max_score}
           dueDate={selectedAssignment.due_date}
+          maxSubmissions={selectedAssignment.max_submissions}
           aiGradingEnabled={selectedAssignment.ai_grading_enabled}
           open={assignmentOpen}
           onClose={() => {
