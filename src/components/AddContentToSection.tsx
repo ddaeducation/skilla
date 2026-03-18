@@ -56,10 +56,12 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
     // Quiz-specific
     passing_score: 70,
     time_limit_minutes: 0,
+    max_attempts: "",
     // Assignment-specific
     instructions: "",
     rubrics: "",
     max_score: 100,
+    max_submissions: "",
     due_date: undefined as Date | undefined,
   });
 
