@@ -87,6 +87,7 @@ interface Quiz {
   description: string | null;
   passing_score: number;
   time_limit_minutes: number | null;
+  max_attempts: number | null;
   order_index: number;
   section_id: string | null;
 }
@@ -98,6 +99,7 @@ interface Assignment {
   instructions: string | null;
   rubrics: string | null;
   max_score: number;
+  max_submissions: number | null;
   due_date: string | null;
   order_index: number;
   section_id: string | null;
@@ -1894,6 +1896,7 @@ const CourseDetail = () => {
           quizDescription={selectedQuiz.description}
           passingScore={selectedQuiz.passing_score}
           timeLimitMinutes={selectedQuiz.time_limit_minutes}
+          maxAttempts={selectedQuiz.max_attempts}
           open={quizTakerOpen}
           onClose={() => {
             setQuizTakerOpen(false);
@@ -1913,6 +1916,7 @@ const CourseDetail = () => {
           rubrics={selectedAssignment.rubrics}
           maxScore={selectedAssignment.max_score}
           dueDate={selectedAssignment.due_date}
+          maxSubmissions={selectedAssignment.max_submissions}
           aiGradingEnabled={selectedAssignment.ai_grading_enabled}
           open={assignmentOpen}
           onClose={() => {

@@ -43,6 +43,7 @@ interface StudentAssignmentSubmissionProps {
   rubrics?: string | null;
   maxScore: number;
   dueDate?: string | null;
+  maxSubmissions?: number | null;
   aiGradingEnabled?: boolean;
   open: boolean;
   onClose: () => void;
@@ -74,6 +75,7 @@ export const StudentAssignmentSubmission = ({
   rubrics,
   maxScore,
   dueDate,
+  maxSubmissions,
   aiGradingEnabled = false,
   open,
   onClose,
@@ -87,6 +89,8 @@ export const StudentAssignmentSubmission = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [aiGrading, setAiGrading] = useState(false);
+  const [submissionCount, setSubmissionCount] = useState(0);
+  const [maxSubmissionsReached, setMaxSubmissionsReached] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -112,6 +116,11 @@ export const StudentAssignmentSubmission = ({
       if (data) {
         setExistingSubmission(data);
         setSubmissionText(data.submission_text || "");
+        const count = (data as any).submission_count || 1;
+        setSubmissionCount(count);
+        if (maxSubmissions && count >= maxSubmissions) {
+          setMaxSubmissionsReached(true);
+        }
       }
     } catch (error) {
       console.error("Error fetching submission:", error);
@@ -156,6 +165,15 @@ export const StudentAssignmentSubmission = ({
   };
 
   const handleSubmit = async () => {
+    if (maxSubmissionsReached) {
+      toast({
+        title: "Submission limit reached",
+        description: `You have used all ${maxSubmissions} submissions.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!submissionText.trim() && !selectedFile) {
       toast({
         title: "Error",
@@ -197,16 +215,22 @@ export const StudentAssignmentSubmission = ({
 
       if (existingSubmission) {
         // Update existing submission
+        const newCount = submissionCount + 1;
         const { error } = await supabase
           .from("assignment_submissions")
           .update({
             submission_text: submissionText.trim() || null,
             file_url: fileUrl || existingSubmission.file_url,
             submitted_at: new Date().toISOString(),
+            submission_count: newCount,
           })
           .eq("id", existingSubmission.id);
 
         if (error) throw error;
+        setSubmissionCount(newCount);
+        if (maxSubmissions && newCount >= maxSubmissions) {
+          setMaxSubmissionsReached(true);
+        }
       } else {
         // Create new submission
         const { error } = await supabase.from("assignment_submissions").insert({
@@ -330,6 +354,11 @@ export const StudentAssignmentSubmission = ({
                   Submitted
                 </Badge>
               )}
+              {maxSubmissions && (
+                <Badge variant="outline" className="gap-1">
+                  Submissions: {submissionCount}/{maxSubmissions}
+                </Badge>
+              )}
               {isGraded && (
                 <Badge variant="default" className="gap-1 bg-green-500">
                   Score: {existingSubmission?.score}/{maxScore}
@@ -352,8 +381,18 @@ export const StudentAssignmentSubmission = ({
 
             <Separator />
 
+            {maxSubmissionsReached && !isGraded && (
+              <Card className="border-destructive bg-destructive/10">
+                <CardContent className="pt-4">
+                  <p className="text-sm text-destructive font-medium">
+                    You have reached the maximum number of submissions ({maxSubmissions}).
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Submission Form */}
-            {!isGraded && (
+            {!isGraded && !maxSubmissionsReached && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="submission-text">Your Response</Label>

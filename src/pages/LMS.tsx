@@ -835,6 +835,7 @@ const LMS = () => {
                 rubrics={selectedAssignment.rubrics}
                 maxScore={selectedAssignment.max_score || 100}
                 dueDate={selectedAssignment.due_date}
+                maxSubmissions={selectedAssignment.max_submissions}
                 aiGradingEnabled={selectedAssignment.ai_grading_enabled}
                 open={!!selectedAssignment}
                 onClose={() => setSelectedAssignment(null)}
@@ -935,6 +936,7 @@ const LMS = () => {
                 quizDescription={selectedQuiz.description}
                 passingScore={selectedQuiz.passing_score || 70}
                 timeLimitMinutes={selectedQuiz.time_limit_minutes}
+                maxAttempts={selectedQuiz.max_attempts}
                 open={!!selectedQuiz}
                 onClose={() => setSelectedQuiz(null)}
                 onComplete={(passed, score, maxScore) => {

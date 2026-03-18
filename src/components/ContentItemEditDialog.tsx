@@ -44,6 +44,7 @@ interface AssignmentData {
   description: string | null;
   instructions: string | null;
   max_score: number;
+  max_submissions: number | null;
   due_date: string | null;
   order_index: number;
   section_id: string | null;
@@ -164,6 +165,7 @@ export const ContentItemEditDialog = ({
             description: assignmentForm.description,
             instructions: assignmentForm.instructions,
             max_score: assignmentForm.max_score,
+            max_submissions: assignmentForm.max_submissions,
             due_date: assignmentForm.due_date,
           })
           .eq("id", itemId);
@@ -458,7 +460,7 @@ export const ContentItemEditDialog = ({
                     minHeight="300px"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="max_score">Max Score</Label>
                     <Input
@@ -467,6 +469,17 @@ export const ContentItemEditDialog = ({
                       value={assignmentForm.max_score}
                       onChange={(e) => setAssignmentForm({ ...assignmentForm, max_score: parseInt(e.target.value) || 100 })}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="max_submissions">Max Submissions</Label>
+                    <Input
+                      id="max_submissions"
+                      type="number"
+                      value={assignmentForm.max_submissions ?? ""}
+                      onChange={(e) => setAssignmentForm({ ...assignmentForm, max_submissions: e.target.value ? parseInt(e.target.value) : null })}
+                      placeholder="Unlimited"
+                    />
+                    <p className="text-xs text-muted-foreground">Leave empty for unlimited</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="due_date">Due Date</Label>

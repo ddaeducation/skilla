@@ -56,10 +56,12 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
     // Quiz-specific
     passing_score: 70,
     time_limit_minutes: 0,
+    max_attempts: "",
     // Assignment-specific
     instructions: "",
     rubrics: "",
     max_score: 100,
+    max_submissions: "",
     due_date: undefined as Date | undefined,
   });
 
@@ -75,9 +77,11 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
       required_watch_percentage: "",
       passing_score: 70,
       time_limit_minutes: 0,
+      max_attempts: "",
       instructions: "",
       rubrics: "",
       max_score: 100,
+      max_submissions: "",
       due_date: undefined,
     });
   };
@@ -108,6 +112,7 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
           description: form.description || null,
           passing_score: form.passing_score,
           time_limit_minutes: form.time_limit_minutes || null,
+          max_attempts: form.max_attempts ? parseInt(form.max_attempts as string) : null,
           order_index: orderIndex,
         });
 
@@ -133,6 +138,7 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
           rubrics: form.rubrics || null,
           attachment_url: form.content_url || null,
           max_score: form.max_score,
+          max_submissions: form.max_submissions ? parseInt(form.max_submissions as string) : null,
           due_date: form.due_date ? form.due_date.toISOString() : null,
           order_index: orderIndex,
         });
@@ -360,7 +366,7 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
 
           {/* Quiz-specific fields */}
           {isQuiz && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Passing Score (%)</Label>
                 <Input
@@ -379,6 +385,17 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
                   onChange={(e) => setForm({ ...form, time_limit_minutes: parseInt(e.target.value) || 0 })}
                   min={0}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Max Attempts</Label>
+                <Input
+                  type="number"
+                  value={form.max_attempts}
+                  onChange={(e) => setForm({ ...form, max_attempts: e.target.value })}
+                  min={0}
+                  placeholder="Unlimited"
+                />
+                <p className="text-xs text-muted-foreground">Leave empty for unlimited</p>
               </div>
             </div>
           )}
@@ -417,7 +434,7 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
                   placeholder="Upload a file or enter URL"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Max Score</Label>
                   <Input
@@ -426,6 +443,17 @@ export const AddContentToSection = ({ courseId, sectionId, onContentCreated }: A
                     onChange={(e) => setForm({ ...form, max_score: parseInt(e.target.value) || 100 })}
                     min={0}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>Max Submissions</Label>
+                  <Input
+                    type="number"
+                    value={form.max_submissions}
+                    onChange={(e) => setForm({ ...form, max_submissions: e.target.value })}
+                    min={0}
+                    placeholder="Unlimited"
+                  />
+                  <p className="text-xs text-muted-foreground">Leave empty for unlimited</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Due Date (optional)</Label>

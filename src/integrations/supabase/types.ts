@@ -168,6 +168,7 @@ export type Database = {
           graded_by: string | null
           id: string
           score: number | null
+          submission_count: number
           submission_text: string | null
           submitted_at: string
           user_id: string
@@ -180,6 +181,7 @@ export type Database = {
           graded_by?: string | null
           id?: string
           score?: number | null
+          submission_count?: number
           submission_text?: string | null
           submitted_at?: string
           user_id: string
@@ -192,6 +194,7 @@ export type Database = {
           graded_by?: string | null
           id?: string
           score?: number | null
+          submission_count?: number
           submission_text?: string | null
           submitted_at?: string
           user_id?: string
@@ -218,6 +221,7 @@ export type Database = {
           instructions: string | null
           lesson_id: string | null
           max_score: number
+          max_submissions: number | null
           order_index: number
           rubrics: string | null
           section_id: string | null
@@ -234,6 +238,7 @@ export type Database = {
           instructions?: string | null
           lesson_id?: string | null
           max_score?: number
+          max_submissions?: number | null
           order_index?: number
           rubrics?: string | null
           section_id?: string | null
@@ -250,6 +255,7 @@ export type Database = {
           instructions?: string | null
           lesson_id?: string | null
           max_score?: number
+          max_submissions?: number | null
           order_index?: number
           rubrics?: string | null
           section_id?: string | null

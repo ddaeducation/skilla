@@ -64,6 +64,7 @@ interface StudentQuizTakerProps {
   quizDescription?: string | null;
   passingScore: number;
   timeLimitMinutes?: number | null;
+  maxAttempts?: number | null;
   open: boolean;
   onClose: () => void;
   onComplete?: (passed: boolean, score: number, maxScore: number) => void;
@@ -78,6 +79,7 @@ export const StudentQuizTaker = ({
   quizDescription,
   passingScore,
   timeLimitMinutes,
+  maxAttempts,
   open,
   onClose,
   onComplete,
@@ -97,6 +99,8 @@ export const StudentQuizTaker = ({
   const [passed, setPassed] = useState(false);
   const [feedbacks, setFeedbacks] = useState<QuestionFeedback[]>([]);
   const [showFeedbackDetails, setShowFeedbackDetails] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [maxAttemptsReached, setMaxAttemptsReached] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -111,6 +115,8 @@ export const StudentQuizTaker = ({
       setCurrentQuestionIndex(0);
       setAttemptId(null);
       setShowFeedbackDetails(false);
+      setAttemptCount(0);
+      setMaxAttemptsReached(false);
       fetchQuestions();
       if (timeLimitMinutes) {
         setTimeLeft(timeLimitMinutes * 60);
@@ -168,25 +174,43 @@ export const StudentQuizTaker = ({
         setOptions(optionsByQuestion);
       }
 
-      // Check for existing passed attempt before creating a new one
+      // Check for existing attempts
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: existingAttempts } = await supabase
+        const { data: allAttempts } = await supabase
           .from("quiz_attempts")
           .select("id, passed, score, max_score, completed_at")
           .eq("user_id", user.id)
-          .eq("quiz_id", quizId)
-          .eq("passed", true)
-          .limit(1);
+          .eq("quiz_id", quizId);
 
-        if (existingAttempts && existingAttempts.length > 0) {
-          // Already passed - show results without creating a new attempt
-          const passedAttempt = existingAttempts[0];
+        const totalAttempts = allAttempts?.length || 0;
+        setAttemptCount(totalAttempts);
+
+        // Check if already passed
+        const passedAttempt = allAttempts?.find(a => a.passed);
+        if (passedAttempt) {
           setAttemptId(passedAttempt.id);
           setScore(passedAttempt.score || 0);
           setMaxScore(passedAttempt.max_score || 0);
           setPassed(true);
           setSubmitted(true);
+          setLoading(false);
+          return;
+        }
+
+        // Check max attempts limit
+        if (maxAttempts && totalAttempts >= maxAttempts) {
+          setMaxAttemptsReached(true);
+          // Show last attempt results
+          const lastAttempt = allAttempts?.sort((a, b) => 
+            (b.completed_at || '').localeCompare(a.completed_at || '')
+          )[0];
+          if (lastAttempt) {
+            setAttemptId(lastAttempt.id);
+            setScore(lastAttempt.score || 0);
+            setMaxScore(lastAttempt.max_score || 0);
+            setSubmitted(true);
+          }
           setLoading(false);
           return;
         }
@@ -411,6 +435,13 @@ export const StudentQuizTaker = ({
   }, [submitted, attemptId, questions, options, answers, passingScore, onComplete, toast]);
 
   const handleRetake = async () => {
+    // Check max attempts limit
+    const newAttemptCount = attemptCount + 1;
+    if (maxAttempts && newAttemptCount >= maxAttempts) {
+      toast({ title: "Max attempts reached", description: `You have used all ${maxAttempts} attempts.`, variant: "destructive" });
+      return;
+    }
+
     // Reset all state and create a new attempt
     setSubmitted(false);
     setGrading(false);
@@ -422,6 +453,7 @@ export const StudentQuizTaker = ({
     setCurrentQuestionIndex(0);
     setAttemptId(null);
     setShowFeedbackDetails(false);
+    setMaxAttemptsReached(false);
     if (timeLimitMinutes) {
       setTimeLeft(timeLimitMinutes * 60);
     }
@@ -436,6 +468,7 @@ export const StudentQuizTaker = ({
         .single();
       if (!error && attempt) {
         setAttemptId(attempt.id);
+        setAttemptCount(newAttemptCount);
       }
     }
   };
@@ -861,13 +894,27 @@ export const StudentQuizTaker = ({
           </ScrollArea>
         )}
 
-        <div className="flex justify-center gap-3 pt-2">
-          <Button variant="outline" onClick={handleRetake} size="lg">
-            Retake Quiz
-          </Button>
-          <Button onClick={onClose} size="lg">
-            Close
-          </Button>
+        <div className="flex flex-col items-center gap-2 pt-2">
+          {maxAttempts && (
+            <p className="text-sm text-muted-foreground">
+              Attempts: {attemptCount}/{maxAttempts}
+            </p>
+          )}
+          <div className="flex justify-center gap-3">
+            {!(maxAttemptsReached || (maxAttempts && attemptCount >= maxAttempts)) && (
+              <Button variant="outline" onClick={handleRetake} size="lg">
+                Retake Quiz
+              </Button>
+            )}
+            {(maxAttemptsReached || (maxAttempts && attemptCount >= maxAttempts)) && !passed && (
+              <p className="text-sm text-destructive font-medium">
+                You have used all {maxAttempts} attempts.
+              </p>
+            )}
+            <Button onClick={onClose} size="lg">
+              Close
+            </Button>
+          </div>
         </div>
       </div>
     );
