@@ -44,6 +44,7 @@ interface AssignmentData {
   description: string | null;
   instructions: string | null;
   max_score: number;
+  max_submissions: number | null;
   due_date: string | null;
   order_index: number;
   section_id: string | null;
