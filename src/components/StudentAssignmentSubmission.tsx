@@ -89,6 +89,8 @@ export const StudentAssignmentSubmission = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [aiGrading, setAiGrading] = useState(false);
+  const [submissionCount, setSubmissionCount] = useState(0);
+  const [maxSubmissionsReached, setMaxSubmissionsReached] = useState(false);
 
   useEffect(() => {
     if (open) {
