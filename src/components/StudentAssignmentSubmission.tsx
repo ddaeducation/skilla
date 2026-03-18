@@ -382,7 +382,7 @@ export const StudentAssignmentSubmission = ({
             <Separator />
 
             {/* Submission Form */}
-            {!isGraded && (
+            {!isGraded && !maxSubmissionsReached && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="submission-text">Your Response</Label>
