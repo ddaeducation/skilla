@@ -99,6 +99,8 @@ export const StudentQuizTaker = ({
   const [passed, setPassed] = useState(false);
   const [feedbacks, setFeedbacks] = useState<QuestionFeedback[]>([]);
   const [showFeedbackDetails, setShowFeedbackDetails] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [maxAttemptsReached, setMaxAttemptsReached] = useState(false);
 
   useEffect(() => {
     if (open) {
