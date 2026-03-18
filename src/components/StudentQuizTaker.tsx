@@ -64,6 +64,7 @@ interface StudentQuizTakerProps {
   quizDescription?: string | null;
   passingScore: number;
   timeLimitMinutes?: number | null;
+  maxAttempts?: number | null;
   open: boolean;
   onClose: () => void;
   onComplete?: (passed: boolean, score: number, maxScore: number) => void;
