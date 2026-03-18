@@ -435,6 +435,13 @@ export const StudentQuizTaker = ({
   }, [submitted, attemptId, questions, options, answers, passingScore, onComplete, toast]);
 
   const handleRetake = async () => {
+    // Check max attempts limit
+    const newAttemptCount = attemptCount + 1;
+    if (maxAttempts && newAttemptCount >= maxAttempts) {
+      toast({ title: "Max attempts reached", description: `You have used all ${maxAttempts} attempts.`, variant: "destructive" });
+      return;
+    }
+
     // Reset all state and create a new attempt
     setSubmitted(false);
     setGrading(false);
@@ -446,6 +453,7 @@ export const StudentQuizTaker = ({
     setCurrentQuestionIndex(0);
     setAttemptId(null);
     setShowFeedbackDetails(false);
+    setMaxAttemptsReached(false);
     if (timeLimitMinutes) {
       setTimeLeft(timeLimitMinutes * 60);
     }
@@ -460,6 +468,7 @@ export const StudentQuizTaker = ({
         .single();
       if (!error && attempt) {
         setAttemptId(attempt.id);
+        setAttemptCount(newAttemptCount);
       }
     }
   };
