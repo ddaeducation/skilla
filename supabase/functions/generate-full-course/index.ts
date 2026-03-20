@@ -98,7 +98,16 @@ CONTENT RULES:
 
 DO NOT include any of these sections: "Watch & Learn", "More Recommended Videos", "Articles & Reading Materials". Only include inline hyperlinks within the body content.
 IMPORTANT: All URLs MUST be real, well-known domains. Do NOT fabricate or guess URLs. If unsure about a specific URL, use the homepage of the relevant site instead.
-${includeQuizzes ? "- Generate a quiz with 4-5 questions (single_choice, 4 options each, with detailed explanations)." : ""}
+${includeQuizzes ? `- Generate a quiz with 4-5 questions using a MIX of these types: single_choice, multiple_choice, true_false, fill_in, short_answer, matching, ordering, drag_drop.
+  - For single_choice: 4 options, one correct.
+  - For multiple_choice: 4 options, 2+ correct.
+  - For true_false: 2 options ("True" and "False"), one correct.
+  - For fill_in: 1 option with the correct answer text, is_correct: true.
+  - For short_answer: 1 option with the expected answer, is_correct: true.
+  - For matching: each option combines left and right using "|||" delimiter (e.g. "France|||Paris"). All options must have is_correct: true. Provide 4-6 pairs.
+  - For ordering: each option is one item in the correct order. All must have is_correct: true. Provide 4-6 items.
+  - For drag_drop: each option combines item and bucket using "|||" delimiter (e.g. "Dog|||Animals"). All options must have is_correct: true. Provide 4-8 items across 2-3 buckets.
+  - Include detailed explanations for each question.` : ""}
 ${includeAssignments ? "- Generate an assignment with HTML instructions including links to tools/references." : ""}`;
 }
 
@@ -315,22 +324,43 @@ Return JSON:
       "content_text": "<h2>Lesson Title</h2><h3>🎯 Learning Objectives</h3><ul><li>...</li></ul><h3>Introduction</h3><p>Brief intro...</p><p>Core body content with <a href='https://real-url.com' target='_blank' rel='noopener noreferrer'>inline hyperlinks</a> throughout...</p><h3>📝 Notes</h3><p>Additional tips...</p><h3>🔗 Useful Tools & Resources</h3><ul><li><a href='url' target='_blank'>Tool - Description</a></li></ul><h3>📝 Key Takeaways</h3><ul><li>Point 1</li></ul>",
       "duration_minutes": 25
     }
-  ]${includeQuizzes ? `,
+   ]${includeQuizzes ? `,
   "quiz": {
     "title": "Quiz: Unit Title",
     "description": "Plain text quiz description",
     "passing_score": 70,
     "questions": [
       {
-        "question_text": "Question?",
+        "question_text": "Which of the following is correct?",
         "question_type": "single_choice",
         "points": 1,
-        "explanation": "Detailed explanation of correct answer",
+        "explanation": "Detailed explanation",
         "options": [
           {"text": "Option A", "is_correct": false},
           {"text": "Option B", "is_correct": true},
           {"text": "Option C", "is_correct": false},
           {"text": "Option D", "is_correct": false}
+        ]
+      },
+      {
+        "question_text": "Match the following:",
+        "question_type": "matching",
+        "points": 3,
+        "explanation": "Explanation of matches",
+        "options": [
+          {"text": "Left1|||Right1", "is_correct": true},
+          {"text": "Left2|||Right2", "is_correct": true}
+        ]
+      },
+      {
+        "question_text": "Arrange in correct order:",
+        "question_type": "ordering",
+        "points": 2,
+        "explanation": "Explanation of order",
+        "options": [
+          {"text": "First item", "is_correct": true},
+          {"text": "Second item", "is_correct": true},
+          {"text": "Third item", "is_correct": true}
         ]
       }
     ]

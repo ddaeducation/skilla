@@ -62,6 +62,8 @@ const questionTypeOptions = [
   { value: "fill_in", label: "Fill in the Blanks" },
   { value: "short_answer", label: "Short Answer" },
   { value: "matching", label: "Matching" },
+  { value: "ordering", label: "Ordering / Sequencing" },
+  { value: "drag_drop", label: "Drag into Buckets" },
 ];
 
 export const AIContentGenerator = ({ courseId, courseName, sectionId, sectionTitle, sectionDescription, onContentGenerated }: AIContentGeneratorProps) => {

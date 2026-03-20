@@ -133,14 +133,18 @@ Return as JSON:
 }`;
     } else if (type === "single_question") {
       const questionType = questionTypes?.[0] || "single_choice";
-      const matchingInstruction = questionType === "matching"
+      const specialInstruction = questionType === "matching"
         ? `\nIMPORTANT: For matching questions, each option must combine the left item and right item using "|||" as delimiter. Example: { "text": "France|||Paris", "is_correct": true }. All options must have is_correct: true. Provide 4-6 pairs.`
+        : questionType === "ordering"
+        ? `\nIMPORTANT: For ordering questions, provide the options in the CORRECT order. Each option must have is_correct: true. Provide 4-6 items. Example: [{ "text": "Step 1", "is_correct": true }, { "text": "Step 2", "is_correct": true }].`
+        : questionType === "drag_drop"
+        ? `\nIMPORTANT: For drag_drop (bucket categorization) questions, each option combines item and bucket using "|||" delimiter. Example: { "text": "Dog|||Animals", "is_correct": true }. All options must have is_correct: true. Provide 4-8 items across 2-3 buckets.`
         : "";
       systemPrompt = `You are an expert assessment designer. Create a single quiz question that effectively tests understanding at the ${difficulty} level. Make it fresh and different from any previous version.`;
       userPrompt = `Create ONE ${questionType} question about "${topic}"${courseName ? ` for the course: ${courseName}` : ""}.
 ${additionalContext ? `Additional context: ${additionalContext}` : ""}
 ${existingContent ? `The previous question was: "${existingContent}". Please generate a different question while staying on topic.` : ""}
-${matchingInstruction}
+${specialInstruction}
 
 Provide:
 1. Question text
