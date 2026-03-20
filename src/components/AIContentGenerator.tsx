@@ -73,19 +73,22 @@ export const AIContentGenerator = ({ courseId, courseName, sectionId, sectionTit
     const checkAiAccess = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setHasAiAccess(false); return; }
-      const { data: adminRole } = await supabase
-        .from("user_roles")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("role", "admin" as any)
-        .maybeSingle();
-      if (adminRole) { setHasAiAccess(true); return; }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("ai_course_generation_enabled")
-        .eq("id", user.id)
-        .maybeSingle();
-      setHasAiAccess((profile as any)?.ai_course_generation_enabled ?? false);
+
+      const [adminRes, profileRes] = await Promise.all([
+        supabase
+          .from("user_roles")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("role", "admin" as any)
+          .maybeSingle(),
+        supabase
+          .from("profiles")
+          .select("ai_course_generation_enabled")
+          .eq("id", user.id)
+          .maybeSingle(),
+      ]);
+
+      setHasAiAccess(!!adminRes.data || !!(profileRes.data as any)?.ai_course_generation_enabled);
     };
     checkAiAccess();
   }, []);
