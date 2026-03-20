@@ -597,35 +597,55 @@ export const CourseSectionManager = ({ courseId, courseName, sections, onSection
     setEditDialogOpen(true);
   };
 
-  // Delete content handlers
+  // Optimistically remove an item from local contentBySection state
+  const removeItemFromState = (id: string) => {
+    setContentBySection(prev => {
+      const next = new Map(prev);
+      next.forEach((items, sectionId) => {
+        const filtered = items.filter(item => item.id !== id);
+        if (filtered.length !== items.length) {
+          next.set(sectionId, filtered);
+        }
+      });
+      return next;
+    });
+  };
+
+  // Delete content handlers with optimistic removal
   const handleDeleteLesson = async (id: string) => {
+    removeItemFromState(id);
+    toast({ title: "Lesson deleted" });
     const { error } = await supabase.from("lesson_content").delete().eq("id", id);
     if (error) {
       toast({ title: "Error", description: "Failed to delete lesson", variant: "destructive" });
+      fetchContentItems();
       return;
     }
-    toast({ title: "Lesson deleted" });
-    fetchContentItems();
+    onSectionsChange();
   };
 
   const handleDeleteQuiz = async (id: string) => {
+    removeItemFromState(id);
+    toast({ title: "Quiz deleted" });
     const { error } = await supabase.from("quizzes").delete().eq("id", id);
     if (error) {
       toast({ title: "Error", description: "Failed to delete quiz", variant: "destructive" });
+      fetchContentItems();
       return;
     }
-    toast({ title: "Quiz deleted" });
-    fetchContentItems();
+    onSectionsChange();
   };
 
   const handleDeleteAssignment = async (id: string) => {
+    removeItemFromState(id);
+    toast({ title: "Assignment deleted" });
     const { error } = await supabase.from("assignments").delete().eq("id", id);
     if (error) {
       toast({ title: "Error", description: "Failed to delete assignment", variant: "destructive" });
+      fetchContentItems();
       return;
     }
-    toast({ title: "Assignment deleted" });
-    fetchContentItems();
+    onSectionsChange();
   };
 
   // Handle reordering of content items within a unit

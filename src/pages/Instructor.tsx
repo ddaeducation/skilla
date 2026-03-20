@@ -810,13 +810,14 @@ const Instructor = () => {
 
   const handleDeleteAssignment = async (id: string) => {
     if (!confirm("Delete this assignment?")) return;
+    setAssignments(prev => prev.filter(a => a.id !== id));
+    toast({ title: "Assignment deleted" });
     try {
       const { error } = await supabase.from("assignments").delete().eq("id", id);
       if (error) throw error;
-      toast({ title: "Assignment deleted" });
-      fetchCourseContent(selectedCourse!.id);
     } catch (error) {
       toast({ title: "Error", description: "Failed to delete assignment", variant: "destructive" });
+      fetchCourseContent(selectedCourse!.id);
     }
   };
 
