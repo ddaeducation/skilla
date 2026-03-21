@@ -11,6 +11,7 @@ import CourseAssistant from "@/components/CourseAssistant";
 import ModuleRatingDialog from "@/components/ModuleRatingDialog";
 import { CourseContentSidebar } from "@/components/CourseContentSidebar";
 import { CourseCommuncationTabs } from "@/components/CourseCommuncationTabs";
+import { StudentNotetaker } from "@/components/StudentNotetaker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,6 +37,7 @@ import {
   Star,
   User,
   ChevronDown,
+  StickyNote,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -856,6 +858,7 @@ const CourseDetail = () => {
 
     return (
       <div className="space-y-1">
+        {/* Lesson Title & Badges */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-xl font-semibold">{lesson.title}</h3>
           <div className="flex items-center gap-2">
@@ -875,7 +878,8 @@ const CourseDetail = () => {
           </div>
         </div>
 
-        {lesson.description && <p className="text-muted-foreground">{stripHtml(lesson.description)}</p>}
+        {/* Spacer between header and media */}
+        <div className="pt-4" />
 
         {/* YouTube Video */}
         {embedUrl && (() => {
@@ -1042,14 +1046,47 @@ const CourseDetail = () => {
           />
         )}
 
-        {/* Text/Notes - show for text type OR as supplemental content for any type */}
-        {lesson.content_text && (
-          <PaginatedTextContent
-            htmlContent={sanitizeYouTubeIframes(lesson.content_text)}
-            className="prose prose-sm max-w-none p-6 bg-muted/50 rounded-lg break-words overflow-wrap-anywhere [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-medium [&>h3]:mb-2 [&>p]:mb-4 [&>p]:leading-relaxed [&>p]:break-words [&>ul]:mb-4 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:mb-4 [&>ol]:list-decimal [&>ol]:pl-5 [&>li]:mb-1 [&>li]:break-words [&>a]:text-primary [&>a]:underline [&>a]:break-all [&>pre]:bg-muted [&>pre]:p-4 [&>pre]:rounded-md [&>pre]:overflow-x-auto [&>pre]:whitespace-pre-wrap [&>pre]:break-words [&>code]:break-words [&>blockquote]:border-l-4 [&>blockquote]:border-primary/30 [&>blockquote]:pl-4 [&>blockquote]:italic [&_*]:max-w-full"
-            onPageInfo={(current, total) => setTextPageInfo({ current, total })}
-          />
-        )}
+        {/* Description & Notetaker Tabs below media */}
+        <Tabs defaultValue="description" className="mt-4">
+          <TabsList className="w-full max-w-md">
+            <TabsTrigger value="description" className="gap-2 flex-1">
+              <FileText className="h-4 w-4" />
+              Description
+            </TabsTrigger>
+            <TabsTrigger value="notetaker" className="gap-2 flex-1">
+              <StickyNote className="h-4 w-4" />
+              Notetaker
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="description" className="mt-4 space-y-4">
+            {lesson.description && (
+              <p className="text-muted-foreground">{stripHtml(lesson.description)}</p>
+            )}
+            {lesson.content_text && (
+              <PaginatedTextContent
+                htmlContent={sanitizeYouTubeIframes(lesson.content_text)}
+                className="prose prose-sm max-w-none p-6 bg-muted/50 rounded-lg break-words overflow-wrap-anywhere [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-medium [&>h3]:mb-2 [&>p]:mb-4 [&>p]:leading-relaxed [&>p]:break-words [&>ul]:mb-4 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:mb-4 [&>ol]:list-decimal [&>ol]:pl-5 [&>li]:mb-1 [&>li]:break-words [&>a]:text-primary [&>a]:underline [&>a]:break-all [&>pre]:bg-muted [&>pre]:p-4 [&>pre]:rounded-md [&>pre]:overflow-x-auto [&>pre]:whitespace-pre-wrap [&>pre]:break-words [&>code]:break-words [&>blockquote]:border-l-4 [&>blockquote]:border-primary/30 [&>blockquote]:pl-4 [&>blockquote]:italic [&_*]:max-w-full"
+                onPageInfo={(current, total) => setTextPageInfo({ current, total })}
+              />
+            )}
+            {!lesson.description && !lesson.content_text && (
+              <p className="text-sm text-muted-foreground italic py-4">No description available for this lesson.</p>
+            )}
+          </TabsContent>
+
+          <TabsContent value="notetaker" className="mt-4">
+            {user ? (
+              <StudentNotetaker
+                userId={user.id}
+                courseId={courseId!}
+                lessonId={lesson.id}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground italic py-4">Sign in to take notes.</p>
+            )}
+          </TabsContent>
+        </Tabs>
 
         {/* Video watch progress indicator */}
         {lesson.required_watch_percentage != null && lesson.required_watch_percentage > 0 && isVideoLesson && !isLessonCompleted(lesson.id) && (
