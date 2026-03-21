@@ -1270,7 +1270,6 @@ const CourseDetail = () => {
             <ClipboardList className="w-10 h-10 text-primary" />
           </div>
           <h3 className="text-2xl font-bold mb-2">{assignment.title}</h3>
-          {assignment.description && <p className="text-muted-foreground">{stripHtml(assignment.description)}</p>}
         </div>
 
         <div className="flex justify-center gap-4 flex-wrap">
@@ -1286,19 +1285,51 @@ const CourseDetail = () => {
           )}
         </div>
 
-        {assignment.instructions && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Instructions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <HighlightedHTML
-                html={sanitizeYouTubeIframes(assignment.instructions)}
-                className="prose prose-sm max-w-none [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-medium [&>h3]:mb-2 [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:mb-4 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:mb-4 [&>ol]:list-decimal [&>ol]:pl-5 [&>li]:mb-1 [&>a]:text-primary [&>a]:underline [&>pre]:bg-muted [&>pre]:p-4 [&>pre]:rounded-md [&>pre]:overflow-x-auto [&>blockquote]:border-l-4 [&>blockquote]:border-primary/30 [&>blockquote]:pl-4 [&>blockquote]:italic"
+        {/* Description & Notetaker Tabs */}
+        <Tabs defaultValue="description" className="mt-4">
+          <TabsList className="w-full max-w-md">
+            <TabsTrigger value="description" className="gap-2 flex-1">
+              <FileText className="h-4 w-4" />
+              Description
+            </TabsTrigger>
+            <TabsTrigger value="notetaker" className="gap-2 flex-1">
+              <StickyNote className="h-4 w-4" />
+              Notetaker
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="description" className="mt-4 space-y-4">
+            {assignment.description && (
+              <p className="text-muted-foreground">{stripHtml(assignment.description)}</p>
+            )}
+            {assignment.instructions && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Instructions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <HighlightedHTML
+                    html={sanitizeYouTubeIframes(assignment.instructions)}
+                    className="prose prose-sm max-w-none [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-base [&>h3]:font-medium [&>h3]:mb-2 [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:mb-4 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:mb-4 [&>ol]:list-decimal [&>ol]:pl-5 [&>li]:mb-1 [&>a]:text-primary [&>a]:underline [&>pre]:bg-muted [&>pre]:p-4 [&>pre]:rounded-md [&>pre]:overflow-x-auto [&>blockquote]:border-l-4 [&>blockquote]:border-primary/30 [&>blockquote]:pl-4 [&>blockquote]:italic"
+                  />
+                </CardContent>
+              </Card>
+            )}
+            {!assignment.description && !assignment.instructions && (
+              <p className="text-sm text-muted-foreground italic py-4">No description available for this assignment.</p>
+            )}
+          </TabsContent>
+          <TabsContent value="notetaker" className="mt-4">
+            {user && courseId ? (
+              <StudentNotetaker
+                userId={user.id}
+                courseId={courseId}
+                lessonId={assignment.id}
               />
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <p className="text-sm text-muted-foreground italic py-4">Sign in to take notes.</p>
+            )}
+          </TabsContent>
+        </Tabs>
 
         {submission && (
           <Card className={submission.graded_at ? "border-green-200 bg-green-50" : "border-blue-200 bg-blue-50"}>
