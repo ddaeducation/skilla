@@ -1166,7 +1166,6 @@ const CourseDetail = () => {
             <HelpCircle className="w-10 h-10 text-primary" />
           </div>
           <h3 className="text-2xl font-bold mb-2">{quiz.title}</h3>
-          {quiz.description && <p className="text-muted-foreground">{stripHtml(quiz.description)}</p>}
         </div>
 
         <div className="flex justify-center gap-4 flex-wrap">
@@ -1202,6 +1201,38 @@ const CourseDetail = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Description & Notetaker Tabs */}
+        <Tabs defaultValue="description" className="mt-4">
+          <TabsList className="w-full max-w-md">
+            <TabsTrigger value="description" className="gap-2 flex-1">
+              <FileText className="h-4 w-4" />
+              Description
+            </TabsTrigger>
+            <TabsTrigger value="notetaker" className="gap-2 flex-1">
+              <StickyNote className="h-4 w-4" />
+              Notetaker
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="description" className="mt-4">
+            {quiz.description ? (
+              <p className="text-muted-foreground">{stripHtml(quiz.description)}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground italic py-4">No description available for this quiz.</p>
+            )}
+          </TabsContent>
+          <TabsContent value="notetaker" className="mt-4">
+            {user && courseId ? (
+              <StudentNotetaker
+                userId={user.id}
+                courseId={courseId}
+                lessonId={quiz.id}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground italic py-4">Sign in to take notes.</p>
+            )}
+          </TabsContent>
+        </Tabs>
 
         <div className="flex justify-between items-center gap-2">
           <div>
