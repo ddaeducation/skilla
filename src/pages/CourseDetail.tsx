@@ -858,6 +858,7 @@ const CourseDetail = () => {
 
     return (
       <div className="space-y-1">
+        {/* Lesson Title & Badges */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-xl font-semibold">{lesson.title}</h3>
           <div className="flex items-center gap-2">
@@ -877,7 +878,8 @@ const CourseDetail = () => {
           </div>
         </div>
 
-        {lesson.description && <p className="text-muted-foreground">{stripHtml(lesson.description)}</p>}
+        {/* Spacer between header and media */}
+        <div className="pt-4" />
 
         {/* YouTube Video */}
         {embedUrl && (() => {
