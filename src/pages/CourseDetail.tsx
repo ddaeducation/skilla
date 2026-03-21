@@ -11,6 +11,7 @@ import CourseAssistant from "@/components/CourseAssistant";
 import ModuleRatingDialog from "@/components/ModuleRatingDialog";
 import { CourseContentSidebar } from "@/components/CourseContentSidebar";
 import { CourseCommuncationTabs } from "@/components/CourseCommuncationTabs";
+import { StudentNotetaker } from "@/components/StudentNotetaker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,6 +37,7 @@ import {
   Star,
   User,
   ChevronDown,
+  StickyNote,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
