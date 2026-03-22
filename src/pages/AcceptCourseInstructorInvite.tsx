@@ -3,23 +3,25 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, CheckCircle2, XCircle, Users, Crown, ShieldCheck } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Users, Crown, ShieldCheck, LogOut } from "lucide-react";
 
 const AcceptCourseInstructorInvite = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
 
-  const [status, setStatus] = useState<"loading" | "idle" | "accepting" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "idle" | "accepting" | "success" | "error" | "email_mismatch">("loading");
   const [acceptedRole, setAcceptedRole] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [inviteInfo, setInviteInfo] = useState<{ email: string; role: string; courseTitle: string } | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loggedInEmail, setLoggedInEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsLoggedIn(!!session);
+      setLoggedInEmail(session?.user?.email || null);
 
       if (!token) {
         setStatus("error");
@@ -27,7 +29,6 @@ const AcceptCourseInstructorInvite = () => {
         return;
       }
 
-      // Load invitation info
       try {
         const { data, error } = await supabase
           .from("course_instructor_invitations")
@@ -53,12 +54,19 @@ const AcceptCourseInstructorInvite = () => {
           return;
         }
 
-        setInviteInfo({
+        const info = {
           email: data.email,
           role: data.role,
           courseTitle: (data as any).courses?.title || "a course",
-        });
-        setStatus("idle");
+        };
+        setInviteInfo(info);
+
+        // Check email mismatch upfront
+        if (session && session.user.email?.toLowerCase().trim() !== data.email.toLowerCase().trim()) {
+          setStatus("email_mismatch");
+        } else {
+          setStatus("idle");
+        }
       } catch {
         setStatus("error");
         setMessage("Failed to load invitation details.");
@@ -68,10 +76,16 @@ const AcceptCourseInstructorInvite = () => {
     init();
   }, [token]);
 
+  const handleLogoutAndLogin = async () => {
+    await supabase.auth.signOut();
+    const redirectUrl = `/accept-course-instructor-invite?token=${encodeURIComponent(token!)}`;
+    navigate(`/signin?redirect=${encodeURIComponent(redirectUrl)}`);
+  };
+
   const handleAccept = async () => {
     if (!isLoggedIn) {
       const redirectUrl = `/accept-course-instructor-invite?token=${encodeURIComponent(token!)}`;
-      navigate(`/auth?redirect=${encodeURIComponent(redirectUrl)}`);
+      navigate(`/signin?redirect=${encodeURIComponent(redirectUrl)}`);
       return;
     }
 
@@ -90,7 +104,6 @@ const AcceptCourseInstructorInvite = () => {
       });
 
       if (res.error) {
-        // For non-2xx responses, try to get the actual error from the response
         let errMsg = "Failed to accept invitation";
         if (res.data?.error) {
           errMsg = res.data.error;
@@ -140,8 +153,8 @@ const AcceptCourseInstructorInvite = () => {
           {status === "idle" && inviteInfo && (
             <>
               <div className="flex flex-col items-center gap-3 py-2">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <RoleIcon className="h-8 w-8 text-primary" />
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <RoleIcon className="h-8 w-8 text-primary" />
                 </div>
                 <div className="text-center">
                   <p className="font-semibold text-lg">You're invited as a {roleLabel}</p>
@@ -173,6 +186,33 @@ const AcceptCourseInstructorInvite = () => {
                 {isLoggedIn ? `Accept as ${roleLabel}` : "Log In to Accept"}
               </Button>
             </>
+          )}
+
+          {status === "email_mismatch" && inviteInfo && (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+                <RoleIcon className="h-8 w-8 text-destructive" />
+              </div>
+              <div className="text-center space-y-2">
+                <p className="font-semibold text-lg">Email Mismatch</p>
+                <p className="text-muted-foreground text-sm">
+                  This invitation is for <strong className="text-foreground">{inviteInfo.email}</strong>
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  You're currently logged in as <strong className="text-foreground">{loggedInEmail}</strong>
+                </p>
+              </div>
+              <div className="bg-secondary border border-border rounded-md p-3 text-sm text-secondary-foreground w-full text-center">
+                Please sign out and log in with <strong>{inviteInfo.email}</strong> to accept.
+              </div>
+              <Button onClick={handleLogoutAndLogin} className="w-full" size="lg">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out & Log In with Correct Email
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/")} className="w-full">
+                Go to Homepage
+              </Button>
+            </div>
           )}
 
           {status === "accepting" && (

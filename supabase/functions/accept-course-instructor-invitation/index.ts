@@ -79,8 +79,8 @@ serve(async (req) => {
     }
 
     // Verify email matches
-    console.log("Email comparison:", { userEmail: user.email?.toLowerCase(), inviteEmail: invitation.email.toLowerCase() });
-    if (user.email?.toLowerCase() !== invitation.email.toLowerCase()) {
+    console.log("Email comparison:", { userEmail: user.email?.toLowerCase().trim(), inviteEmail: invitation.email.toLowerCase().trim() });
+    if (user.email?.toLowerCase().trim() !== invitation.email.toLowerCase().trim()) {
       return new Response(
         JSON.stringify({
           error: `This invitation is for ${invitation.email}. Please log in with that email address.`,
