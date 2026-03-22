@@ -1059,7 +1059,7 @@ const CourseDetail = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="description" className="mt-4 space-y-4">
+          <TabsContent value="description" className="mt-2 space-y-2">
             {lesson.description && (
               <p className="text-muted-foreground">{stripHtml(lesson.description)}</p>
             )}
@@ -1075,7 +1075,7 @@ const CourseDetail = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="notetaker" className="mt-4">
+          <TabsContent value="notetaker" className="mt-2">
             {user ? (
               <StudentNotetaker
                 userId={user.id}
@@ -1214,14 +1214,14 @@ const CourseDetail = () => {
               Notetaker
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="description" className="mt-4">
+          <TabsContent value="description" className="mt-2">
             {quiz.description ? (
               <p className="text-muted-foreground">{stripHtml(quiz.description)}</p>
             ) : (
               <p className="text-sm text-muted-foreground italic py-4">No description available for this quiz.</p>
             )}
           </TabsContent>
-          <TabsContent value="notetaker" className="mt-4">
+          <TabsContent value="notetaker" className="mt-2">
             {user && courseId ? (
               <StudentNotetaker
                 userId={user.id}
@@ -1297,7 +1297,7 @@ const CourseDetail = () => {
               Notetaker
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="description" className="mt-4 space-y-4">
+          <TabsContent value="description" className="mt-2 space-y-2">
             {assignment.description && (
               <p className="text-muted-foreground">{stripHtml(assignment.description)}</p>
             )}
@@ -1318,7 +1318,7 @@ const CourseDetail = () => {
               <p className="text-sm text-muted-foreground italic py-4">No description available for this assignment.</p>
             )}
           </TabsContent>
-          <TabsContent value="notetaker" className="mt-4">
+          <TabsContent value="notetaker" className="mt-2">
             {user && courseId ? (
               <StudentNotetaker
                 userId={user.id}
