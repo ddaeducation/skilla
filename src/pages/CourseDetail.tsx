@@ -1214,7 +1214,7 @@ const CourseDetail = () => {
               Notetaker
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="description" className="mt-2">
+          <TabsContent value="description" className="mt-1">
             {quiz.description ? (
               <p className="text-muted-foreground">{stripHtml(quiz.description)}</p>
             ) : (
