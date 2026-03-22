@@ -1221,7 +1221,7 @@ const CourseDetail = () => {
               <p className="text-sm text-muted-foreground italic py-4">No description available for this quiz.</p>
             )}
           </TabsContent>
-          <TabsContent value="notetaker" className="mt-2">
+          <TabsContent value="notetaker" className="mt-1">
             {user && courseId ? (
               <StudentNotetaker
                 userId={user.id}
