@@ -1227,14 +1227,14 @@ const CourseDetail = () => {
               Notetaker
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="description" className="mt-1">
+          <TabsContent value="description" className="mt-0">
             {quiz.description ? (
               <p className="text-muted-foreground">{stripHtml(quiz.description)}</p>
             ) : (
               <p className="text-sm text-muted-foreground italic py-4">No description available for this quiz.</p>
             )}
           </TabsContent>
-          <TabsContent value="notetaker" className="mt-1">
+          <TabsContent value="notetaker" className="mt-0">
             {user && courseId ? (
               <StudentNotetaker
                 userId={user.id}
