@@ -879,7 +879,7 @@ const CourseDetail = () => {
         </div>
 
         {/* Spacer between header and media */}
-        <div className="pt-4" />
+        <div className="pt-1" />
 
         {/* YouTube Video */}
         {embedUrl && (() => {
