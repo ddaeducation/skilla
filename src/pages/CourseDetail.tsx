@@ -1297,7 +1297,7 @@ const CourseDetail = () => {
               Notetaker
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="description" className="mt-2 space-y-2">
+          <TabsContent value="description" className="mt-1 space-y-1">
             {assignment.description && (
               <p className="text-muted-foreground">{stripHtml(assignment.description)}</p>
             )}
