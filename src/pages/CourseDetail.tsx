@@ -1160,7 +1160,7 @@ const CourseDetail = () => {
     const attempt = getQuizAttempt(quiz.id);
 
     return (
-      <div className="space-y-6 py-4">
+      <div className="space-y-3 py-2">
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
             <HelpCircle className="w-10 h-10 text-primary" />
