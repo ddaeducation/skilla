@@ -210,6 +210,49 @@ const CourseDetail = () => {
     resetWatchProgress();
   }, [activeLessonId, resetWatchProgress]);
 
+  // Video quiz popup: track current video time
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+  const videoElementRef = useRef<HTMLVideoElement | null>(null);
+  const videoQuizPausedRef = useRef(false);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        if (data?.event === "infoDelivery" && data?.info?.currentTime !== undefined) {
+          setVideoCurrentTime(data.info.currentTime);
+        }
+        if (data?.method === "playProgress" && data?.value?.seconds !== undefined) {
+          setVideoCurrentTime(data.value.seconds);
+        }
+      } catch {}
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  const handleVideoQuizPause = useCallback(() => {
+    videoQuizPausedRef.current = true;
+    if (videoElementRef.current) videoElementRef.current.pause();
+    document.querySelectorAll("iframe").forEach((iframe) => {
+      try {
+        iframe.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "pauseVideo", args: [] }), "*");
+        iframe.contentWindow?.postMessage(JSON.stringify({ method: "pause" }), "*");
+      } catch {}
+    });
+  }, []);
+
+  const handleVideoQuizResume = useCallback(() => {
+    videoQuizPausedRef.current = false;
+    if (videoElementRef.current) videoElementRef.current.play();
+    document.querySelectorAll("iframe").forEach((iframe) => {
+      try {
+        iframe.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "playVideo", args: [] }), "*");
+        iframe.contentWindow?.postMessage(JSON.stringify({ method: "play" }), "*");
+      } catch {}
+    });
+  }, []);
+
   // Quiz and Assignment dialogs
   const [quizTakerOpen, setQuizTakerOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
