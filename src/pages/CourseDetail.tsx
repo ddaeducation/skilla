@@ -1078,7 +1078,11 @@ const CourseDetail = () => {
                 controls
                 controlsList={hasWatchReq ? "nofullscreen nodownload noplaybackrate" : undefined}
                 className="w-full rounded-lg"
-                ref={videoRefCallback}
+                ref={(el) => {
+                  videoRefCallback(el);
+                  videoElementRef.current = el;
+                }}
+                onTimeUpdate={(e) => setVideoCurrentTime(e.currentTarget.currentTime)}
                 onSeeking={hasWatchReq ? (e) => {
                   const video = e.currentTarget;
                   const maxAllowed = (maxWatchedRef.current / 100) * video.duration;
