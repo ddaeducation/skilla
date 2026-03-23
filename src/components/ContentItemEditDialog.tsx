@@ -351,6 +351,17 @@ export const ContentItemEditDialog = ({
                     </p>
                   </div>
                 </div>
+
+                {/* Video Pop-up Quiz Points */}
+                {['video', 'youtube', 'vimeo', 'embed'].includes(lessonForm.content_type) && lessonForm.id && (
+                  <div className="border-t pt-4">
+                    <VideoQuizPointManager
+                      lessonId={lessonForm.id}
+                      courseId={(lessonForm as any).course_id || ""}
+                      durationMinutes={lessonForm.duration_minutes}
+                    />
+                  </div>
+                )}
               </>
             )}
 
