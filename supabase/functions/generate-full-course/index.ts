@@ -491,7 +491,7 @@ Return JSON:
               section_id: job.unitSectionId,
               title: unitContent.assignment.title,
               description: stripHtml(unitContent.assignment.description) || null,
-              instructions: unitContent.assignment.instructions || null,
+              instructions: unitContent.assignment.instructions ? sanitizeHtml(unitContent.assignment.instructions) : null,
               max_score: unitContent.assignment.max_score || 100,
               ai_grading_enabled: true,
               order_index: contentIndex++,

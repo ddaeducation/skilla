@@ -385,10 +385,18 @@ Return ONLY the HTML content. Start directly with <h2>.`;
       parsedContent = parsedContent.map((item: any) => ({
         ...item,
         description: stripHtml(item.description),
+        content_text: item.content_text ? sanitizeHtml(item.content_text) : item.content_text,
+        instructions: item.instructions ? sanitizeHtml(item.instructions) : item.instructions,
       }));
     } else if (parsedContent && typeof parsedContent === 'object') {
       if (parsedContent.description) {
         parsedContent.description = stripHtml(parsedContent.description);
+      }
+      if (parsedContent.content_text) {
+        parsedContent.content_text = sanitizeHtml(parsedContent.content_text);
+      }
+      if (parsedContent.instructions) {
+        parsedContent.instructions = sanitizeHtml(parsedContent.instructions);
       }
     }
 
