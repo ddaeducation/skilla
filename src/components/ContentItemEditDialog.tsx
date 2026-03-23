@@ -26,6 +26,7 @@ interface LessonData {
   required_watch_percentage: number | null;
   is_locked: boolean;
   unlock_at: string | null;
+  course_id: string;
 }
 
 interface QuizData {
