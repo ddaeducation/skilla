@@ -351,7 +351,7 @@ Return ONLY the HTML content. Start directly with <h2>.`;
     // For editor_content, return raw HTML directly
     if (type === "editor_content") {
       // Strip any markdown code fences the model might wrap around HTML
-      const cleanedContent = content.replace(/^```html?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+      const cleanedContent = sanitizeHtml(content.replace(/^```html?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim());
       return new Response(JSON.stringify({ success: true, data: { content_text: cleanedContent } }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
