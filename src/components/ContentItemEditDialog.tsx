@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { QuizQuestionManager } from "@/components/QuizQuestionManager";
+import { VideoQuizPointManager } from "@/components/VideoQuizPointManager";
 
 interface LessonData {
   id: string;
