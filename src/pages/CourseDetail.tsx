@@ -54,6 +54,7 @@ import PaginatedTextContent from "@/components/PaginatedTextContent";
 import { PeerReviewPanel } from "@/components/PeerReviewPanel";
 import HighlightedHTML from "@/components/HighlightedHTML";
 import { useVideoWatchProgress } from "@/hooks/useVideoWatchProgress";
+import { VideoQuizPopup } from "@/components/VideoQuizPopup";
 
 interface CourseSection {
   id: string;
