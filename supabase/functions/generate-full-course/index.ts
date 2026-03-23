@@ -425,7 +425,7 @@ Return JSON:
               section_id: job.unitSectionId,
               title: lesson.title,
               description: stripHtml(lesson.description) || null,
-              content_text: lesson.content_text || null,
+              content_text: lesson.content_text ? sanitizeHtml(lesson.content_text) : null,
               content_type: "text",
               order_index: contentIndex++,
               duration_minutes: lesson.duration_minutes || 25,
