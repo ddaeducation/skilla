@@ -358,7 +358,7 @@ export const ContentItemEditDialog = ({
                   <div className="border-t pt-4">
                     <VideoQuizPointManager
                       lessonId={lessonForm.id}
-                      courseId={(lessonForm as any).course_id || ""}
+                      courseId={lessonForm.course_id}
                       durationMinutes={lessonForm.duration_minutes}
                     />
                   </div>
