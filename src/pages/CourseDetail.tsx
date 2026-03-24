@@ -215,18 +215,31 @@ const CourseDetail = () => {
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const videoQuizPausedRef = useRef(false);
 
+  useEffect(() => {
+    setVideoCurrentTime(0);
+    videoQuizPausedRef.current = false;
+  }, [activeLessonId]);
+
   // YouTube & Vimeo time tracking via postMessage
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       try {
         const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
         // YouTube infoDelivery
-        if (data?.event === "infoDelivery" && data?.info?.currentTime !== undefined) {
+        if (data?.event === "infoDelivery" && typeof data?.info?.currentTime === "number") {
           setVideoCurrentTime(data.info.currentTime);
         }
         // Vimeo playProgress
-        if (data?.method === "playProgress" && data?.value?.seconds !== undefined) {
+        if (data?.method === "playProgress" && typeof data?.value?.seconds === "number") {
           setVideoCurrentTime(data.value.seconds);
+        }
+        // Vimeo timeupdate (newer postMessage payload)
+        if (data?.event === "timeupdate" && typeof data?.data?.seconds === "number") {
+          setVideoCurrentTime(data.data.seconds);
+        }
+        // Vimeo playProgress (alternate payload)
+        if (data?.event === "playProgress" && typeof data?.data?.seconds === "number") {
+          setVideoCurrentTime(data.data.seconds);
         }
         // YouTube onReady — start listening for info
         if (data?.event === "onReady" || data?.event === "initialDelivery") {
@@ -253,6 +266,7 @@ const CourseDetail = () => {
         // Vimeo: request playProgress events
         if (src.includes("vimeo")) {
           try {
+            iframe.contentWindow?.postMessage(JSON.stringify({ method: "addEventListener", value: "timeupdate" }), "*");
             iframe.contentWindow?.postMessage(JSON.stringify({ method: "addEventListener", value: "playProgress" }), "*");
           } catch {}
         }
@@ -928,6 +942,28 @@ const CourseDetail = () => {
       : null;
   };
 
+  const withPlayerTrackingParams = (src: string) => {
+    try {
+      const parsed = new URL(src);
+      const host = parsed.hostname.toLowerCase();
+
+      if (host.includes("youtube")) {
+        parsed.searchParams.set("enablejsapi", "1");
+      }
+
+      if (host.includes("vimeo.com")) {
+        parsed.searchParams.set("api", "1");
+        if (!parsed.searchParams.has("player_id")) {
+          parsed.searchParams.set("player_id", "vimeo-player");
+        }
+      }
+
+      return parsed.toString();
+    } catch {
+      return src;
+    }
+  };
+
   // Calculate progress including quizzes and assignments
   const completedLessons = progress.filter((p) => p.completed).length;
   const passedQuizzes = quizAttempts.filter((a) => a.passed).length;
@@ -993,7 +1029,8 @@ const CourseDetail = () => {
         {/* YouTube Video */}
         {embedUrl && (() => {
           const hasWatchReq = lesson.required_watch_percentage != null && lesson.required_watch_percentage > 0 && !hasMetWatchRequirement && !isLessonCompleted(lesson.id);
-          const finalSrc = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'enablejsapi=1' + (hasWatchReq ? '&disablekb=1' : '');
+          const trackedSrc = withPlayerTrackingParams(embedUrl);
+          const finalSrc = trackedSrc + (hasWatchReq ? `${trackedSrc.includes("?") ? "&" : "?"}disablekb=1` : "");
           return (
             <div className="aspect-video w-full rounded-lg overflow-hidden bg-black relative">
               <iframe
@@ -1014,7 +1051,7 @@ const CourseDetail = () => {
         {/* Vimeo Video */}
         {vimeoEmbedUrl && (() => {
           const hasWatchReq = lesson.required_watch_percentage != null && lesson.required_watch_percentage > 0 && !hasMetWatchRequirement && !isLessonCompleted(lesson.id);
-          const vimeoSrc = vimeoEmbedUrl + (vimeoEmbedUrl.includes('?') ? '&' : '?') + 'api=1&player_id=vimeo-player';
+          const vimeoSrc = withPlayerTrackingParams(vimeoEmbedUrl);
           return (
             <div className="aspect-video w-full rounded-lg overflow-hidden bg-black relative">
               <iframe
@@ -1041,9 +1078,9 @@ const CourseDetail = () => {
                 src={(() => {
                   const url = lesson.content_url!;
                   const ytEmbed = getYouTubeEmbedUrl(url);
-                  if (ytEmbed) return ytEmbed;
+                  if (ytEmbed) return withPlayerTrackingParams(ytEmbed);
                   const vimeoEmbed = getVimeoEmbedUrl(url);
-                  if (vimeoEmbed) return vimeoEmbed;
+                  if (vimeoEmbed) return withPlayerTrackingParams(vimeoEmbed);
                   try {
                     const embedUrlObj = new URL(url);
                     embedUrlObj.searchParams.set('rel', '0');
@@ -1052,9 +1089,9 @@ const CourseDetail = () => {
                     embedUrlObj.searchParams.set('title', '0');
                     embedUrlObj.searchParams.set('controls', '1');
                     if (hasWatchReq) embedUrlObj.searchParams.set('disablekb', '1');
-                    return embedUrlObj.toString();
+                    return withPlayerTrackingParams(embedUrlObj.toString());
                   } catch {
-                    return url;
+                    return withPlayerTrackingParams(url);
                   }
                 })()}
                 className="w-full h-full"
@@ -1093,10 +1130,11 @@ const CourseDetail = () => {
                   src = videoUrl;
                 }
               }
+              const trackedSrc = src ? withPlayerTrackingParams(src) : src;
               return (
                 <div className="aspect-video w-full rounded-lg overflow-hidden bg-black relative">
                   <iframe
-                    src={src}
+                    src={trackedSrc || src}
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen={!hasWatchReq}
