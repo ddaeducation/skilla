@@ -96,11 +96,16 @@ export const VideoQuizPopup = ({
   }, [lessonId, userId]);
 
   // Check if current time triggers a quiz point
+  const lastCheckedTimeRef = useRef(-1);
   useEffect(() => {
     if (activePoint || quizPoints.length === 0) return;
     const currentSec = Math.floor(currentTimeSeconds);
+    // Avoid re-checking the same second
+    if (currentSec === lastCheckedTimeRef.current) return;
+    lastCheckedTimeRef.current = currentSec;
+    
     const matchingPoint = quizPoints.find(
-      (p) => Math.abs(p.timestamp_seconds - currentSec) <= 1 && !triggeredIds.has(p.id)
+      (p) => Math.abs(p.timestamp_seconds - currentSec) <= 2 && !triggeredIds.has(p.id)
     );
     if (matchingPoint) {
       triggerQuizPoint(matchingPoint);

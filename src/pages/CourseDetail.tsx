@@ -1014,10 +1014,12 @@ const CourseDetail = () => {
         {/* Vimeo Video */}
         {vimeoEmbedUrl && (() => {
           const hasWatchReq = lesson.required_watch_percentage != null && lesson.required_watch_percentage > 0 && !hasMetWatchRequirement && !isLessonCompleted(lesson.id);
+          const vimeoSrc = vimeoEmbedUrl + (vimeoEmbedUrl.includes('?') ? '&' : '?') + 'api=1&player_id=vimeo-player';
           return (
             <div className="aspect-video w-full rounded-lg overflow-hidden bg-black relative">
               <iframe
-                src={vimeoEmbedUrl}
+                id="vimeo-player"
+                src={vimeoSrc}
                 className="w-full h-full"
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen={!hasWatchReq}
