@@ -113,6 +113,20 @@ export const VideoQuizPopup = ({
       return;
     }
 
+    // If user seeked backward, reset triggered quizzes that are ahead of current time
+    if (currentSec < previousSec - 2) {
+      setTriggeredIds((prev) => {
+        const newSet = new Set<string>();
+        prev.forEach((id) => {
+          const point = quizPoints.find((p) => p.id === id);
+          if (point && point.timestamp_seconds < currentSec) {
+            newSet.add(id);
+          }
+        });
+        return newSet;
+      });
+    }
+
     const fromSec = Math.min(previousSec, currentSec);
     const toSec = Math.max(previousSec, currentSec);
 
