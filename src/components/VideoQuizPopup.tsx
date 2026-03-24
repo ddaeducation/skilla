@@ -54,10 +54,15 @@ export const VideoQuizPopup = ({
   const [isCorrect, setIsCorrect] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
   const [visible, setVisible] = useState(false);
+  const previousTimeRef = useRef<number | null>(null);
 
   // Load quiz points once
   useEffect(() => {
     const load = async () => {
+      setQuizPoints([]);
+      setAllOptions({});
+      setTriggeredIds(new Set());
+
       const { data: points } = await supabase
         .from("video_quiz_points")
         .select("*")
@@ -95,18 +100,35 @@ export const VideoQuizPopup = ({
     load();
   }, [lessonId, userId]);
 
-  // Check if current time triggers a quiz point
-  const lastCheckedTimeRef = useRef(-1);
+  useEffect(() => {
+    previousTimeRef.current = null;
+  }, [lessonId]);
+
+  // Check if current time crosses a quiz timestamp
   useEffect(() => {
     if (activePoint || quizPoints.length === 0) return;
+
     const currentSec = Math.floor(currentTimeSeconds);
-    // Avoid re-checking the same second
-    if (currentSec === lastCheckedTimeRef.current) return;
-    lastCheckedTimeRef.current = currentSec;
-    
+    const previousSec = previousTimeRef.current;
+    previousTimeRef.current = currentSec;
+
+    if (previousSec === null) {
+      const exactPoint = quizPoints.find(
+        (p) => p.timestamp_seconds === currentSec && !triggeredIds.has(p.id)
+      );
+      if (exactPoint) {
+        triggerQuizPoint(exactPoint);
+      }
+      return;
+    }
+
+    const fromSec = Math.min(previousSec, currentSec);
+    const toSec = Math.max(previousSec, currentSec);
+
     const matchingPoint = quizPoints.find(
-      (p) => Math.abs(p.timestamp_seconds - currentSec) <= 2 && !triggeredIds.has(p.id)
+      (p) => p.timestamp_seconds >= fromSec && p.timestamp_seconds <= toSec && !triggeredIds.has(p.id)
     );
+
     if (matchingPoint) {
       triggerQuizPoint(matchingPoint);
     }
