@@ -205,11 +205,11 @@ export const VideoQuizPopup = ({
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center bg-black/70 transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center bg-black/50 transition-opacity duration-300 ${
         fadeIn ? "opacity-100" : "opacity-0"
       }`}
     >
-      <Card className="w-full max-w-lg mx-4 shadow-2xl border-primary/20">
+      <Card className="w-full max-w-md mx-4 shadow-xl border-border">
         <CardContent className="pt-6 space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">
