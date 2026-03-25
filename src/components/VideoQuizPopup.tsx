@@ -151,8 +151,43 @@ export const VideoQuizPopup = ({
     setSubmitted(false);
     setIsCorrect(false);
     setVisible(true);
-    // Fade-in animation
+    setDragPos(null); // Reset position to center
     setTimeout(() => setFadeIn(true), 50);
+  };
+
+  // Drag handlers
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    dragStartRef.current = {
+      mouseX: clientX,
+      mouseY: clientY,
+      elX: dragPos?.x || 0,
+      elY: dragPos?.y || 0,
+    };
+    isDraggingRef.current = true;
+
+    const handleMove = (ev: MouseEvent | TouchEvent) => {
+      if (!dragStartRef.current) return;
+      const cx = "touches" in ev ? ev.touches[0].clientX : ev.clientX;
+      const cy = "touches" in ev ? ev.touches[0].clientY : ev.clientY;
+      setDragPos({
+        x: dragStartRef.current.elX + (cx - dragStartRef.current.mouseX),
+        y: dragStartRef.current.elY + (cy - dragStartRef.current.mouseY),
+      });
+    };
+    const handleUp = () => {
+      isDraggingRef.current = false;
+      dragStartRef.current = null;
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleUp);
+    };
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    window.addEventListener("touchmove", handleMove);
+    window.addEventListener("touchend", handleUp);
   };
 
   const checkAnswer = useCallback(() => {
