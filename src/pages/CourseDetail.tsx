@@ -593,7 +593,22 @@ const CourseDetail = () => {
       .select("quiz_id, passed, score, max_score")
       .eq("user_id", userId);
 
-    if (attemptsData) setQuizAttempts(attemptsData);
+    if (attemptsData) {
+      // Consolidate to best attempt per quiz (max grade policy)
+      const bestByQuiz = new Map<string, QuizAttempt>();
+      attemptsData.forEach((a: QuizAttempt) => {
+        const existing = bestByQuiz.get(a.quiz_id);
+        if (!existing) {
+          bestByQuiz.set(a.quiz_id, a);
+        } else {
+          // Keep highest score; preserve passed=true if any attempt passed
+          const everPassed = existing.passed || a.passed;
+          const best = a.score > existing.score ? a : existing;
+          bestByQuiz.set(a.quiz_id, { ...best, passed: everPassed });
+        }
+      });
+      setQuizAttempts(Array.from(bestByQuiz.values()));
+    }
 
     // Fetch assignment submissions
     const { data: submissionsData } = await supabase
@@ -899,9 +914,26 @@ const CourseDetail = () => {
 
   const handleQuizComplete = (passed: boolean, score: number, maxScore: number) => {
     if (selectedQuiz) {
+      // Use max grade: keep the best attempt (highest score) rather than the latest
+      const existingAttempts = quizAttempts.filter((a) => a.quiz_id === selectedQuiz.id);
+      const bestExisting = existingAttempts.length > 0
+        ? existingAttempts.reduce((best, a) => (a.score > best.score ? a : best), existingAttempts[0])
+        : null;
+      
+      const currentAttempt = { quiz_id: selectedQuiz.id, passed, score, max_score: maxScore };
+      
+      // Pick whichever attempt has the higher score
+      const bestAttempt = bestExisting && bestExisting.score > score
+        ? bestExisting
+        : currentAttempt;
+      
+      // Mark as passed if ANY attempt ever passed
+      const everPassed = passed || existingAttempts.some((a) => a.passed);
+      const finalAttempt = { ...bestAttempt, passed: everPassed };
+      
       const updatedAttempts = [
         ...quizAttempts.filter((a) => a.quiz_id !== selectedQuiz.id),
-        { quiz_id: selectedQuiz.id, passed, score, max_score: maxScore },
+        finalAttempt,
       ];
       setQuizAttempts(updatedAttempts);
       
