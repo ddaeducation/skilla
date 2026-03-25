@@ -593,7 +593,22 @@ const CourseDetail = () => {
       .select("quiz_id, passed, score, max_score")
       .eq("user_id", userId);
 
-    if (attemptsData) setQuizAttempts(attemptsData);
+    if (attemptsData) {
+      // Consolidate to best attempt per quiz (max grade policy)
+      const bestByQuiz = new Map<string, QuizAttempt>();
+      attemptsData.forEach((a: QuizAttempt) => {
+        const existing = bestByQuiz.get(a.quiz_id);
+        if (!existing) {
+          bestByQuiz.set(a.quiz_id, a);
+        } else {
+          // Keep highest score; preserve passed=true if any attempt passed
+          const everPassed = existing.passed || a.passed;
+          const best = a.score > existing.score ? a : existing;
+          bestByQuiz.set(a.quiz_id, { ...best, passed: everPassed });
+        }
+      });
+      setQuizAttempts(Array.from(bestByQuiz.values()));
+    }
 
     // Fetch assignment submissions
     const { data: submissionsData } = await supabase
