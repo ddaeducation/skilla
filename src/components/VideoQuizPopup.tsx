@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, XCircle, SkipForward, HelpCircle } from "lucide-react";
+import { CheckCircle, XCircle, SkipForward, HelpCircle, GripHorizontal } from "lucide-react";
 
 interface VideoQuizPoint {
   id: string;
