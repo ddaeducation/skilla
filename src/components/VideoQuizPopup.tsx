@@ -198,6 +198,16 @@ export const VideoQuizPopup = ({
 
   const handleSkip = () => {
     if (activePoint?.behavior === "must_correct") return;
+    // Save skip as zero score
+    if (userId && activePoint) {
+      supabase.from("video_quiz_point_responses").upsert({
+        video_quiz_point_id: activePoint.id,
+        user_id: userId,
+        course_id: courseId,
+        answer: "skipped",
+        is_correct: false,
+      }, { onConflict: "video_quiz_point_id,user_id" }).then(() => {});
+    }
     dismiss();
   };
 
