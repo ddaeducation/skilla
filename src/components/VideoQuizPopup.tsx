@@ -56,6 +56,11 @@ export const VideoQuizPopup = ({
   const [visible, setVisible] = useState(false);
   const previousTimeRef = useRef<number | null>(null);
 
+  // Drag state
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  const dragStartRef = useRef<{ mouseX: number; mouseY: number; elX: number; elY: number } | null>(null);
+  const isDraggingRef = useRef(false);
+
   // Load quiz points once
   useEffect(() => {
     const load = async () => {
