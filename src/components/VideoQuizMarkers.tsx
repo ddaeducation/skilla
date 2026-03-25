@@ -24,23 +24,35 @@ export const VideoQuizMarkers = ({ lessonId, videoDuration }: VideoQuizMarkersPr
   if (!videoDuration || videoDuration <= 0 || timestamps.length === 0) return null;
 
   return (
-    <>
+    <div
+      className="absolute left-0 right-0 z-20 pointer-events-none"
+      style={{ bottom: "12px", height: "14px" }}
+    >
       {timestamps.map((ts, i) => {
-        const pct = Math.min(100, Math.max(0, (ts / videoDuration) * 100));
+        const pct = Math.min(99, Math.max(1, (ts / videoDuration) * 100));
         return (
           <div
             key={i}
-            className="absolute z-20 pointer-events-none"
+            className="absolute"
             style={{
               left: `${pct}%`,
-              bottom: "10px",
-              transform: "translateX(-50%)",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
             }}
           >
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white shadow-sm" />
+            <div
+              className="rounded-full shadow-md"
+              style={{
+                width: "10px",
+                height: "10px",
+                backgroundColor: "#ef4444",
+                border: "2px solid white",
+                boxShadow: "0 0 4px rgba(0,0,0,0.5)",
+              }}
+            />
           </div>
         );
       })}
-    </>
+    </div>
   );
 };
