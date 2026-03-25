@@ -55,6 +55,7 @@ import { PeerReviewPanel } from "@/components/PeerReviewPanel";
 import HighlightedHTML from "@/components/HighlightedHTML";
 import { useVideoWatchProgress } from "@/hooks/useVideoWatchProgress";
 import { VideoQuizPopup } from "@/components/VideoQuizPopup";
+import { VideoQuizMarkers } from "@/components/VideoQuizMarkers";
 
 interface CourseSection {
   id: string;
