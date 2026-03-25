@@ -230,6 +230,9 @@ const CourseDetail = () => {
         // YouTube infoDelivery
         if (data?.event === "infoDelivery" && typeof data?.info?.currentTime === "number") {
           setVideoCurrentTime(data.info.currentTime);
+          if (typeof data?.info?.duration === "number" && data.info.duration > 0) {
+            setVideoDuration(data.info.duration);
+          }
         }
         // Vimeo playProgress
         if (data?.method === "playProgress" && typeof data?.value?.seconds === "number") {
