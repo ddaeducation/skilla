@@ -24,23 +24,28 @@ export const VideoQuizMarkers = ({ lessonId, videoDuration }: VideoQuizMarkersPr
   if (!videoDuration || videoDuration <= 0 || timestamps.length === 0) return null;
 
   return (
-    <div className="absolute bottom-[28px] left-[12px] right-[12px] h-0 z-30 pointer-events-none">
-      {timestamps.map((ts, i) => {
-        const pct = Math.min(100, Math.max(0, (ts / videoDuration) * 100));
-        return (
-          <div
-            key={i}
-            className="absolute"
-            style={{
-              left: `${pct}%`,
-              top: "50%",
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            <div className="w-3 h-3 rounded-full bg-destructive border-2 border-background shadow-md" />
-          </div>
-        );
-      })}
-    </div>
+    <>
+      {/* Markers on the native/iframe seek bar area */}
+      <div className="absolute bottom-[6px] left-0 right-0 h-[4px] z-[40] pointer-events-none"
+        style={{ marginLeft: '65px', marginRight: '200px' }}
+      >
+        {timestamps.map((ts, i) => {
+          const pct = Math.min(100, Math.max(0, (ts / videoDuration) * 100));
+          return (
+            <div
+              key={i}
+              className="absolute"
+              style={{
+                left: `${pct}%`,
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+              }}
+            >
+              <div className="w-2.5 h-2.5 rounded-full bg-destructive border border-destructive shadow-sm shadow-destructive/50" />
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 };
