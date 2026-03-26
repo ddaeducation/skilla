@@ -364,7 +364,7 @@ export const VideoQuizPopup = ({
                           <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Select..." />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="z-[99999]">
                             {rightOptions.map((r) => (
                               <SelectItem key={r} value={r}>{r}</SelectItem>
                             ))}
