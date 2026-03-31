@@ -307,6 +307,66 @@ const CourseDetail = () => {
     });
   }, []);
 
+  // Auto-mark lesson complete when video watch requirement is met
+  const autoCompletedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (
+      activeLesson &&
+      isVideoLesson &&
+      hasMetWatchRequirement &&
+      !isLessonCompleted(activeLesson.id) &&
+      !autoCompletedRef.current.has(activeLesson.id) &&
+      user
+    ) {
+      autoCompletedRef.current.add(activeLesson.id);
+      markLessonComplete(activeLesson.id);
+    }
+  }, [hasMetWatchRequirement, activeLesson?.id]);
+
+  // Auto-mark text/image lessons complete after 5 seconds of viewing
+  const textAutoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (textAutoTimerRef.current) {
+      clearTimeout(textAutoTimerRef.current);
+      textAutoTimerRef.current = null;
+    }
+    if (
+      activeLesson &&
+      ['text', 'image'].includes(activeLesson.content_type) &&
+      !isLessonCompleted(activeLesson.id) &&
+      !autoCompletedRef.current.has(activeLesson.id) &&
+      user
+    ) {
+      textAutoTimerRef.current = setTimeout(() => {
+        if (!autoCompletedRef.current.has(activeLesson!.id)) {
+          autoCompletedRef.current.add(activeLesson!.id);
+          markLessonComplete(activeLesson!.id);
+        }
+      }, 5000);
+    }
+    return () => {
+      if (textAutoTimerRef.current) clearTimeout(textAutoTimerRef.current);
+    };
+  }, [activeLesson?.id, user]);
+
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const contentAreaRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement && contentAreaRef.current) {
+      contentAreaRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
   // Quiz and Assignment dialogs
   const [quizTakerOpen, setQuizTakerOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
