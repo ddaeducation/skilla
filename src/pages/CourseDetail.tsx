@@ -2174,6 +2174,7 @@ const CourseDetail = () => {
             </TabsList>
 
             <TabsContent value="content">
+              <div ref={contentAreaRef} className={isFullscreen ? "bg-background" : ""}>
               {isSidebarHidden ? (
                 <div className="relative">
                   {/* Floating show sidebar button when hidden */}
@@ -2187,41 +2188,70 @@ const CourseDetail = () => {
                       Show Content
                     </Button>
                   </div>
+                  {/* Fullscreen toggle */}
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleFullscreen}
+                      title={isFullscreen ? "Exit full screen" : "Full screen"}
+                      className="gap-1.5"
+                    >
+                      {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                      {isFullscreen ? "Exit Full Screen" : "Full Screen"}
+                    </Button>
+                  </div>
                   {/* Main Content Area - Full Width */}
                   <Card>
                     <CardContent className="p-6">{renderActiveContent()}</CardContent>
                   </Card>
                 </div>
               ) : (
-                <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border">
-                  {/* Sidebar Panel */}
-                  <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-                    <div className="h-full overflow-auto">
-                      <CourseContentSidebar
-                        sections={sections}
-                        unifiedContent={unifiedContent}
-                        activeContent={activeContent}
-                        onSelectContent={handleSelectContent}
-                        getItemStatus={getItemStatus}
-                        isItemLocked={isItemLocked}
-                        completedItems={completedItems}
-                        totalItems={totalItems}
-                        onHideSidebar={() => setIsSidebarHidden(true)}
-                      />
-                    </div>
-                  </ResizablePanel>
+                <>
+                  {/* Fullscreen toggle */}
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleFullscreen}
+                      title={isFullscreen ? "Exit full screen" : "Full screen"}
+                      className="gap-1.5"
+                    >
+                      {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                      {isFullscreen ? "Exit Full Screen" : "Full Screen"}
+                    </Button>
+                  </div>
+                  <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border">
+                    {/* Sidebar Panel */}
+                    <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+                      <div className="h-full overflow-auto">
+                        <CourseContentSidebar
+                          sections={sections}
+                          unifiedContent={unifiedContent}
+                          activeContent={activeContent}
+                          onSelectContent={handleSelectContent}
+                          getItemStatus={getItemStatus}
+                          isItemLocked={isItemLocked}
+                          completedItems={completedItems}
+                          totalItems={totalItems}
+                          onHideSidebar={() => setIsSidebarHidden(true)}
+                        />
+                      </div>
+                    </ResizablePanel>
 
-                  {/* Resizable Handle / Splitter */}
-                  <ResizableHandle withHandle />
+                    {/* Resizable Handle / Splitter */}
+                    <ResizableHandle withHandle />
 
-                  {/* Main Content Panel */}
-                  <ResizablePanel defaultSize={75}>
-                    <div className="h-full overflow-auto p-6">
-                      {renderActiveContent()}
-                    </div>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
+                    {/* Main Content Panel */}
+                    <ResizablePanel defaultSize={75}>
+                      <div className="h-full overflow-auto p-6">
+                        {renderActiveContent()}
+                      </div>
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                </>
               )}
+              </div>
             </TabsContent>
 
             <TabsContent value="playground">
