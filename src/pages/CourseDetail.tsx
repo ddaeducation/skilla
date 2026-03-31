@@ -792,12 +792,13 @@ const CourseDetail = () => {
           }
           return true;
         });
-        setActiveContent(firstUncompleted || unifiedContent[unifiedContent.length - 1]);
+        // Default to first item if all completed, ensuring first lesson is always accessible
+        setActiveContent(firstUncompleted || unifiedContent[0] || null);
       } else {
         setActiveContent(unifiedContent[0]);
       }
     }
-  }, [lessons, quizzes, assignments, progress, quizAttempts, assignmentSubmissions, showCourseOverview]);
+  }, [lessons, quizzes, assignments, progress, quizAttempts, assignmentSubmissions, showCourseOverview, isEnrolled, isInstructor]);
 
   const courseSlug = course?.slug || courseId;
 

@@ -268,9 +268,7 @@ export function CourseContentSidebar({
         {locked ? (
           <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
         ) : isCompleted ? (
-          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold">
-            ✓
-          </span>
+          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
         ) : (
           <span className="flex-shrink-0">{icon}</span>
         )}
