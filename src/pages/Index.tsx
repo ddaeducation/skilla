@@ -7,7 +7,7 @@ import SchoolsSection from "@/components/SchoolsSection";
 import WhySection from "@/components/WhySection";
 import CareerSection from "@/components/CareerSection";
 import FAQSection from "@/components/FAQSection";
-import DonateSection from "@/components/DonateSection";
+
 import Footer from "@/components/Footer";
 import CourseAssistant from "@/components/CourseAssistant";
 import SkipNavigation from "@/components/SkipNavigation";
