@@ -432,9 +432,22 @@ export function CourseContentSidebar({
             </Button>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
-          {completedItems} of {totalItems} completed
-        </p>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              {completedItems} of {totalItems} completed
+            </span>
+            <span className="font-medium text-green-600 dark:text-green-400">
+              {totalItems > 0 ? Math.min(100, Math.round((completedItems / totalItems) * 100)) : 0}%
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-muted overflow-hidden">
+            <div 
+              className="h-full rounded-full bg-green-500 transition-all duration-500" 
+              style={{ width: `${totalItems > 0 ? Math.min(100, Math.round((completedItems / totalItems) * 100)) : 0}%` }} 
+            />
+          </div>
+        </div>
         {/* Collapse/Expand Controls */}
         <div className="flex gap-1 pt-2">
           <Button
