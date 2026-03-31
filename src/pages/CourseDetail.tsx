@@ -38,6 +38,8 @@ import {
   User,
   ChevronDown,
   StickyNote,
+  Maximize,
+  Minimize,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -305,6 +307,66 @@ const CourseDetail = () => {
         iframe.contentWindow?.postMessage(JSON.stringify({ method: "play" }), "*");
       } catch {}
     });
+  }, []);
+
+  // Auto-mark lesson complete when video watch requirement is met
+  const autoCompletedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (
+      activeLesson &&
+      isVideoLesson &&
+      hasMetWatchRequirement &&
+      !isLessonCompleted(activeLesson.id) &&
+      !autoCompletedRef.current.has(activeLesson.id) &&
+      user
+    ) {
+      autoCompletedRef.current.add(activeLesson.id);
+      markLessonComplete(activeLesson.id);
+    }
+  }, [hasMetWatchRequirement, activeLesson?.id]);
+
+  // Auto-mark text/image lessons complete after 5 seconds of viewing
+  const textAutoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (textAutoTimerRef.current) {
+      clearTimeout(textAutoTimerRef.current);
+      textAutoTimerRef.current = null;
+    }
+    if (
+      activeLesson &&
+      ['text', 'image'].includes(activeLesson.content_type) &&
+      !isLessonCompleted(activeLesson.id) &&
+      !autoCompletedRef.current.has(activeLesson.id) &&
+      user
+    ) {
+      textAutoTimerRef.current = setTimeout(() => {
+        if (!autoCompletedRef.current.has(activeLesson!.id)) {
+          autoCompletedRef.current.add(activeLesson!.id);
+          markLessonComplete(activeLesson!.id);
+        }
+      }, 5000);
+    }
+    return () => {
+      if (textAutoTimerRef.current) clearTimeout(textAutoTimerRef.current);
+    };
+  }, [activeLesson?.id, user]);
+
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const contentAreaRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement && contentAreaRef.current) {
+      contentAreaRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
   // Quiz and Assignment dialogs
@@ -2112,6 +2174,7 @@ const CourseDetail = () => {
             </TabsList>
 
             <TabsContent value="content">
+              <div ref={contentAreaRef} className={isFullscreen ? "bg-background" : ""}>
               {isSidebarHidden ? (
                 <div className="relative">
                   {/* Floating show sidebar button when hidden */}
@@ -2125,41 +2188,70 @@ const CourseDetail = () => {
                       Show Content
                     </Button>
                   </div>
+                  {/* Fullscreen toggle */}
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleFullscreen}
+                      title={isFullscreen ? "Exit full screen" : "Full screen"}
+                      className="gap-1.5"
+                    >
+                      {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                      {isFullscreen ? "Exit Full Screen" : "Full Screen"}
+                    </Button>
+                  </div>
                   {/* Main Content Area - Full Width */}
                   <Card>
                     <CardContent className="p-6">{renderActiveContent()}</CardContent>
                   </Card>
                 </div>
               ) : (
-                <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border">
-                  {/* Sidebar Panel */}
-                  <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-                    <div className="h-full overflow-auto">
-                      <CourseContentSidebar
-                        sections={sections}
-                        unifiedContent={unifiedContent}
-                        activeContent={activeContent}
-                        onSelectContent={handleSelectContent}
-                        getItemStatus={getItemStatus}
-                        isItemLocked={isItemLocked}
-                        completedItems={completedItems}
-                        totalItems={totalItems}
-                        onHideSidebar={() => setIsSidebarHidden(true)}
-                      />
-                    </div>
-                  </ResizablePanel>
+                <>
+                  {/* Fullscreen toggle */}
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleFullscreen}
+                      title={isFullscreen ? "Exit full screen" : "Full screen"}
+                      className="gap-1.5"
+                    >
+                      {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                      {isFullscreen ? "Exit Full Screen" : "Full Screen"}
+                    </Button>
+                  </div>
+                  <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border">
+                    {/* Sidebar Panel */}
+                    <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+                      <div className="h-full overflow-auto">
+                        <CourseContentSidebar
+                          sections={sections}
+                          unifiedContent={unifiedContent}
+                          activeContent={activeContent}
+                          onSelectContent={handleSelectContent}
+                          getItemStatus={getItemStatus}
+                          isItemLocked={isItemLocked}
+                          completedItems={completedItems}
+                          totalItems={totalItems}
+                          onHideSidebar={() => setIsSidebarHidden(true)}
+                        />
+                      </div>
+                    </ResizablePanel>
 
-                  {/* Resizable Handle / Splitter */}
-                  <ResizableHandle withHandle />
+                    {/* Resizable Handle / Splitter */}
+                    <ResizableHandle withHandle />
 
-                  {/* Main Content Panel */}
-                  <ResizablePanel defaultSize={75}>
-                    <div className="h-full overflow-auto p-6">
-                      {renderActiveContent()}
-                    </div>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
+                    {/* Main Content Panel */}
+                    <ResizablePanel defaultSize={75}>
+                      <div className="h-full overflow-auto p-6">
+                        {renderActiveContent()}
+                      </div>
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                </>
               )}
+              </div>
             </TabsContent>
 
             <TabsContent value="playground">
