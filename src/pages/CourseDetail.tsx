@@ -385,6 +385,56 @@ const CourseDetail = () => {
     checkUserAndCourse();
   }, [courseParam]);
 
+  // Realtime subscription: auto-refresh lessons, quizzes, and assignments when updated
+  useEffect(() => {
+    if (!courseId) return;
+
+    const channel = supabase
+      .channel(`course-content-${courseId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'lesson_content', filter: `course_id=eq.${courseId}` },
+        () => {
+          // Re-fetch lessons
+          supabase
+            .from("lesson_content")
+            .select("*")
+            .eq("course_id", courseId)
+            .order("order_index")
+            .then(({ data }) => { if (data) setLessons(data); });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'quizzes', filter: `course_id=eq.${courseId}` },
+        () => {
+          supabase
+            .from("quizzes")
+            .select("*")
+            .eq("course_id", courseId)
+            .order("order_index")
+            .then(({ data }) => { if (data) setQuizzes(data); });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'assignments', filter: `course_id=eq.${courseId}` },
+        () => {
+          supabase
+            .from("assignments")
+            .select("*")
+            .eq("course_id", courseId)
+            .order("order_index")
+            .then(({ data }) => { if (data) setAssignments(data); });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [courseId]);
+
   const checkUserAndCourse = async () => {
     const {
       data: { session },
