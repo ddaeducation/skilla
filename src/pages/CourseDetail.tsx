@@ -346,12 +346,38 @@ const CourseDetail = () => {
     checkUserAndCourse();
   }, [courseParam]);
 
-  // Realtime subscription: auto-refresh lessons, quizzes, and assignments when updated
+  // Realtime subscription: auto-refresh course, sections, lessons, quizzes, and assignments when updated
   useEffect(() => {
     if (!courseId) return;
 
     const channel = supabase
       .channel(`course-content-${courseId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'courses', filter: `id=eq.${courseId}` },
+        () => {
+          // Re-fetch course details
+          supabase
+            .from("courses")
+            .select("*")
+            .eq("id", courseId)
+            .maybeSingle()
+            .then(({ data }) => { if (data) setCourse(data); });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'course_sections', filter: `course_id=eq.${courseId}` },
+        () => {
+          // Re-fetch sections
+          supabase
+            .from("course_sections")
+            .select("*")
+            .eq("course_id", courseId)
+            .order("order_index")
+            .then(({ data }) => { if (data) setSections(data); });
+        }
+      )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'lesson_content', filter: `course_id=eq.${courseId}` },
