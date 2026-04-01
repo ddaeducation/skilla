@@ -309,47 +309,8 @@ const CourseDetail = () => {
     });
   }, []);
 
-  // Auto-mark lesson complete when video watch requirement is met
+  // autoCompletedRef kept for manual tracking only
   const autoCompletedRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    if (
-      activeLesson &&
-      isVideoLesson &&
-      hasMetWatchRequirement &&
-      !isLessonCompleted(activeLesson.id) &&
-      !autoCompletedRef.current.has(activeLesson.id) &&
-      user
-    ) {
-      autoCompletedRef.current.add(activeLesson.id);
-      markLessonComplete(activeLesson.id);
-    }
-  }, [hasMetWatchRequirement, activeLesson?.id]);
-
-  // Auto-mark text/image lessons complete after 5 seconds of viewing
-  const textAutoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (textAutoTimerRef.current) {
-      clearTimeout(textAutoTimerRef.current);
-      textAutoTimerRef.current = null;
-    }
-    if (
-      activeLesson &&
-      ['text', 'image'].includes(activeLesson.content_type) &&
-      !isLessonCompleted(activeLesson.id) &&
-      !autoCompletedRef.current.has(activeLesson.id) &&
-      user
-    ) {
-      textAutoTimerRef.current = setTimeout(() => {
-        if (!autoCompletedRef.current.has(activeLesson!.id)) {
-          autoCompletedRef.current.add(activeLesson!.id);
-          markLessonComplete(activeLesson!.id);
-        }
-      }, 5000);
-    }
-    return () => {
-      if (textAutoTimerRef.current) clearTimeout(textAutoTimerRef.current);
-    };
-  }, [activeLesson?.id, user]);
 
   // Fullscreen state
   const [isFullscreen, setIsFullscreen] = useState(false);
