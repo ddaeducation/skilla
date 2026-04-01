@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   BookOpen, Users, Shield, GraduationCap, Clock, Award, Settings, LogOut,
-  HelpCircle, User, Ticket, DollarSign, Building2, Handshake, Megaphone, Heart,
+  HelpCircle, User, Ticket, DollarSign, Building2, Handshake, Megaphone, Heart, ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -88,6 +88,13 @@ const AdminSidebar = ({ activeView, setActiveView }: AdminSidebarProps) => {
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-5 py-4">
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors mb-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to Home</span>
+        </button>
         <h2 className="font-display text-lg font-bold text-sidebar-foreground">Admin Portal</h2>
         <p className="text-xs text-sidebar-foreground/60">Global Nexus Institute</p>
       </SidebarHeader>

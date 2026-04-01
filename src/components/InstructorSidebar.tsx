@@ -27,6 +27,7 @@ import {
   Wallet,
   Monitor,
   MessageSquare,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -104,6 +105,13 @@ const InstructorSidebar = ({ activeView, setActiveView }: InstructorSidebarProps
     <Sidebar>
       <SidebarHeader className="border-b">
         <div className="p-4">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Home</span>
+          </button>
           <h2 className="text-xl font-bold text-primary">Instructor Portal</h2>
           <p className="text-sm text-muted-foreground">Global Nexus Institute</p>
         </div>

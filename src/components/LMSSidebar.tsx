@@ -10,7 +10,8 @@ import {
   ClipboardCheck,
   BarChart3,
   HelpCircle,
-  Gift
+  Gift,
+  ArrowLeft
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,6 +74,13 @@ const LMSSidebar = ({ user, activeView, onViewChange }: LMSSidebarProps) => {
   return (
     <Sidebar collapsible="icon" aria-label="Student dashboard navigation">
       <SidebarHeader className="p-4">
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {!isCollapsed && <span>Back to Home</span>}
+        </button>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
             L
