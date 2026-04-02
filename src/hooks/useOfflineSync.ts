@@ -43,14 +43,14 @@ export function useOfflineSync() {
       let synced = 0;
       for (const item of unsyncedItems) {
         try {
-          const { error } = await supabase.from("lesson_progress").upsert(
+          const { error } = await supabase.from("student_progress").upsert(
             {
               user_id: item.userId,
               lesson_id: item.lessonId,
               course_id: item.courseId,
               completed: true,
               completed_at: new Date(item.completedAt).toISOString(),
-            },
+            } as any,
             { onConflict: "user_id,lesson_id" }
           );
 
