@@ -12,6 +12,7 @@ import ModuleRatingDialog from "@/components/ModuleRatingDialog";
 import { CourseContentSidebar } from "@/components/CourseContentSidebar";
 import { CourseCommuncationTabs } from "@/components/CourseCommuncationTabs";
 import { StudentNotetaker } from "@/components/StudentNotetaker";
+import CourseDownloadButton from "@/components/CourseDownloadButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
