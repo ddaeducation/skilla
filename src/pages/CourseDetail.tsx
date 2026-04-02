@@ -1885,6 +1885,11 @@ const CourseDetail = () => {
                     <span className="font-medium">{progressPercentage}%</span>
                   </div>
                 </div>
+                {isEnrolled && courseId && (
+                  <div className="mt-2">
+                    <CourseDownloadButton courseId={courseId} courseTitle={course.title} variant="compact" />
+                  </div>
+                )}
               </div>
             )}
           </div>
