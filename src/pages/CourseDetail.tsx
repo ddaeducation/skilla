@@ -1740,6 +1740,12 @@ const CourseDetail = () => {
   const isItemLocked = (item: ContentItem) => {
     if (isInstructor) return false;
 
+    // The very first content item is always unlocked for enrolled students
+    const currentIndex = unifiedContent.findIndex(
+      (i) => i.type === item.type && i.data.id === item.data.id
+    );
+    if (currentIndex === 0) return false;
+
     // Check instructor-set lock on the lesson itself
     if (item.type === "lesson") {
       const lesson = item.data as LessonContent;
