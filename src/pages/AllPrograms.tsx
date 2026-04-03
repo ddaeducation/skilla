@@ -124,7 +124,6 @@ const CourseCard = ({ course, instructor, ratingData }: {
           </>
         )}
         <div className="mt-auto space-y-3">
-          <CoursePriceDisplay monthlyPrice={course.monthly_price} price={course.price} defaultCurrency={course.price_display_currency || "USD"} pricingType={(course as any).pricing_type} fullPrice={(course as any).full_price} />
           <div className="flex flex-wrap items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>

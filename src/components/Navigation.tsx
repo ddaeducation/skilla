@@ -329,7 +329,7 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
             </div>
             <div className="space-y-2 border-t border-border/60 pt-3">
               <Button variant="outline" asChild className="w-full">
-                <Link to="/lms">LMS</Link>
+                <Link to="/lms">Go to Course</Link>
               </Button>
               {isInstructor && (
                 <Button variant="outline" asChild className="w-full">
