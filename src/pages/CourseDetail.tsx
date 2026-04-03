@@ -377,42 +377,42 @@ const CourseDetail = () => {
             .eq("course_id", courseId)
             .order("order_index")
             .then(({ data }) => { if (data) setSections(data); });
+          // Sections deleted may cascade-delete lessons/quizzes, refresh counts and content
+          supabase.from("lesson_content").select("*").eq("course_id", courseId).order("order_index")
+            .then(({ data }) => { if (data) setLessons(data); });
+          supabase.from("quizzes").select("*").eq("course_id", courseId).order("order_index")
+            .then(({ data }) => { if (data) setQuizzes(data); });
+          supabase.from("assignments").select("*").eq("course_id", courseId).order("order_index")
+            .then(({ data }) => { if (data) setAssignments(data); });
+          supabase.rpc("get_course_content_counts", { p_course_id: courseId })
+            .then(({ data }) => { if (data) setContentCounts(data as any); });
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'lesson_content', filter: `course_id=eq.${courseId}` },
         () => {
-          // Re-fetch lessons
-          supabase
-            .from("lesson_content")
-            .select("*")
-            .eq("course_id", courseId)
-            .order("order_index")
+          supabase.from("lesson_content").select("*").eq("course_id", courseId).order("order_index")
             .then(({ data }) => { if (data) setLessons(data); });
+          supabase.rpc("get_course_content_counts", { p_course_id: courseId })
+            .then(({ data }) => { if (data) setContentCounts(data as any); });
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'quizzes', filter: `course_id=eq.${courseId}` },
         () => {
-          supabase
-            .from("quizzes")
-            .select("*")
-            .eq("course_id", courseId)
-            .order("order_index")
+          supabase.from("quizzes").select("*").eq("course_id", courseId).order("order_index")
             .then(({ data }) => { if (data) setQuizzes(data); });
+          supabase.rpc("get_course_content_counts", { p_course_id: courseId })
+            .then(({ data }) => { if (data) setContentCounts(data as any); });
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'assignments', filter: `course_id=eq.${courseId}` },
         () => {
-          supabase
-            .from("assignments")
-            .select("*")
-            .eq("course_id", courseId)
-            .order("order_index")
+          supabase.from("assignments").select("*").eq("course_id", courseId).order("order_index")
             .then(({ data }) => { if (data) setAssignments(data); });
         }
       )
