@@ -1780,6 +1780,7 @@ const CourseDetail = () => {
     }
 
     // Sequential lock: item is locked if the previous item is not completed
+    // The very first content item is always available
     const currentIndex = unifiedContent.findIndex(
       (i) => i.type === item.type && i.data.id === item.data.id
     );
