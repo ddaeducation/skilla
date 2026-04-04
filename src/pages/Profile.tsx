@@ -670,6 +670,24 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Choose a unique username"
+                    value={username}
+                    onChange={(e) => {
+                      setUsername(e.target.value.replace(/\s/g, ''));
+                      setUsernameError("");
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Letters, numbers, and underscores only. Can be used to sign in.
+                  </p>
+                  {usernameError && <p className="text-xs text-destructive">{usernameError}</p>}
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
