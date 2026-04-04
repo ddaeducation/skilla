@@ -138,7 +138,7 @@ const SignIn = () => {
 
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signin-email">Email</Label>
+                      <Label htmlFor="signin-email">Email or Username</Label>
                       <Input id="signin-email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
