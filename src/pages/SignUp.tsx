@@ -106,6 +106,8 @@ const SignUp = () => {
 
     if (s === 1) {
       if (!fullName.trim() || fullName.trim().length < 2) errors.fullName = "Full name must be at least 2 characters";
+      if (!username.trim() || username.trim().length < 3) errors.username = "Username must be at least 3 characters";
+      else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) errors.username = "Username can only contain letters, numbers, and underscores";
       if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errors.email = "Please enter a valid email address";
       if (!password || password.length < 6) errors.password = "Password must be at least 6 characters";
     }
