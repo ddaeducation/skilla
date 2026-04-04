@@ -81,6 +81,8 @@ const LMS = () => {
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<any | null>(null);
   const [selectedQuiz, setSelectedQuiz] = useState<any | null>(null);
+  const [assignmentCourseFilter, setAssignmentCourseFilter] = useState<string>("all");
+  const [quizCourseFilter, setQuizCourseFilter] = useState<string>("all");
   const navigate = useNavigate();
   const { toast } = useToast();
 
