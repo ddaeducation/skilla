@@ -38,7 +38,18 @@ const SignIn = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    let loginEmail = email.trim();
+    // If input doesn't look like an email, treat it as a username
+    if (!loginEmail.includes('@')) {
+      const { data } = await supabase.rpc('get_email_by_username', { p_username: loginEmail });
+      if (!data) {
+        toast({ title: "Sign in failed", description: "No account found with that username.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      loginEmail = data;
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
     if (error) {
       toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
     } else {
