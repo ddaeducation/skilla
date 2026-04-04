@@ -164,6 +164,7 @@ const SignUp = () => {
       options: {
         data: {
           full_name: fullName.trim(),
+          username: username.trim(),
           phone: phone.trim(),
           country,
           education_level: educationLevel,
