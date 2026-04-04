@@ -61,6 +61,9 @@ const SignUp = () => {
   const [step, setStep] = useState(1);
   // Step 1
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
