@@ -210,6 +210,12 @@ const SignUp = () => {
         {stepErrors.fullName && <p className="text-xs text-destructive">{stepErrors.fullName}</p>}
       </div>
       <div className="space-y-2">
+        <Label htmlFor="username">Username *</Label>
+        <Input id="username" placeholder="johndoe123" value={username} onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))} />
+        <p className="text-xs text-muted-foreground">Letters, numbers, and underscores only. Used as an alternative login.</p>
+        {stepErrors.username && <p className="text-xs text-destructive">{stepErrors.username}</p>}
+      </div>
+      <div className="space-y-2">
         <Label htmlFor="signup-email">Email *</Label>
         <Input id="signup-email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
         {stepErrors.email && <p className="text-xs text-destructive">{stepErrors.email}</p>}
