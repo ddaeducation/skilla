@@ -873,14 +873,33 @@ const LMS = () => {
       case "quizzes":
         return (
           <div>
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold mb-2">Quizzes & Exams</h1>
-              <p className="text-muted-foreground">
-                Test your knowledge with quizzes and exams
-              </p>
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Quizzes & Exams</h1>
+                <p className="text-muted-foreground">
+                  Test your knowledge with quizzes and exams
+                </p>
+              </div>
+              {quizzes.length > 0 && (
+                <Select value={quizCourseFilter} onValueChange={setQuizCourseFilter}>
+                  <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectValue placeholder="Filter by course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Courses</SelectItem>
+                    {[...new Map(quizzes.map((q: any) => [q.course_id, q.courses?.title])).entries()]
+                      .filter(([, title]) => title)
+                      .map(([id, title]) => (
+                        <SelectItem key={id} value={id as string}>{title as string}</SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
-            {quizzes.length === 0 ? (
+            {(() => {
+              const filtered = quizCourseFilter === "all" ? quizzes : quizzes.filter((q: any) => q.course_id === quizCourseFilter);
+              return filtered.length === 0 ? (
               <div className="text-center py-12">
                 <ClipboardCheck className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
                 <p className="text-xl text-muted-foreground mb-2">No quizzes available</p>
@@ -888,7 +907,7 @@ const LMS = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {quizzes.map((quiz) => {
+                {filtered.map((quiz: any) => {
                   const status = getQuizStatus(quiz.id);
                   const bestScore = getQuizBestScore(quiz.id);
                   
@@ -949,7 +968,8 @@ const LMS = () => {
                   );
                 })}
               </div>
-            )}
+            );
+            })()}
 
             {/* Quiz Taker Dialog */}
             {selectedQuiz && (
