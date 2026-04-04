@@ -58,6 +58,8 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const [phone, setPhone] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -122,6 +124,7 @@ const Profile = () => {
       setProfile(data);
       setFullName(data.full_name || "");
       setPhone(data.phone || "");
+      setUsername((data as any).username || "");
       setAvatarUrl(data.avatar_url || null);
     }
     setLoading(false);
@@ -411,6 +414,25 @@ const Profile = () => {
     e.preventDefault();
     if (!user) return;
 
+    // Validate username if provided
+    if (username.trim()) {
+      if (username.trim().length < 3) {
+        setUsernameError("Username must be at least 3 characters");
+        return;
+      }
+      if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) {
+        setUsernameError("Username can only contain letters, numbers, and underscores");
+        return;
+      }
+      // Check uniqueness
+      const { data: existingEmail } = await supabase.rpc('get_email_by_username', { p_username: username.trim() });
+      if (existingEmail && existingEmail !== user.email) {
+        setUsernameError("This username is already taken");
+        return;
+      }
+    }
+    setUsernameError("");
+
     setSaving(true);
 
     const { error } = await supabase
@@ -418,22 +440,26 @@ const Profile = () => {
       .update({
         full_name: fullName,
         phone: phone,
-      })
+        username: username.trim() || null,
+      } as any)
       .eq("id", user.id);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.message?.includes('profiles_username_unique')) {
+        setUsernameError("This username is already taken");
+      } else {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } else {
       toast({
         title: "Profile updated",
         description: "Your profile has been saved successfully.",
       });
       await logActivity("profile_update", "Updated profile information");
-      // Refresh profile data
       await fetchProfile(user.id);
     }
 
@@ -641,6 +667,24 @@ const Profile = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Choose a unique username"
+                    value={username}
+                    onChange={(e) => {
+                      setUsername(e.target.value.replace(/\s/g, ''));
+                      setUsernameError("");
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Letters, numbers, and underscores only. Can be used to sign in.
+                  </p>
+                  {usernameError && <p className="text-xs text-destructive">{usernameError}</p>}
                 </div>
 
                 <div className="space-y-2">
