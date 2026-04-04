@@ -2054,6 +2054,7 @@ export type Database = {
           referred_by_code: string | null
           student_id: string | null
           student_residence: string | null
+          username: string | null
           year_of_birth: number | null
         }
         Insert: {
@@ -2076,6 +2077,7 @@ export type Database = {
           referred_by_code?: string | null
           student_id?: string | null
           student_residence?: string | null
+          username?: string | null
           year_of_birth?: number | null
         }
         Update: {
@@ -2098,6 +2100,7 @@ export type Database = {
           referred_by_code?: string | null
           student_id?: string | null
           student_residence?: string | null
+          username?: string | null
           year_of_birth?: number | null
         }
         Relationships: []
@@ -2778,6 +2781,7 @@ export type Database = {
           title: string
         }[]
       }
+      get_email_by_username: { Args: { p_username: string }; Returns: string }
       get_free_preview_lesson: {
         Args: { p_lesson_id: string }
         Returns: {
