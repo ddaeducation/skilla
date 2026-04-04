@@ -139,7 +139,7 @@ const SignIn = () => {
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="signin-email">Email or Username</Label>
-                      <Input id="signin-email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                      <Input id="signin-email" type="text" placeholder="your@email.com or username" value={email} onChange={(e) => setEmail(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">

@@ -347,6 +347,7 @@ const SignUp = () => {
         <p className="text-xs text-muted-foreground">Please confirm that all the information you provided is accurate before creating your account.</p>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
           <span className="text-muted-foreground">Name:</span><span className="font-medium truncate">{fullName}</span>
+          <span className="text-muted-foreground">Username:</span><span className="font-medium truncate">{username}</span>
           <span className="text-muted-foreground">Email:</span><span className="font-medium truncate">{email}</span>
           <span className="text-muted-foreground">Phone:</span><span className="font-medium">{phone}</span>
           <span className="text-muted-foreground">Country:</span><span className="font-medium">{country}</span>
