@@ -61,6 +61,9 @@ const SignUp = () => {
   const [step, setStep] = useState(1);
   // Step 1
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -103,6 +106,8 @@ const SignUp = () => {
 
     if (s === 1) {
       if (!fullName.trim() || fullName.trim().length < 2) errors.fullName = "Full name must be at least 2 characters";
+      if (!username.trim() || username.trim().length < 3) errors.username = "Username must be at least 3 characters";
+      else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) errors.username = "Username can only contain letters, numbers, and underscores";
       if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errors.email = "Please enter a valid email address";
       if (!password || password.length < 6) errors.password = "Password must be at least 6 characters";
     }
@@ -128,10 +133,19 @@ const SignUp = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleNext = () => {
-    if (validateStep(step)) {
-      setStep(step + 1);
+  const handleNext = async () => {
+    if (!validateStep(step)) return;
+    // Check username uniqueness on step 1
+    if (step === 1 && username.trim()) {
+      setCheckingUsername(true);
+      const { data } = await supabase.rpc('get_email_by_username', { p_username: username.trim() });
+      setCheckingUsername(false);
+      if (data) {
+        setStepErrors(prev => ({ ...prev, username: "This username is already taken" }));
+        return;
+      }
     }
+    setStep(step + 1);
   };
 
   const handleBack = () => {
@@ -150,6 +164,7 @@ const SignUp = () => {
       options: {
         data: {
           full_name: fullName.trim(),
+          username: username.trim(),
           phone: phone.trim(),
           country,
           education_level: educationLevel,
@@ -193,6 +208,12 @@ const SignUp = () => {
         <Label htmlFor="fullName">Full Name *</Label>
         <Input id="fullName" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} />
         {stepErrors.fullName && <p className="text-xs text-destructive">{stepErrors.fullName}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="username">Username *</Label>
+        <Input id="username" placeholder="johndoe123" value={username} onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))} />
+        <p className="text-xs text-muted-foreground">Letters, numbers, and underscores only. Used as an alternative login.</p>
+        {stepErrors.username && <p className="text-xs text-destructive">{stepErrors.username}</p>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="signup-email">Email *</Label>
@@ -326,6 +347,7 @@ const SignUp = () => {
         <p className="text-xs text-muted-foreground">Please confirm that all the information you provided is accurate before creating your account.</p>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
           <span className="text-muted-foreground">Name:</span><span className="font-medium truncate">{fullName}</span>
+          <span className="text-muted-foreground">Username:</span><span className="font-medium truncate">{username}</span>
           <span className="text-muted-foreground">Email:</span><span className="font-medium truncate">{email}</span>
           <span className="text-muted-foreground">Phone:</span><span className="font-medium">{phone}</span>
           <span className="text-muted-foreground">Country:</span><span className="font-medium">{country}</span>
