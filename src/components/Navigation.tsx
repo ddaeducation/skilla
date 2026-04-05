@@ -219,7 +219,7 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
         <div className="flex items-center gap-2">
           {user && <AccessibilityPanel />}
           <Button variant="ghost" size="sm" asChild className="hidden md:inline-flex text-foreground/70 hover:text-primary">
-            <Link to="/lms">LMS</Link>
+            <Link to="/lms">Dashboard</Link>
           </Button>
           {isInstructor && (
             <Button variant="ghost" size="sm" asChild className="hidden md:inline-flex text-foreground/70 hover:text-primary">
@@ -329,7 +329,7 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
             </div>
             <div className="space-y-2 border-t border-border/60 pt-3">
               <Button variant="outline" asChild className="w-full">
-                <Link to="/lms">LMS</Link>
+                <Link to="/lms">Dashboard</Link>
               </Button>
               {isInstructor && (
                 <Button variant="outline" asChild className="w-full">
