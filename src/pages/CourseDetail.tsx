@@ -1407,7 +1407,7 @@ const CourseDetail = () => {
         )}
 
         {/* Mark Complete and Next Buttons */}
-        <div className="flex justify-between items-center gap-2 pt-2">
+        <div className={`flex justify-between items-center gap-2 pt-2 ${isFullscreen ? "sticky bottom-0 bg-background border-t border-border px-4 py-3 mb-5 z-50 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]" : ""}`}>
           <div>
             {hasPreviousContent() && (
               <Button variant="outline" onClick={goToPreviousContent}>
@@ -1531,7 +1531,7 @@ const CourseDetail = () => {
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-between items-center gap-2">
+        <div className={`flex justify-between items-center gap-2 ${isFullscreen ? "sticky bottom-0 bg-background border-t border-border px-4 py-3 mb-5 z-50 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]" : ""}`}>
           <div>
             {hasPreviousContent() && (
               <Button size="lg" variant="outline" onClick={goToPreviousContent}>
@@ -1660,7 +1660,7 @@ const CourseDetail = () => {
           />
         )}
 
-        <div className="flex justify-between items-center gap-2">
+        <div className={`flex justify-between items-center gap-2 ${isFullscreen ? "sticky bottom-0 bg-background border-t border-border px-4 py-3 mb-5 z-50 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]" : ""}`}>
           <div>
             {hasPreviousContent() && (
               <Button size="lg" variant="outline" onClick={goToPreviousContent}>
