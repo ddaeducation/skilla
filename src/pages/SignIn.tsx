@@ -158,8 +158,8 @@ const SignIn = () => {
               <div className="p-8">
                 {/* Header */}
                 <div className="text-center mb-8">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 mb-4">
-                    <LogIn className="h-7 w-7 text-primary" />
+                  <div className="inline-flex items-center justify-center w-20 h-20 mb-4">
+                    <img src={logoImg} alt="Global Nexus Institute" className="w-full h-full object-contain" />
                   </div>
                   <h1 className="font-display text-2xl font-bold text-foreground">
                     Welcome back
