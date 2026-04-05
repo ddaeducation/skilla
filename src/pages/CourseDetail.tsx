@@ -2221,7 +2221,7 @@ const CourseDetail = () => {
             </TabsList>
 
             <TabsContent value="content">
-              <div ref={contentAreaRef} className={isFullscreen ? "bg-background" : ""}>
+              <div ref={contentAreaRef} className={isFullscreen ? "bg-background h-screen overflow-auto" : ""}>
               {isSidebarHidden ? (
                 <div className="relative">
                   {/* Floating show sidebar button when hidden */}
