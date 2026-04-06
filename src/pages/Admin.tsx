@@ -2726,6 +2726,8 @@ const Admin = () => {
                         const cols = [
                           { header: "Name", accessor: (r: InstructorUser) => r.profiles?.full_name || "-" },
                           { header: "Email", accessor: (r: InstructorUser) => r.profiles?.email || "-" },
+                          { header: "Courses", accessor: (r: InstructorUser) => String(r.course_count || 0) },
+                          { header: "Status", accessor: (r: InstructorUser) => (r.course_count || 0) > 0 ? "Active" : "Inactive" },
                           { header: "Added", accessor: (r: InstructorUser) => r.created_at ? new Date(r.created_at).toLocaleDateString() : "-" },
                         ];
                         exportToExcel(instructorUsers, cols, "instructors");
@@ -2736,6 +2738,8 @@ const Admin = () => {
                         const cols = [
                           { header: "Name", accessor: (r: InstructorUser) => r.profiles?.full_name || "-" },
                           { header: "Email", accessor: (r: InstructorUser) => r.profiles?.email || "-" },
+                          { header: "Courses", accessor: (r: InstructorUser) => String(r.course_count || 0) },
+                          { header: "Status", accessor: (r: InstructorUser) => (r.course_count || 0) > 0 ? "Active" : "Inactive" },
                           { header: "Added", accessor: (r: InstructorUser) => r.created_at ? new Date(r.created_at).toLocaleDateString() : "-" },
                         ];
                         exportToPDF(instructorUsers, cols, "instructors", "Current Instructors");
