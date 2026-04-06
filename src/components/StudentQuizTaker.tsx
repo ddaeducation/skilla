@@ -1046,5 +1046,32 @@ export const StudentQuizTaker = ({
         )}
       </DialogContent>
     </Dialog>
+
+      <FollowUpQuiz
+        open={showFollowUp}
+        onClose={() => setShowFollowUp(false)}
+        wrongQuestions={feedbacks
+          .filter(f => !f.isCorrect)
+          .map(f => {
+            const q = questions.find(qq => qq.id === f.questionId);
+            const qOpts = options[f.questionId] || [];
+            const correctOpt = qOpts.find(o => o.is_correct);
+            const studentAns = answers[f.questionId];
+            const studentAnswerText = typeof studentAns === "string"
+              ? (qOpts.find(o => o.id === studentAns)?.option_text || studentAns)
+              : Array.isArray(studentAns)
+              ? studentAns.map(a => qOpts.find(o => o.id === a)?.option_text || a).join(", ")
+              : "";
+            return {
+              questionText: q?.question_text || "",
+              studentAnswer: studentAnswerText,
+              correctAnswer: correctOpt?.option_text || "",
+              feedback: f.feedback,
+            };
+          })}
+        scorePercentage={maxScore > 0 ? Math.round((score / maxScore) * 100) : 0}
+        quizTitle={quizTitle}
+      />
+    </>
   );
 };
