@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SortableOrderingList } from "@/components/quiz/SortableOrderingList";
+import { FollowUpQuiz } from "@/components/FollowUpQuiz";
 
 interface QuizQuestion {
   id: string;
@@ -101,6 +102,7 @@ export const StudentQuizTaker = ({
   const [showFeedbackDetails, setShowFeedbackDetails] = useState(false);
   const [attemptCount, setAttemptCount] = useState(0);
   const [maxAttemptsReached, setMaxAttemptsReached] = useState(false);
+  const [showFollowUp, setShowFollowUp] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -900,6 +902,18 @@ export const StudentQuizTaker = ({
               Attempts: {attemptCount}/{maxAttempts}
             </p>
           )}
+          {/* Follow-up practice button for students who didn't get 100% */}
+          {feedbacks.some(f => !f.isCorrect) && (
+            <Button
+              variant="secondary"
+              size="lg"
+              className="gap-2"
+              onClick={() => setShowFollowUp(true)}
+            >
+              <Sparkles className="w-4 h-4" />
+              Practice Weak Areas
+            </Button>
+          )}
           <div className="flex justify-center gap-3">
             {!(maxAttemptsReached || (maxAttempts && attemptCount >= maxAttempts)) && (
               <Button variant="outline" onClick={handleRetake} size="lg">
@@ -937,6 +951,7 @@ export const StudentQuizTaker = ({
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -1032,5 +1047,32 @@ export const StudentQuizTaker = ({
         )}
       </DialogContent>
     </Dialog>
+
+      <FollowUpQuiz
+        open={showFollowUp}
+        onClose={() => setShowFollowUp(false)}
+        wrongQuestions={feedbacks
+          .filter(f => !f.isCorrect)
+          .map(f => {
+            const q = questions.find(qq => qq.id === f.questionId);
+            const qOpts = options[f.questionId] || [];
+            const correctOpt = qOpts.find(o => o.is_correct);
+            const studentAns = answers[f.questionId];
+            const studentAnswerText = typeof studentAns === "string"
+              ? (qOpts.find(o => o.id === studentAns)?.option_text || studentAns)
+              : Array.isArray(studentAns)
+              ? studentAns.map(a => qOpts.find(o => o.id === a)?.option_text || a).join(", ")
+              : "";
+            return {
+              questionText: q?.question_text || "",
+              studentAnswer: studentAnswerText,
+              correctAnswer: correctOpt?.option_text || "",
+              feedback: f.feedback,
+            };
+          })}
+        scorePercentage={maxScore > 0 ? Math.round((score / maxScore) * 100) : 0}
+        quizTitle={quizTitle}
+      />
+    </>
   );
 };
