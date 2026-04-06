@@ -493,9 +493,22 @@ const Admin = () => {
         .order("created_at", { ascending: false });
 
       if (instructorUsersData) {
+        // Fetch course counts per instructor
+        const instructorIds = (instructorUsersData as any[]).map(r => r.user_id);
+        const { data: coursesData } = await supabase
+          .from("courses")
+          .select("instructor_id")
+          .in("instructor_id", instructorIds);
+
+        const courseCountMap = new Map<string, number>();
+        coursesData?.forEach((c: any) => {
+          courseCountMap.set(c.instructor_id, (courseCountMap.get(c.instructor_id) || 0) + 1);
+        });
+
         const hydratedInstructors = (instructorUsersData as any[]).map((r) => ({
           ...r,
           profiles: profilesById.get(r.user_id) ?? null,
+          course_count: courseCountMap.get(r.user_id) || 0,
         }));
         setInstructorUsers(hydratedInstructors as unknown as InstructorUser[]);
       }
