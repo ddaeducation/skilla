@@ -2769,6 +2769,22 @@ const Admin = () => {
                           </TableCell>
                           <TableCell>{instructor.profiles?.email || "-"}</TableCell>
                           <TableCell>
+                            <Badge variant="outline">{instructor.course_count || 0} courses</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {(instructor.course_count || 0) > 0 ? (
+                              <Badge className="bg-green-500 hover:bg-green-600 gap-1">
+                                <CheckCircle className="w-3 h-3" />
+                                Active
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive" className="gap-1">
+                                <Ban className="w-3 h-3" />
+                                Inactive
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
                             <div className="flex items-center gap-2">
                               <Switch
                                 checked={instructor.profiles?.ai_course_generation_enabled ?? false}
