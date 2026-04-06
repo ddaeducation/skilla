@@ -135,6 +135,7 @@ interface InstructorUser {
   role: string;
   created_at: string;
   profiles?: { full_name: string | null; email: string | null; ai_course_generation_enabled?: boolean };
+  course_count?: number;
 }
 
 interface InstructorApplication {
@@ -492,9 +493,22 @@ const Admin = () => {
         .order("created_at", { ascending: false });
 
       if (instructorUsersData) {
+        // Fetch course counts per instructor
+        const instructorIds = (instructorUsersData as any[]).map(r => r.user_id);
+        const { data: coursesData } = await supabase
+          .from("courses")
+          .select("instructor_id")
+          .in("instructor_id", instructorIds);
+
+        const courseCountMap = new Map<string, number>();
+        coursesData?.forEach((c: any) => {
+          courseCountMap.set(c.instructor_id, (courseCountMap.get(c.instructor_id) || 0) + 1);
+        });
+
         const hydratedInstructors = (instructorUsersData as any[]).map((r) => ({
           ...r,
           profiles: profilesById.get(r.user_id) ?? null,
+          course_count: courseCountMap.get(r.user_id) || 0,
         }));
         setInstructorUsers(hydratedInstructors as unknown as InstructorUser[]);
       }
@@ -2712,6 +2726,8 @@ const Admin = () => {
                         const cols = [
                           { header: "Name", accessor: (r: InstructorUser) => r.profiles?.full_name || "-" },
                           { header: "Email", accessor: (r: InstructorUser) => r.profiles?.email || "-" },
+                          { header: "Courses", accessor: (r: InstructorUser) => String(r.course_count || 0) },
+                          { header: "Status", accessor: (r: InstructorUser) => (r.course_count || 0) > 0 ? "Active" : "Inactive" },
                           { header: "Added", accessor: (r: InstructorUser) => r.created_at ? new Date(r.created_at).toLocaleDateString() : "-" },
                         ];
                         exportToExcel(instructorUsers, cols, "instructors");
@@ -2722,6 +2738,8 @@ const Admin = () => {
                         const cols = [
                           { header: "Name", accessor: (r: InstructorUser) => r.profiles?.full_name || "-" },
                           { header: "Email", accessor: (r: InstructorUser) => r.profiles?.email || "-" },
+                          { header: "Courses", accessor: (r: InstructorUser) => String(r.course_count || 0) },
+                          { header: "Status", accessor: (r: InstructorUser) => (r.course_count || 0) > 0 ? "Active" : "Inactive" },
                           { header: "Added", accessor: (r: InstructorUser) => r.created_at ? new Date(r.created_at).toLocaleDateString() : "-" },
                         ];
                         exportToPDF(instructorUsers, cols, "instructors", "Current Instructors");
@@ -2737,6 +2755,8 @@ const Admin = () => {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Courses</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>AI Course Access</TableHead>
                         <TableHead>Added</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -2752,6 +2772,22 @@ const Admin = () => {
                             </div>
                           </TableCell>
                           <TableCell>{instructor.profiles?.email || "-"}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{instructor.course_count || 0} courses</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {(instructor.course_count || 0) > 0 ? (
+                              <Badge className="bg-green-500 hover:bg-green-600 gap-1">
+                                <CheckCircle className="w-3 h-3" />
+                                Active
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive" className="gap-1">
+                                <Ban className="w-3 h-3" />
+                                Inactive
+                              </Badge>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Switch
