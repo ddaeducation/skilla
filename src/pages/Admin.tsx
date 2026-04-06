@@ -2751,6 +2751,8 @@ const Admin = () => {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Courses</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>AI Course Access</TableHead>
                         <TableHead>Added</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
