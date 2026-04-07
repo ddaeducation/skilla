@@ -31,6 +31,7 @@ import CorporateTraining from "./pages/CorporateTraining";
 import CorporateDashboard from "./pages/CorporateDashboard";
 import AcceptCorporateInvite from "./pages/AcceptCorporateInvite";
 import Collaborate from "./pages/Collaborate";
+import Blog from "./pages/Blog";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,8 @@ const App = () => {
           <Route path="/corporate-dashboard" element={<CorporateDashboard />} />
           <Route path="/accept-corporate-invite" element={<AcceptCorporateInvite />} />
           <Route path="/collaborate" element={<Collaborate />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<Blog />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

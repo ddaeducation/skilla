@@ -13,6 +13,7 @@ import AdminCorporateManagement from "@/components/AdminCorporateManagement";
 import AdminCollaborationManagement from "@/components/AdminCollaborationManagement";
 import AdminPromotionalManagement from "@/components/AdminPromotionalManagement";
 import AdminDonationManagement from "@/components/AdminDonationManagement";
+import AdminBlogManagement from "@/components/AdminBlogManagement";
 import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -3786,6 +3787,20 @@ const Admin = () => {
                 </div>
               </div>
               <AdminDonationManagement />
+            </TabsContent>
+
+            <TabsContent value="blog" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-semibold flex items-center gap-2">
+                    Blog & News
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Publish articles and news updates for all users
+                  </p>
+                </div>
+              </div>
+              <AdminBlogManagement />
             </TabsContent>
           </Tabs>
         </div>
