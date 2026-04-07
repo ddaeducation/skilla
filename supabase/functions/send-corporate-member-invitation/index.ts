@@ -24,6 +24,52 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Auth check: require a valid user who is an admin or corporate admin
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Authorization required" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseUser = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid authentication" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check if user is an admin or a corporate account admin
+    const { data: adminRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    const { data: corpAccount } = await supabaseAdmin
+      .from("corporate_accounts")
+      .select("id")
+      .eq("admin_user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (!adminRole && !corpAccount) {
+      return new Response(JSON.stringify({ error: "Unauthorized: admin or corporate admin access required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { type, member_email, member_name, company_name, course_title, site_url }: InvitationRequest = await req.json();
 
     if (!member_email || !company_name) {
@@ -101,7 +147,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error sending corporate invitation:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to send invitation" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
