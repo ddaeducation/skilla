@@ -60,6 +60,7 @@ import { useVideoWatchProgress } from "@/hooks/useVideoWatchProgress";
 import { VideoQuizPopup } from "@/components/VideoQuizPopup";
 import { VideoQuizMarkers } from "@/components/VideoQuizMarkers";
 import CourseReviews from "@/components/CourseReviews";
+import LessonDiscussion from "@/components/LessonDiscussion";
 
 interface CourseSection {
   id: string;
