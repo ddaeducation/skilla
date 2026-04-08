@@ -494,6 +494,14 @@ const LMS = () => {
 
             {/* Weekly Learning Chart */}
             <WeeklyLearningChart userId={user?.id} />
+
+            {/* Learning Analytics */}
+            <StudentAnalytics
+              enrolledCourses={enrolledCourses}
+              progress={progress}
+              quizAttempts={quizAttempts}
+              totalTimeSpent={totalTimeSpent}
+            />
           </div>
         );
 
