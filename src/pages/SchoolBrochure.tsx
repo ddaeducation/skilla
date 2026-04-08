@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Code, Database, Briefcase, Palette, TrendingUp, Cpu, Users, Clock, BookOpen, Target, Award, CheckCircle, Globe, Star, Sparkles } from "lucide-react";
+import { ArrowLeft, Code, Database, Briefcase, Palette, TrendingUp, Cpu, Users, BookOpen, Target, Award, CheckCircle, Globe, Star, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const schoolBrochureData: Record<string, {
