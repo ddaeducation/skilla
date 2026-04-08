@@ -333,6 +333,12 @@ const SchoolBrochure = () => {
         {/* Programs */}
         <section className="py-16 md:py-20">
           <div className="container px-4">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl md:text-4xl font-bold font-display mb-3">Programs Offered</h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Choose the program that fits your goals and schedule
+              </p>
+            </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
               {data.programs.map((prog, i) => (
                 <div
