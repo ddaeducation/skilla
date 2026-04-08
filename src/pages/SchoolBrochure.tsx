@@ -330,40 +330,6 @@ const SchoolBrochure = () => {
           </div>
         </section>
 
-        {/* Programs */}
-        <section className="py-16 md:py-20">
-          <div className="container px-4">
-            <div className="text-center mb-14">
-              <h2 className="text-3xl md:text-4xl font-bold font-display mb-3">Programs Offered</h2>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Choose the program that fits your goals and schedule
-              </p>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {data.programs.map((prog, i) => (
-                <div
-                  key={i}
-                  className="bg-card rounded-2xl border border-border/60 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
-                >
-                  <div className={`h-2 bg-gradient-to-r ${data.gradient}`} />
-                  <div className="p-6 flex-1 flex flex-col">
-                    <h3 className="text-xl font-bold mb-2 text-foreground">{prog.title}</h3>
-                    <p className="text-muted-foreground text-sm mb-4 flex-1 leading-relaxed">{prog.description}</p>
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        {prog.duration}
-                      </span>
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r ${data.gradient} text-white`}>
-                        {prog.level}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* Career Paths */}
         <section className="py-16 md:py-20 bg-muted/30">
