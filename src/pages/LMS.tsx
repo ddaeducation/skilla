@@ -503,6 +503,9 @@ const LMS = () => {
               quizAttempts={quizAttempts}
               totalTimeSpent={totalTimeSpent}
             />
+
+            {/* Gamification */}
+            {user && <GamificationPanel userId={user.id} />}
           </div>
         );
 
