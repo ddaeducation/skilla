@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, Clock, Target, Sparkles, CheckCircle } from "lucide-react";
+import { ArrowRight, BookOpen, Clock, Target, Sparkles, ChevronRight } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface PathCourse {
   id: string;
@@ -170,25 +171,30 @@ const LearningPaths = () => {
                     </div>
 
                     {courses.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-foreground mb-2">Courses in this path:</p>
-                        <div className="space-y-1.5">
-                          {courses.slice(0, 4).map((c, i) => (
-                            <Link key={c.id} to={`/course/${c.id}`} className="flex items-center gap-2 text-sm group hover:bg-accent/50 rounded-md px-1.5 py-1 -mx-1.5 transition-colors">
-                              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-medium shrink-0">
-                                {i + 1}
-                              </span>
-                              <span className="text-muted-foreground group-hover:text-primary truncate transition-colors">{c.title}</span>
-                              <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto" />
-                            </Link>
-                          ))}
-                          {courses.length > 4 && (
-                            <p className="text-xs text-muted-foreground pl-7">
-                              + {courses.length - 4} more courses
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                      <Collapsible className="mb-4">
+                        <CollapsibleTrigger className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors w-full">
+                          <ChevronRight className="h-4 w-4 transition-transform [[data-state=open]>&]:rotate-90" />
+                          Courses in this path ({courses.length})
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-2">
+                          <div className="space-y-1.5">
+                            {courses.slice(0, 4).map((c, i) => (
+                              <Link key={c.id} to={`/course/${c.id}`} className="flex items-center gap-2 text-sm group hover:bg-accent/50 rounded-md px-1.5 py-1 -mx-1.5 transition-colors">
+                                <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-medium shrink-0">
+                                  {i + 1}
+                                </span>
+                                <span className="text-muted-foreground group-hover:text-primary truncate transition-colors">{c.title}</span>
+                                <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto" />
+                              </Link>
+                            ))}
+                            {courses.length > 4 && (
+                              <p className="text-xs text-muted-foreground pl-7">
+                                + {courses.length - 4} more courses
+                              </p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
                     )}
 
                     <div className="mt-auto pt-3">
