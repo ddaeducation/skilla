@@ -58,8 +58,55 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { type, announcement, message, user_status, enrollment_status }: NotificationRequest = await req.json();
+    const { type, announcement, message, user_status, enrollment_status, enrollment_confirmation }: NotificationRequest = await req.json();
     console.log(`Processing ${type} notification`);
+
+    // Handle enrollment confirmation notification
+    if (type === "enrollment_confirmation" && enrollment_confirmation) {
+      const { user_email, user_name, course_name, amount_paid, currency, platform_name = "Global Nexus Institute" } = enrollment_confirmation;
+      console.log(`Sending enrollment confirmation to ${user_email}`);
+
+      const paymentLine = amount_paid > 0
+        ? `<strong>Amount Paid:</strong> ${currency} ${amount_paid.toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+        : `<strong>Enrollment:</strong> Free`;
+
+      await resend.emails.send({
+        from: `${platform_name} <onboarding@resend.dev>`,
+        to: [user_email],
+        subject: `🎉 Welcome to "${course_name}" — Enrollment Confirmed`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #3b82f6, #1e40af); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px;">🎓 Enrollment Confirmed!</h1>
+            </div>
+            <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+              <p style="color: #4b5563; margin: 0 0 8px 0; font-size: 16px;">Hi ${user_name || "Student"},</p>
+              <p style="color: #4b5563; margin: 0 0 20px 0; line-height: 1.6;">
+                Congratulations! You have successfully enrolled in the course below. You can start learning right away.
+              </p>
+              <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+                <p style="color: #1e40af; font-weight: 700; font-size: 16px; margin: 0 0 8px 0;">${course_name}</p>
+                <p style="color: #64748b; font-size: 14px; margin: 0;">${paymentLine}</p>
+              </div>
+              <div style="text-align: center; margin-bottom: 24px;">
+                <a href="#" style="display: inline-block; background: linear-gradient(135deg, #3b82f6, #1e40af); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+                  Start Learning Now →
+                </a>
+              </div>
+              <p style="color: #9ca3af; font-size: 12px; margin: 0; text-align: center;">
+                This is an automated message from ${platform_name}. Please do not reply directly.
+              </p>
+            </div>
+          </div>
+        `,
+      });
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
 
     // Handle user status notifications (suspended, removed, reactivated)
     if (type === "user_status" && user_status) {
