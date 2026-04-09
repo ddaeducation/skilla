@@ -129,7 +129,7 @@ const LearningPaths = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {LEARNING_PATHS.map((path) => {
               const courses = pathCourses[path.id] || [];
               return (
@@ -174,12 +174,13 @@ const LearningPaths = () => {
                         <p className="text-sm font-medium text-foreground mb-2">Courses in this path:</p>
                         <div className="space-y-1.5">
                           {courses.slice(0, 4).map((c, i) => (
-                            <div key={c.id} className="flex items-center gap-2 text-sm">
+                            <Link key={c.id} to={`/course/${c.id}`} className="flex items-center gap-2 text-sm group hover:bg-accent/50 rounded-md px-1.5 py-1 -mx-1.5 transition-colors">
                               <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-medium shrink-0">
                                 {i + 1}
                               </span>
-                              <span className="text-muted-foreground truncate">{c.title}</span>
-                            </div>
+                              <span className="text-muted-foreground group-hover:text-primary truncate transition-colors">{c.title}</span>
+                              <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto" />
+                            </Link>
                           ))}
                           {courses.length > 4 && (
                             <p className="text-xs text-muted-foreground pl-7">
