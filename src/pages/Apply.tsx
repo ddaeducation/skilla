@@ -1281,6 +1281,23 @@ const calculateFullPriceExpiry = (duration: string | null): Date => {
                     <li>✓ Complete assignments and quizzes</li>
                   </ul>
                 </div>
+                {selectedCourse && (
+                  <div className="mb-6">
+                    <PaymentReceiptGenerator
+                      receiptData={{
+                        studentName: `${formData.firstName} ${formData.lastName}`,
+                        studentEmail: formData.email,
+                        courseName: selectedCourse.title,
+                        courseSchool: selectedCourse.school,
+                        amountPaid: totalPriceUSD,
+                        currency: "USD",
+                        paymentDate: new Date().toISOString(),
+                        enrollmentId: enrollmentId || crypto.randomUUID(),
+                        monthsPaid: isFullPrice ? null : numberOfMonths,
+                      }}
+                    />
+                  </div>
+                )}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   {selectedCourse ? (
                     <Button size="lg" onClick={() => navigate(`/course/${selectedCourse.id}`)}>
