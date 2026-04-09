@@ -26,8 +26,12 @@ const CoursePriceDisplay = ({ monthlyPrice, price, defaultCurrency = "USD", pric
   const isFullPrice = pricingType === "full";
   
   const displayPrice = isFullPrice 
-    ? (fullPrice && fullPrice > 0 ? fullPrice : 5)
-    : (monthlyPrice ?? price) > 0 ? (monthlyPrice ?? price) : 5;
+    ? (fullPrice ?? 0)
+    : (monthlyPrice ?? price);
+
+  if (displayPrice === 0) {
+    return <span className="text-sm font-semibold text-primary">Free</span>;
+  }
 
   const formatPrice = (cur: "USD" | "RWF") => {
     if (cur === "RWF") {

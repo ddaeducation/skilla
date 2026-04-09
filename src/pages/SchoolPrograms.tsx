@@ -482,8 +482,8 @@ const SchoolPrograms = () => {
               </div> : dbCourses.length > 0 ? <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
                 {dbCourses.map((course, index) => {
               const displayPrice = (course as any).monthly_price ?? course.price;
-              const priceText = `$${displayPrice > 0 ? displayPrice : 5}/mo`;
-              return <ProgramCard key={course.id} title={course.title} description={course.description || ""} duration={course.duration || "Self-paced"} format="Live classes + recorded lectures" category={(course as any).category || undefined} skills={course.learning_outcomes as string[] || []} gradientColor={currentSchool.color} animationDelay={index * 0.1} enrollLink={`/course/${(course as any).slug || course.id}`} enrollButtonText={`Enroll Now - ${priceText}`} />;
+              const priceText = displayPrice > 0 ? `$${displayPrice}/mo` : 'Free';
+              return <ProgramCard key={course.id} title={course.title} description={course.description || ""} duration={course.duration || "Self-paced"} format="Live classes + recorded lectures" category={(course as any).category || undefined} skills={course.learning_outcomes as string[] || []} gradientColor={currentSchool.color} animationDelay={index * 0.1} enrollLink={`/course/${(course as any).slug || course.id}`} enrollButtonText={displayPrice > 0 ? `Enroll Now - ${priceText}` : `Enroll Now - Free`} />;
             })}
               </div> : <div className="text-center py-12">
                 <p className="text-muted-foreground">No programs available yet. Check back soon!</p>
